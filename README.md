@@ -7,6 +7,7 @@
 | 插件 | 简介 | 介绍与使用 |
 | --- | --- | --- |
 | Seedance 创意导演 | 从图片和脚本共创中文视频提示词，兼顾创意补全、意图继承与动作连续性。 | [详细介绍](docs/seedance-creative-director.md) · [使用与依赖](plugins/seedance-creative-director/README.md) |
+| 视频套版 FrameFit | Windows 本机批量横竖转换与图片套版，支持预览、GPU／CPU 导出和处理功能自动更新。 | [详细介绍](docs/framefit.md) · [使用与依赖](plugins/framefit/README.md) |
 
 各插件的功能、依赖、账号要求和许可请查看对应页面。
 
@@ -35,6 +36,8 @@ codex plugin marketplace upgrade yuanchuan-plugins
 ```
 
 必要时重启客户端并新建聊天。市场跟踪 `main`，不承诺即时自动更新；固定到 tag 或提交后将不再跟随主分支。
+
+FrameFit 的视频处理程序、面板及共享模板／预设另通过公开稳定版本清单，在准备新任务时检查并更新；正在处理的任务固定使用原版本。插件技能、名称和 MCP 接口仍通过上述市场更新。
 
 ## 贡献插件
 

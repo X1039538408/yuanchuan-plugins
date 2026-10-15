@@ -1,0 +1,4 @@
+interface:
+  display_name: "视频套版 FrameFit"
+  short_description: "Windows 本机横竖视频套版、批量预览导出与任务恢复"
+  default_prompt: "使用 $framefit 将我提供的视频套用内置横版模板，以 1080P 导出并保留原声。"
