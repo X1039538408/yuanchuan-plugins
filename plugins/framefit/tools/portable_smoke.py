@@ -126,9 +126,9 @@ def smoke(archive, work):
     require(task["status"] == "completed" and task["progress"] == 1, task)
     item = task["items"][0]
     require(item["status"] == "completed" and item["backend"] == "cpu", item)
-    require(Path(task["runtimeRoot"]) == root and task["version"] == manifest["version"], task)
+    require(os.path.samefile(task["runtimeRoot"], root) and task["version"] == manifest["version"], task)
     exported = Path(item["output"])
-    require(exported.is_file() and exported.parent == output_dir and exported.stat().st_size > 100, item)
+    require(exported.is_file() and os.path.samefile(exported.parent, output_dir) and exported.stat().st_size > 100, item)
     info = json.loads(run([root / "bin" / "ffprobe.exe", "-v", "error", "-show_streams", "-show_format", "-of", "json", exported]))
     video = next(stream for stream in info["streams"] if stream["codec_type"] == "video")
     require([video["width"], video["height"]] == session["outputSize"], video)
