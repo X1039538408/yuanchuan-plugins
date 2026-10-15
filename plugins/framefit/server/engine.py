@@ -27,7 +27,7 @@ ID = re.compile(r"^[a-zA-Z0-9_-]{1,100}$")
 DEFAULTS = dict(direction="landscape", templateId="landscape", detection="auto", rect=None,
                 fit="cover", zoom=100, resolution="1080p", quality="high", backend="auto",
                 language="auto", otherLanguage="", nameMode="compact", outputGroup="folder",
-                borderPolicy="ask", templateConfirmed=False)
+                borderPolicy="ask", templateConfirmed=False, outputSize=None)
 CHOICES = dict(direction=("landscape", "portrait", "custom"), detection=("auto", "black", "white", "transparent"),
                fit=("cover", "contain", "stretch", "zoom"), resolution=("720p", "1080p", "4k", "original"),
                quality=("high", "standard"), backend=("auto", "nvenc", "cpu"),
@@ -221,6 +221,10 @@ class Engine:
             if cfg[key] not in choices:
                 raise ValueError(f"{key} 参数无效。")
         cfg["zoom"] = core.validate_zoom(cfg["zoom"])
+        requested_size = cfg.get('outputSize')
+        if requested_size is not None and (not isinstance(requested_size, list) or len(requested_size)!=2 or
+                any(isinstance(value,bool) or not isinstance(value,int) or value<2 or value>16384 or value%2 for value in requested_size)):
+            raise ValueError('outputSize 需要两个 2～16384 的正偶数。')
         template = cfg.get("template")
         if not template:
             template_id = cfg.get("templateId", cfg["direction"])
@@ -252,12 +256,14 @@ class Engine:
                 size = {"720p": (1280, 720), "1080p": (1920, 1080), "4k": (3840, 2160)}[cfg["resolution"]]
                 if cfg["direction"] == "portrait":
                     size = size[::-1]
+        if requested_size:
+            size = tuple(requested_size)
         cfg["template"] = str(template)
         cfg["rect"] = list(rect)
         cfg["outputDir"] = str(Path(cfg.get("outputDir") or Path.home() / "Videos" / "套版导出").expanduser().resolve())
         return cfg, list(size)
 
-    def prepare_config(self, videos=None, config=None, sessionId=None, itemConfigs=None):
+    def prepare_config(self, videos=None, config=None, sessionId=None, itemConfigs=None, outputTemplates=None):
         with file_lock(self.state / "sessions.lock"):
             previous = self.load_session(sessionId) if sessionId else None
             incoming = dict(config or {})
@@ -269,10 +275,14 @@ class Engine:
                     desktop_recipe = self.desktop_settings().get("recipes", {}).get(name)
                     if isinstance(desktop_recipe, dict):
                         preset = {"config": desktop_recipe.get("engineConfig") or desktop_recipe.get("config")}
+                        if outputTemplates is None and desktop_recipe.get('outputTemplates'):
+                            outputTemplates = desktop_recipe['outputTemplates']
                 if preset is None:
                     raise ValueError("未找到该预设。")
                 preset_config = preset["config"]
                 preset_config = {k: v for k, v in preset_config.items() if k not in ('templateConfirmed', 'borderPolicy')}
+            if outputTemplates is None and itemConfigs is None and previous is None and not incoming.get('template'):
+                outputTemplates = self.desktop_settings().get('outputTemplates') or None
             direction = incoming.get("direction", preset_config.get("direction", previous["config"]["direction"] if previous else "landscape"))
             if not previous or direction != previous["config"]["direction"]:
                 saved_profiles = read_json(self.state / "profiles.json", {})
@@ -295,20 +305,43 @@ class Engine:
             cfg, size = self.validate(cfg)
             if videos is None:
                 videos = [v["path"] for v in previous["videos"]] if previous else []
+                if previous and itemConfigs is None:
+                    itemConfigs = [dict(item.get('overrides',{}), outputKey=item.get('outputKey','')) for item in previous['videos']]
+            if itemConfigs is not None and (not isinstance(itemConfigs,list) or any(not isinstance(v,dict) for v in itemConfigs)):
+                raise ValueError('itemConfigs 需要配置对象数组。')
             if not isinstance(videos, list) or any(not isinstance(v, str) or not v.strip() for v in videos):
                 raise ValueError("videos 必须是视频路径数组。")
+            if outputTemplates is not None:
+                if not isinstance(outputTemplates,list) or not 1<=len(outputTemplates)<=100 or any(not isinstance(v,dict) for v in outputTemplates):
+                    raise ValueError('outputTemplates 需要 1～100 个套版设置。')
+                if itemConfigs is not None:
+                    raise ValueError('outputTemplates 与 itemConfigs 不能同时提供。')
+                source_paths = []
+                for value in videos:
+                    path = Path(value).expanduser().resolve()
+                    source_paths.extend(sorted(p for p in path.iterdir() if p.is_file() and p.suffix.lower() in {'.mp4','.mov','.mkv','.avi','.webm','.m4v','.ts','.wmv'}) if path.is_dir() else [path])
+                sources = list(dict.fromkeys(str(path) for path in source_paths))
+                videos = [path for path in sources for variant in outputTemplates]
+                itemConfigs = [dict(variant, outputKey=str(index), templateConfirmed=True)
+                               for path in sources for index,variant in enumerate(outputTemplates)]
             expanded = []
             extensions = {".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v", ".ts", ".wmv"}
             for value in videos:
                 path = Path(value).expanduser().resolve()
                 expanded.extend(sorted(p for p in path.iterdir() if p.is_file() and p.suffix.lower() in extensions) if path.is_dir() else [path])
             items, seen = [], set()
-            for path in expanded:
-                identity = os.path.normcase(str(path))
+            retained_overrides = []
+            for position,path in enumerate(expanded):
+                overrides = itemConfigs[position] if itemConfigs is not None and len(itemConfigs)==len(expanded) else {}
+                output_key = overrides.get('outputKey', '')
+                if not isinstance(output_key,str) or len(output_key)>100:
+                    raise ValueError('outputKey 需要最多 100 字符的字符串。')
+                identity = (os.path.normcase(str(path)),output_key)
                 if identity in seen:
                     continue
                 seen.add(identity)
-                item = dict(path=str(path), name=path.name)
+                item = dict(path=str(path), name=path.name, outputKey=output_key)
+                retained_overrides.append(overrides)
                 try:
                     if not path.is_file():
                         raise ValueError("视频不存在或当前不可访问。")
@@ -316,19 +349,22 @@ class Engine:
                 except Exception as exc:
                     item["error"] = str(exc)
                 items.append(item)
-            if itemConfigs is not None and (not isinstance(itemConfigs, list) or len(itemConfigs) != len(items) or any(not isinstance(v, dict) for v in itemConfigs)):
+            if itemConfigs is not None and (not isinstance(itemConfigs, list) or len(itemConfigs) not in (len(items),len(expanded)) or any(not isinstance(v, dict) for v in itemConfigs)):
                 raise ValueError('itemConfigs 需要与去重后的视频队列一一对应。')
+            if itemConfigs is not None and len(itemConfigs)==len(expanded):
+                itemConfigs = retained_overrides
             desktop_workflow = bool(self.desktop_settings().get('machine'))
-            previous_items = {item['path']: item for item in previous.get('videos', [])} if previous else {}
+            previous_items = {(item['path'],item.get('outputKey','')): item for item in previous.get('videos', [])} if previous else {}
             for index, item in enumerate(items):
                 overrides = dict(itemConfigs[index]) if itemConfigs is not None else (
-                    dict(previous_items.get(item['path'], {}).get('overrides', {})))
+                    dict(previous_items.get((item['path'],item.get('outputKey','')), {}).get('overrides', {})))
                 item['overrides'] = dict(overrides)
                 if item.get('error'):
                     continue
                 item_cfg = dict(cfg)
                 item_rect_source = rect_source
                 output_name = overrides.pop('outputName', None)
+                overrides.pop('outputKey', None)
                 if output_name:
                     item['outputName'] = self.safe_filename(output_name)
                 if 'template' in overrides and 'rect' not in overrides:
@@ -349,7 +385,7 @@ class Engine:
                         chosen = match['candidates'][0]
                         chosen_identity = os.path.normcase(str(Path(chosen['path']).resolve()))
                         same_template = os.path.normcase(str(Path(item_cfg.get('template', '')).resolve())) == chosen_identity
-                        prior = previous_items.get(item['path'], {})
+                        prior = previous_items.get((item['path'],item.get('outputKey','')), {})
                         prior_cfg = prior.get('config', {})
                         carry_manual = (prior.get('rectSource') == 'manual' and
                             os.path.normcase(str(Path(prior_cfg.get('template', '')).resolve())) == chosen_identity and
@@ -584,7 +620,7 @@ class Engine:
                     if video.get('requiresTemplateReview'):
                         raise ValueError(f"{video['name']}：{video.get('match', {}).get('message') or '项目套版需要确认'}；请选择候选或确认使用上次模板。")
                     item_cfg, item_size = self.validate(video.get('config', cfg))
-                    if session.get('workflowEnabled'):
+                    if session.get('workflowEnabled') and item_cfg['borderPolicy'] != 'keep':
                         report = self.analyze_borders(sessionId, index)
                         if report['newBorders']:
                             if item_cfg['borderPolicy'] == 'ask':

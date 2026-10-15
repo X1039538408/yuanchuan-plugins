@@ -364,3 +364,48 @@ def test_profiles_and_template_snapshot_are_independent(setup):
     result = wait(engine, task["taskId"])
     assert result["status"] == "completed"
     assert Path(result["config"]["template"]).is_file()
+
+
+def test_one_video_three_output_templates_and_resume_identity(setup):
+    engine, video, tmp = setup
+    variants=[]
+    for index,size in enumerate(((160,90),(90,160),(120,120))):
+        template=tmp/f'variant-{index}.png'
+        image=Image.new('RGB',size,'#376659')
+        ImageDraw.Draw(image).rectangle((4,4,size[0]-5,size[1]-5),fill='black')
+        image.save(template)
+        variants.append({'template':str(template),'direction':'custom','resolution':'original',
+                         'outputSize':list(size),'fit':'cover','borderPolicy':'keep'})
+    session=engine.prepare_config([str(video)],{'resolution':'original','backend':'cpu','outputDir':str(tmp/'multi')},outputTemplates=variants)
+    assert len(session['videos'])==3
+    assert len({item['outputKey'] for item in session['videos']})==3
+    session=engine.update_config(session['sessionId'],{'quality':'standard'})
+    assert len(session['videos'])==3
+    final=wait(engine,engine.export_videos(session['sessionId'],'three-outputs')['taskId'])
+    assert final['status']=='completed',final
+    assert len({item['output'] for item in final['items']})==3
+    for item,size in zip(final['items'],((160,90),(90,160),(120,120))):
+        info=core.probe(item['output'])
+        assert (info['width'],info['height'])==size
+        assert info['audio']
+    directory=tmp/'sources'
+    directory.mkdir()
+    shutil.copyfile(video,directory/'a.mp4')
+    shutil.copyfile(video,directory/'b.mp4')
+    session=engine.prepare_config([str(directory)],{'resolution':'original'},outputTemplates=variants)
+    assert len(session['videos'])==6
+    assert {path:len([v for v in session['videos'] if v['path']==path]) for path in {v['path'] for v in session['videos']}} == {
+        str((directory/'a.mp4').resolve()):3,str((directory/'b.mp4').resolve()):3}
+
+
+def test_media_preflight_cancel_terminates_child_process():
+    cancel=threading.Event()
+    timer=threading.Timer(.2,cancel.set)
+    timer.start()
+    started=time.monotonic()
+    try:
+        with core.cancellable(cancel), pytest.raises(core.Cancelled):
+            core.run([sys.executable,'-c','import time; time.sleep(30)'])
+    finally:
+        timer.cancel()
+    assert time.monotonic()-started<3

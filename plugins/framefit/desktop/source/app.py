@@ -9,7 +9,7 @@ import threading
 import time
 import traceback
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox, simpledialog
 
 from PIL import Image, ImageTk, ImageDraw
 from tkinterdnd2 import DND_FILES, TkinterDnD
@@ -41,14 +41,19 @@ DETECTION = {'自动（透明 / 黑 / 白）': 'auto', '仅黑色区域': 'black
              '仅白色区域': 'white', '仅透明区域': 'transparent'}
 CONFIG = Path(os.getenv('LOCALAPPDATA', Path.home())) / 'FrameFit' / 'settings.json'
 EXTENSIONS = {'.mp4', '.mov', '.mkv', '.avi', '.webm', '.m4v', '.ts', '.wmv'}
+RATIOS = {'跟随套版': None, '16:9 · 1920×1080': (1920,1080), '9:16 · 1080×1920': (1080,1920),
+          '1:1 · 1080×1080': (1080,1080), '4:5 · 1080×1350': (1080,1350),
+          '3:4 · 1080×1440': (1080,1440), '4:3 · 1440×1080': (1440,1080),
+          '2:3 · 1080×1620': (1080,1620), '3:2 · 1620×1080': (1620,1080),
+          '21:9 · 2520×1080': (2520,1080), '自定义尺寸…': None}
 
 
 class App(TkinterDnD.Tk):
     def __init__(self):
         super().__init__()
         self.title('视频套版 FrameFit · 本地批量套版')
-        self.geometry('1180x870')
-        self.minsize(1040, 820)
+        self.geometry('1440x960')
+        self.minsize(1100, 760)
         self.configure(bg=BG)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
@@ -65,7 +70,12 @@ class App(TkinterDnD.Tk):
         self.dragging_seek = False
         self.importing = 0
         self.cancel = threading.Event()
-        self.scan_slots = threading.Semaphore(2)
+        self.scan_slots = threading.Semaphore(1)
+        self.output_templates = []
+        self.timeline_stop = threading.Event()
+        self.scrub_running = False
+        self.scrub_target = None
+        self.closing = False
         self.preview_slots = threading.Semaphore(2)
         self.border_preflight_running = False
         self.skip_border_preflight = False
@@ -103,6 +113,8 @@ class App(TkinterDnD.Tk):
         self.output_group_var = tk.StringVar(value='统一文件夹')
         self.recipe_name_var = tk.StringVar()
         self.recipe_var = tk.StringVar()
+        self.ratio_var = tk.StringVar(value='跟随套版')
+        self.multi_var = tk.StringVar(value='单套版 · 使用当前设置')
         self.recipes = {}
         self.status_var = tk.StringVar(value='添加竖屏视频，即可开始套版')
         self.template_var = tk.StringVar(value='内置 · 仙界横版套框')
@@ -132,7 +144,7 @@ class App(TkinterDnD.Tk):
         self.mode_var.trace_add('write', self.update_zoom_controls)
         self.zoom_var.trace_add('write', self.schedule_preview)
         for variable in [*self.rect_vars, self.size_var, self.mode_var, self.zoom_var,
-                         self.quality_var, self.backend_var, self.output_var, self.language_var,
+                         self.ratio_var, self.quality_var, self.backend_var, self.output_var, self.language_var,
                          self.other_language_var, self.name_mode_var, self.output_group_var,
                          self.schedule_root_var, self.template_root_var, self.project_keywords_var]:
             variable.trace_add('write', self.schedule_save)
@@ -186,28 +198,171 @@ class App(TkinterDnD.Tk):
         self.settings_canvas.yview_scroll(-int(event.delta / 120), 'units')
         return 'break'
 
+    def toggle_preview_focus(self):
+        focused = not getattr(self,'preview_focused',False)
+        self.preview_focused = focused
+        for index,section in enumerate(self.queue_sections):
+            if focused:
+                section.pack_forget()
+            else:
+                section.pack(fill='x',pady=(0,8) if index<2 else 0)
+        self.focus_button.configure(text='显示队列 · F11' if focused else '放大预览 · F11')
+
+    def change_ratio(self, _event=None):
+        if self.ratio_var.get()=='自定义尺寸…':
+            raw = simpledialog.askstring('自定义输出尺寸', '输入宽×高，例如 1440×1920（正偶数，最大 16384）',parent=self)
+            import re
+            values = re.fullmatch(r'\s*(\d+)\s*[xX×*]\s*(\d+)\s*',raw or '')
+            if not values or any(int(value)<2 or int(value)>16384 or int(value)%2 for value in values.groups()):
+                self.ratio_var.set('跟随套版')
+                return
+            self.restore_output_size(list(map(int,values.groups())))
+        self.remember_profile()
+        if self.direction != 'custom':
+            self.profiles['custom'] = dict(self.profiles.get(self.direction, {}))
+            self.direction = 'custom'
+            self.apply_profile()
+        selected = self.tree.selection()
+        if selected and self.jobs.get(selected[0], {}).get('config'):
+            self.jobs[selected[0]]['config'].update(direction='custom', outputSize=list(self.output_size()))
+        self.update_size_info()
+        self.schedule_preview()
+        self.schedule_save()
+
+    def restore_output_size(self, size):
+        if not size:
+            self.ratio_var.set('跟随套版')
+            return
+        label = next((label for label,value in RATIOS.items() if value and list(value)==list(size)), None)
+        if label is None:
+            label = f'自定义 · {size[0]}×{size[1]}'
+            RATIOS[label] = tuple(size)
+            self.ratio_combo.configure(values=list(RATIOS))
+        self.ratio_var.set(label)
+
+    def update_output_templates_label(self):
+        self.multi_var.set(f'{len(self.output_templates)} 套版 · 每条视频输出 {len(self.output_templates)} 份' if self.output_templates
+                           else '单套版 · 使用当前设置')
+
+    def add_output_templates(self):
+        paths = filedialog.askopenfilenames(parent=self, title='选择多个输出套版（每个套版独立导出）',
+            filetypes=[('套版图片', '*.png *.jpg *.jpeg *.bmp *.webp')])
+        self.add_template_paths(paths)
+
+    def add_template_paths(self, paths):
+        current = {item['template'] for item in self.output_templates}
+        for path in paths:
+            if str(Path(path)) in current:
+                continue
+            with Image.open(path) as image:
+                try:
+                    rect = core.detect_window(image.convert('RGBA'), DETECTION[self.detection_var.get()])
+                except ValueError:
+                    rect = (0,0,*image.size)
+                native = [value // 2 * 2 for value in image.size]
+            cfg = self._engine_profile('custom', {'template':str(path), 'rect':rect,
+                'size':'跟随套版原始尺寸', 'mode':self.mode_var.get(), 'zoom':self.get_zoom()})
+            cfg.update(direction='custom', resolution='original', outputSize=native, templateConfirmed=True)
+            self.output_templates.append(cfg)
+            current.add(str(Path(path)))
+        self.update_output_templates_label()
+        self.save_settings()
+
+    def manage_output_templates(self):
+        dialog = tk.Toplevel(self)
+        dialog.title('多套版输出 · 选择套版可编辑窗口、比例与适配')
+        dialog.geometry('720x340')
+        listing = tk.Listbox(dialog, selectmode='extended', bg=PANEL, fg=TEXT)
+        listing.pack(fill='both', expand=True, padx=12, pady=12)
+        def refresh():
+            listing.delete(0, 'end')
+            for cfg in self.output_templates:
+                size = cfg.get('outputSize') or []
+                listing.insert('end', f"{Path(cfg['template']).name}   {'×'.join(map(str,size))}   {cfg['fit']}")
+        def edit():
+            indices = listing.curselection()
+            if not indices:
+                return
+            index = indices[0]
+            cfg = self.output_templates[index]
+            self.direction = 'custom'
+            self.profiles['custom'] = dict(template=cfg['template'], rect=cfg['rect'], size='跟随套版原始尺寸',
+                mode={value: label for label,value in MODES.items()}[cfg['fit']], zoom=cfg['zoom'])
+            self.ratio_var.set(next((label for label,size in RATIOS.items() if size and list(size)==cfg.get('outputSize')), '跟随套版'))
+            # Clear queue focus while editing a shared output so source overrides stay intact.
+            self.tree.selection_remove(*self.tree.selection())
+            self.apply_profile()
+            dialog.destroy()
+            self.editing_output_index = index
+            self.status_var.set('正在编辑输出套版；完成后点击“保存套版参数”')
+        def remove():
+            for index in reversed(listing.curselection()):
+                self.output_templates.pop(index)
+            self.update_output_templates_label()
+            self.save_settings()
+            refresh()
+        row = tk.Frame(dialog)
+        row.pack(fill='x', padx=12, pady=(0,12))
+        self.button(row, '编辑所选', edit, lock=False).pack(side='left')
+        self.button(row, '移除所选', remove, lock=False).pack(side='left', padx=8)
+        self.button(row, '关闭', dialog.destroy, lock=False).pack(side='right')
+        refresh()
+
+    def save_output_template_parameters(self):
+        index = getattr(self, 'editing_output_index', None)
+        if index is None or index >= len(self.output_templates):
+            self.status_var.set('先在“管理”中选择需要编辑的套版')
+            return
+        self.output_templates[index] = self._engine_profile('custom', {
+            'template':str(self.template), 'rect':self.get_rect(), 'size':self.size_var.get(),
+            'mode':self.mode_var.get(), 'zoom':self.get_zoom(), 'detection':self.detection_var.get()})
+        self.output_templates[index].update(outputSize=list(self.output_size()), templateConfirmed=True)
+        self.save_settings()
+        self.status_var.set('输出套版参数已保存')
+
+    def expand_output_jobs(self):
+        if not self.output_templates:
+            return
+        import hashlib
+        for iid, original in list(self.jobs.items()):
+            if original.get('outputKey') or original.get('output') or not original.get('info'):
+                continue
+            for cfg in self.output_templates:
+                key = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()[:16]
+                job = dict(original, template=cfg['template'], rect=cfg['rect'], config=dict(cfg),
+                    outputKey=key, requiresTemplateReview=False, output=None)
+                for cache_key in ('scrubFrames','scrubCaching','scrubReady','scrubProcess'):
+                    job.pop(cache_key,None)
+                job.pop('outputName', None)
+                row = self.tree.insert('', 'end', values=(original['path'].name, '×'.join(map(str,cfg.get('outputSize',[]))),
+                    f"{original['info']['duration']:.1f}s", Path(cfg['template']).name))
+                self.jobs[row] = job
+            del self.jobs[iid]
+            self.tree.delete(iid)
+        self.queue_var.set(f'输出队列 · {len(self.jobs)} 项')
+        if not self.tree.selection() and self.tree.get_children():
+            self.tree.selection_set(self.tree.get_children()[0])
+
     def _layout(self):
         header = tk.Frame(self, bg=BG)
-        header.grid(row=0, column=0, sticky='ew', padx=26, pady=(20, 18))
-        self.label(header, '视频套版', font=('Microsoft YaHei UI', 23, 'bold')).pack(side='left', padx=(0, 22))
+        header.grid(row=0, column=0, sticky='ew', padx=18, pady=(8, 6))
         self.direction_buttons = {}
-        for key, (title, _, _) in DIRECTIONS.items():
-            btn = self.button(header, title, lambda selected=key: self.switch_direction(selected))
-            btn.pack(side='left', padx=(0, 6))
-            self.direction_buttons[key] = btn
+        self.focus_button = self.button(header, '放大预览 · F11', self.toggle_preview_focus, lock=False)
+        self.focus_button.pack(side='left')
+        self.bind('<F11>', lambda _event:self.toggle_preview_focus())
         self.label(header, f'v{self.app_version()}  ·  本地处理', muted=True).pack(side='right')
         self.update_button = self.button(header, '检查更新', self.update_action, lock=False)
         self.update_button.pack(side='right', padx=(0, 14))
         body = tk.Frame(self, bg=BG)
-        body.grid(row=1, column=0, sticky='nsew', padx=26)
-        sidebar = tk.Frame(body, bg=PANEL, width=300)
+        body.grid(row=1, column=0, sticky='nsew', padx=18)
+        sidebar = tk.Frame(body, bg=PANEL, width=310)
         sidebar.pack(side='right', fill='y', padx=(18, 0))
         sidebar.pack_propagate(False)
         left = tk.Frame(body, bg=BG)
         left.pack(side='left', fill='both', expand=True)
 
         self.label(left, '画面预览', font=('Microsoft YaHei UI', 12, 'bold')).pack(anchor='w', pady=(0, 8))
-        self.canvas = tk.Canvas(left, bg='#080e12', bd=0, highlightthickness=1, highlightbackground='#304049', height=240)
+        self.canvas = tk.Canvas(left, bg='#080e12', bd=0, highlightthickness=1, highlightbackground='#304049', height=400)
         self.canvas.pack(fill='both', expand=True)
         self.canvas.bind('<Configure>', lambda _: self.draw_preview())
         self.label(left, textvariable=self.preview_var, muted=True, font=('Microsoft YaHei UI', 9)).pack(fill='x', pady=(7, 10))
@@ -220,9 +375,6 @@ class App(TkinterDnD.Tk):
         self.seek_slider.bind('<ButtonPress-1>', lambda _event: setattr(self, 'dragging_seek', True))
         self.seek_slider.bind('<ButtonRelease-1>', self.finish_seek)
         self.label(timebar, textvariable=self.time_var, muted=True, font=('Consolas', 9)).pack(side='right')
-        self.storyboard = tk.Canvas(left, height=72, bg='#1b252c', bd=0, highlightthickness=0, cursor='hand2')
-        self.storyboard.pack(fill='x', pady=(0, 6))
-        self.storyboard.bind('<Button-1>', self.seek_storyboard)
         borderbox = tk.Frame(left, bg=BG)
         borderbox.pack(fill='x', pady=(0, 8))
         self.label(borderbox, textvariable=self.border_var, muted=True, wraplength=500,
@@ -238,7 +390,7 @@ class App(TkinterDnD.Tk):
         self.button(toolbar, '＋ 添加视频', self.choose_videos).pack(side='right')
         table = tk.Frame(left, bg=PANEL)
         table.pack(fill='x')
-        self.tree = ttk.Treeview(table, columns=('name', 'size', 'duration', 'status'), show='headings', height=4)
+        self.tree = ttk.Treeview(table, columns=('name', 'size', 'duration', 'status'), show='headings', height=3)
         for col, title, width in [('name', '视频文件', 330), ('size', '尺寸', 100), ('duration', '时长', 60), ('status', '状态', 95)]:
             self.tree.heading(col, text=title)
             self.tree.column(col, width=width, minwidth=50, stretch=col == 'name')
@@ -249,8 +401,7 @@ class App(TkinterDnD.Tk):
         self.tree.bind('<<TreeviewSelect>>', self.select_queue_item)
         self.tree.bind('<Delete>', lambda _: self.remove_selected())
         self.tree.bind('<Double-1>', self.open_job)
-        self.label(left, '把视频拖到窗口即可添加 · 支持多选 · 双击队列可打开视频或查看错误', muted=True,
-                   font=('Microsoft YaHei UI', 9)).pack(anchor='w', pady=(8, 0))
+        self.queue_sections = [borderbox, toolbar, table]
 
         settings_canvas = tk.Canvas(sidebar, bg=PANEL, bd=0, highlightthickness=0)
         self.settings_canvas = settings_canvas
@@ -283,7 +434,16 @@ class App(TkinterDnD.Tk):
             box.pack(side='left', fill='x', expand=True, padx=(0, 5))
             self.label(box, title, muted=True).pack(fill='x')
             self.entry(box, self.rect_vars[i], 5).pack(fill='x', ipady=5)
-        self.label(inner, '02   导出设置', font=('Microsoft YaHei UI', 12, 'bold')).pack(fill='x', pady=(26, 12))
+        self.label(inner, '02   导出尺寸与比例', font=('Microsoft YaHei UI', 12, 'bold')).pack(fill='x', pady=(18, 10))
+        self.ratio_combo = self.combo(inner, self.ratio_var, RATIOS)
+        self.ratio_combo.pack(fill='x', pady=(0, 10))
+        self.ratio_combo.bind('<<ComboboxSelected>>', self.change_ratio)
+        self.label(inner, textvariable=self.multi_var, muted=True, wraplength=270).pack(fill='x', pady=(0, 5))
+        variant_buttons = tk.Frame(inner, bg=PANEL)
+        variant_buttons.pack(fill='x', pady=(0, 12))
+        self.button(variant_buttons, '添加多套版', self.add_output_templates).pack(side='left')
+        self.button(variant_buttons, '管理', self.manage_output_templates).pack(side='right')
+        self.button(inner, '保存套版参数', self.save_output_template_parameters).pack(fill='x', pady=(0,10))
         for label, var, values in [('编码加速', self.backend_var, BACKENDS), ('导出尺寸', self.size_var, SIZES), ('画面适配', self.mode_var, MODES), ('画质', self.quality_var, ['高画质', '标准画质（文件更小）'])]:
             self.label(inner, label, muted=True, font=('Microsoft YaHei UI', 9)).pack(fill='x', pady=(0, 5))
             widget = self.combo(inner, var, values)
@@ -336,23 +496,23 @@ class App(TkinterDnD.Tk):
         self.combo(machine, self.name_mode_var, ['精简命名', '完整信息']).pack(fill='x', padx=7, pady=(0, 8))
         self.label(machine, '输出分类', muted=True).pack(fill='x', padx=7, pady=(0, 3))
         self.combo(machine, self.output_group_var, ['统一文件夹', '按项目分文件夹', '按模板分文件夹']).pack(fill='x', padx=7, pady=(0, 8))
-        self.label(machine, '本机批量配方', muted=True).pack(fill='x', padx=7, pady=(0, 3))
+        self.label(machine, '输出模板', muted=True).pack(fill='x', padx=7, pady=(0, 3))
         self.recipe_combo = self.combo(machine, self.recipe_var, [])
         self.recipe_combo.pack(fill='x', padx=7, pady=(0, 5))
         self.entry(machine, self.recipe_name_var).pack(fill='x', padx=7, ipady=5, pady=(0, 5))
         recipe_buttons = tk.Frame(machine, bg=PANEL)
         recipe_buttons.pack(fill='x', padx=7, pady=(0, 8))
-        self.button(recipe_buttons, '保存配方', self.save_recipe, lock=False).pack(side='left')
+        self.button(recipe_buttons, '保存输出模板', self.save_recipe, lock=False).pack(side='left')
         self.button(recipe_buttons, '使用', self.apply_recipe, lock=False).pack(side='left', padx=5)
         self.button(recipe_buttons, '删除', self.delete_recipe, lock=False).pack(side='right')
 
         footer = tk.Frame(self, bg=BG)
-        footer.grid(row=2, column=0, sticky='ew', padx=26, pady=18)
+        footer.grid(row=2, column=0, sticky='ew', padx=18, pady=8)
         self.start_button = self.button(footer, '开始批量导出 →', self.start_export, primary=True)
         self.start_button.pack(side='right', padx=(12, 0))
         self.resume_button = self.button(footer, '继续未完成', self.resume_export)
         self.resume_button.pack(side='right')
-        self.cancel_button = self.button(footer, '取消导出', self.cancel_export, lock=False)
+        self.cancel_button = self.button(footer, '取消当前操作', self.cancel_export, lock=False)
         self.cancel_button.pack(side='right', padx=(12, 0))
         self.cancel_button.configure(state='disabled')
         progressbox = tk.Frame(footer, bg=BG)
@@ -376,6 +536,15 @@ class App(TkinterDnD.Tk):
             self.quality_var.set(config['quality'])
         if config.get('output'):
             self.output_var.set(config['output'])
+        self.output_templates = config.get('outputTemplates', [])
+        saved_ratio = config.get('ratio', '')
+        if saved_ratio.startswith('自定义 · '):
+            parts = saved_ratio.removeprefix('自定义 · ').split('×')
+            if len(parts)==2 and all(value.isdigit() for value in parts):
+                RATIOS[saved_ratio] = tuple(map(int,parts))
+                self.ratio_combo.configure(values=list(RATIOS))
+        self.ratio_var.set(config.get('ratio', '跟随套版'))
+        self.update_output_templates_label()
         profiles = config.get('profiles', {})
         self.machine_settings = dict(config.get('machine', {}))
         self.schedule_root_var.set(self.machine_settings.get('scheduleRoot', self.schedule_root_var.get()))
@@ -474,7 +643,8 @@ class App(TkinterDnD.Tk):
                         profiles=self.profiles, machine=self.machine_settings,
                         output=self.output_var.get(), backend=self.backend_var.get(), quality=self.quality_var.get(),
                         language=self.language_var.get(), otherLanguage=self.other_language_var.get(),
-                        nameMode=self.name_mode_var.get(), outputGroup=self.output_group_var.get(), recipes=self.recipes)
+                        nameMode=self.name_mode_var.get(), outputGroup=self.output_group_var.get(), recipes=self.recipes,
+                        outputTemplates=self.output_templates, ratio=self.ratio_var.get())
             engine_module.atomic_json(CONFIG, data)
             self.sync_engine_profiles()
             return True
@@ -514,7 +684,8 @@ class App(TkinterDnD.Tk):
                   'language': {'自动识别': 'auto', '不添加': 'none', '其他': 'other'}.get(self.language_var.get(), self.language_var.get()),
                   'otherLanguage': self.other_language_var.get(),
                   'nameMode': 'full' if self.name_mode_var.get() == '完整信息' else 'compact',
-                  'outputGroup': {'统一文件夹': 'folder', '按项目分文件夹': 'project', '按模板分文件夹': 'template'}[self.output_group_var.get()]}
+                  'outputGroup': {'统一文件夹': 'folder', '按项目分文件夹': 'project', '按模板分文件夹': 'template'}[self.output_group_var.get()],
+                  'outputSize': list(RATIOS[self.ratio_var.get()]) if RATIOS.get(self.ratio_var.get()) else None}
         template = profile.get('template')
         if template and Path(template).is_file():
             config['template'] = template
@@ -582,10 +753,33 @@ class App(TkinterDnD.Tk):
         if not isinstance(config, dict):
             return
         self.loading_selection = True
+        variants = {}
+        for item in session.get('videos',[]):
+            if item.get('outputKey') and item.get('config'):
+                variants[item['outputKey']] = dict(item['config'])
+        if variants:
+            self.output_templates = list(variants.values())
+            self.update_output_templates_label()
         video_paths = [video.get('path') for video in session.get('videos', []) if video.get('path')]
-        self.remote_items.update({video['path']: video for video in session.get('videos', []) if video.get('path')})
-        if video_paths:
-            self.add_videos(video_paths)
+        for video in session.get('videos', []):
+            cfg = video.get('config')
+            if not cfg:
+                continue
+            identity = (os.path.normcase(str(Path(video['path']).resolve())), video.get('outputKey',''))
+            iid = next((key for key,job in self.jobs.items() if
+                (os.path.normcase(str(job['path'].resolve())),job.get('outputKey',''))==identity), None)
+            if iid is None:
+                iid = self.tree.insert('', 'end', values=(video['name'], '×'.join(map(str,video.get('outputSize',[]))),
+                    f"{video.get('info',{}).get('duration',0):.1f}s", '已准备'))
+                self.jobs[iid] = {'path':Path(video['path']), 'info':video.get('info'), 'output':None, 'error':video.get('error','')}
+            self.jobs[iid].update(outputKey=video.get('outputKey',''),template=cfg['template'],rect=cfg['rect'],config=dict(cfg),
+                outputName=video.get('outputName'),match=video.get('match',{}),requiresTemplateReview=video.get('requiresTemplateReview',False))
+            if not self.jobs[iid].get('borderReport') and not self.jobs[iid].get('borderScanning'):
+                self.jobs[iid]['borderScanning'] = True
+                self.scan_borders(iid,self.jobs[iid]['path'])
+        self.queue_var.set(f'输出队列 · {len(self.jobs)} 项')
+        if not self.tree.selection() and self.tree.get_children():
+            self.tree.selection_set(self.tree.get_children()[0])
         direction = config.get('direction', 'landscape')
         if direction in DIRECTIONS and direction != self.direction:
             self.switch_direction(direction)
@@ -614,7 +808,7 @@ class App(TkinterDnD.Tk):
         self.update_language_controls()
         for video in session.get('videos', []):
             for iid, job in self.jobs.items():
-                if str(job['path'].resolve()) == video['path'] and video.get('config'):
+                if str(job['path'].resolve()) == video['path'] and job.get('outputKey','')==video.get('outputKey','') and video.get('config'):
                     job.update(template=video['config']['template'], rect=video['config']['rect'],
                                config=dict(video['config']), outputName=video.get('outputName'),
                                match=video.get('match', {}), requiresTemplateReview=video.get('requiresTemplateReview', False))
@@ -626,14 +820,15 @@ class App(TkinterDnD.Tk):
     def save_recipe(self):
         name = self.recipe_name_var.get().strip()
         if not name:
-            messagebox.showinfo('保存批量配方', '请先填写配方名称。', parent=self)
+            messagebox.showinfo('保存输出模板', '请先填写配方名称。', parent=self)
             return
         try:
             self.remember_profile()
         except ValueError as exc:
-            messagebox.showerror('无法保存配方', str(exc), parent=self)
+            messagebox.showerror('无法保存输出模板', str(exc), parent=self)
             return
         self.recipes[name] = {
+            'outputTemplates': list(self.output_templates), 'ratio': self.ratio_var.get(),
             'direction': self.direction,
             'profile': dict(self.profiles.get(self.direction, {})),
             'engineConfig': self._engine_profile(self.direction, self.profiles.get(self.direction, {})),
@@ -645,14 +840,23 @@ class App(TkinterDnD.Tk):
         self.recipe_var.set(name)
         self.recipe_combo.configure(values=list(self.recipes))
         self.save_settings()
-        self.status_var.set(f'本机配方“{name}”已保存')
+        self.status_var.set(f'输出模板“{name}”已保存')
 
     def apply_recipe(self):
         name = self.recipe_var.get()
         recipe = self.recipes.get(name)
         if not recipe:
-            messagebox.showinfo('使用批量配方', '请先选择一个本机配方。', parent=self)
+            messagebox.showinfo('使用输出模板', '请先选择一个输出模板。', parent=self)
             return
+        self.output_templates = list(recipe.get('outputTemplates', []))
+        saved_ratio = recipe.get('ratio', '跟随套版')
+        if saved_ratio.startswith('自定义 · '):
+            parts = saved_ratio.removeprefix('自定义 · ').split('×')
+            if len(parts)==2 and all(value.isdigit() for value in parts):
+                self.restore_output_size(list(map(int,parts)))
+        else:
+            self.ratio_var.set(saved_ratio)
+        self.update_output_templates_label()
         direction = recipe.get('direction')
         profile = recipe.get('profile')
         if direction in DIRECTIONS and isinstance(profile, dict):
@@ -668,7 +872,7 @@ class App(TkinterDnD.Tk):
         self.name_mode_var.set(recipe.get('nameMode', '精简命名'))
         self.output_group_var.set(recipe.get('outputGroup', self.output_group_var.get()))
         self.save_settings()
-        self.status_var.set(f'已使用本机配方“{name}”')
+        self.status_var.set(f'已使用输出模板“{name}”')
 
     def delete_recipe(self):
         name = self.recipe_var.get()
@@ -678,7 +882,7 @@ class App(TkinterDnD.Tk):
         self.recipe_combo.configure(values=list(self.recipes))
         self.recipe_var.set('')
         self.save_settings()
-        self.status_var.set(f'本机配方“{name}”已删除')
+        self.status_var.set(f'输出模板“{name}”已删除')
 
     def update_language_controls(self, _event=None):
         if self.language_var.get() == '其他':
@@ -801,6 +1005,8 @@ class App(TkinterDnD.Tk):
             canvas.yview_moveto(max(0, bottom - canvas.winfo_height()) / bounds[3])
 
     def output_size(self):
+        if RATIOS.get(self.ratio_var.get()):
+            return RATIOS[self.ratio_var.get()]
         size = DIRECTIONS[self.direction][1][self.size_var.get()]
         return size or tuple(v // 2 * 2 for v in self.template_image.size)
 
@@ -857,6 +1063,7 @@ class App(TkinterDnD.Tk):
                 job['rect'] = saved_rect
             cfg = job.get('config') or {}
             if cfg:
+                self.restore_output_size(cfg.get('outputSize'))
                 self.mode_var.set({'cover': '等比填满（推荐）', 'contain': '完整显示', 'stretch': '拉伸铺满', 'zoom': '自由缩放'}[cfg['fit']])
                 self.zoom_var.set(str(cfg['zoom']))
                 self.detection_var.set({value: label for label,value in DETECTION.items()}.get(cfg.get('detection'), next(iter(DETECTION))))
@@ -1041,86 +1248,114 @@ class App(TkinterDnD.Tk):
         self.time_var.set(f'{seconds:.1f}s')
         selected = self.tree.selection()
         job = self.jobs.get(selected[0], {}) if selected else {}
-        frames = job.get('timelineFrames', [])
+        frames = job.get('scrubFrames', [])
         if frames:
             _second, frame = min(frames, key=lambda pair: abs(pair[0] - seconds))
-            self.display_image = frame
+            self.display_image = self.compose_scrub(frame)
             self.draw_preview()
-        if not self.dragging_seek:
+        if self.dragging_seek:
+            self.scrub_target = (selected[0], seconds) if selected else None
+            self.start_scrub_worker()
+        else:
             self.schedule_preview()
+
+    def compose_scrub(self, frame):
+        from PIL import ImageOps
+        width,height = self.output_size()
+        factor = min(1,800/max(width,height))
+        canvas = self.template_image.convert('RGB').resize((max(1,round(width*factor)),max(1,round(height*factor))),Image.Resampling.BILINEAR)
+        x,y,w,h = core.mapped_rect(self.get_rect(), self.template_image.size, canvas.size)
+        mode = MODES[self.mode_var.get()]
+        factor = self.get_zoom()/100 if mode=='zoom' else 1
+        width,height = max(1,round(w*factor)),max(1,round(h*factor))
+        if mode=='stretch':
+            video = frame.resize((width,height),Image.Resampling.BILINEAR)
+        else:
+            ratio = (min if mode=='contain' else max)(width/frame.width,height/frame.height)
+            video = frame.resize((max(1,round(frame.width*ratio)), max(1,round(frame.height*ratio))),Image.Resampling.BILINEAR)
+        canvas.paste(video,(round(x+(w-video.width)/2),round(y+(h-video.height)/2)))
+        return canvas
+
+    def ensure_timeline_cache(self, iid, job):
+        if job.get('scrubCaching') or job.get('scrubReady') or not job.get('info'):
+            return
+        job['scrubCaching'] = True
+        job['scrubFrames'] = []
+        path = job['path']
+        duration = job['info']['duration']
+        rate = min(5.0, 600/max(.2,duration))
+        def worker():
+            import subprocess
+            process = None
+            try:
+                # One low-resolution decode supplies the whole draggable timeline;
+                # no visible filmstrip and no full-size composition for each movement.
+                process = subprocess.Popen([core.binary('ffmpeg'),'-v','error','-nostdin','-threads','1','-i',str(path),
+                    '-an','-filter_threads','1','-vf',f'fps={rate}:start_time=0,scale=320:180:force_original_aspect_ratio=decrease,pad=320:180:(ow-iw)/2:(oh-ih)/2',
+                    '-pix_fmt','rgb24','-f','rawvideo','pipe:1'],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,creationflags=core.CREATE_FLAGS)
+                job['scrubProcess'] = process
+                index = 0
+                while not self.timeline_stop.is_set() and iid in self.jobs:
+                    data = process.stdout.read(320*180*3)
+                    if len(data)!=320*180*3:
+                        break
+                    # Crop decoder padding using the source display aspect ratio.
+                    image = Image.frombytes('RGB',(320,180),data)
+                    aspect = job['info']['width']/job['info']['height']
+                    width,height = (min(320,round(180*aspect)),180) if aspect<320/180 else (320,min(180,round(320/aspect)))
+                    image = image.crop(((320-width)//2,(180-height)//2,(320+width)//2,(180+height)//2))
+                    job['scrubFrames'].append((index/rate,image))
+                    index += 1
+            except Exception:
+                pass
+            finally:
+                if process:
+                    if process.poll() is None:
+                        process.kill()
+                    process.wait()
+                    process.stdout.close()
+                job['scrubCaching'] = False
+                job['scrubReady'] = True
+                job.pop('scrubProcess',None)
+        threading.Thread(target=worker,daemon=True).start()
+
+    def start_scrub_worker(self):
+        if self.scrub_running:
+            return
+        self.scrub_running = True
+        def worker():
+            try:
+                while self.scrub_target and not self.timeline_stop.is_set():
+                    target = self.scrub_target
+                    self.scrub_target = None
+                    iid,seconds = target
+                    job = self.jobs.get(iid)
+                    if not job:
+                        continue
+                    frames = job.get('scrubFrames',[])
+                    if frames and min(abs(point-seconds) for point,_ in frames)<.25:
+                        continue
+                    with core.cancellable(self.timeline_stop):
+                        frame = core.thumbnail(job['path'],seconds,(480,480))
+                    self.events.put(('scrub',iid,seconds,frame))
+            except Exception:
+                pass
+            finally:
+                self.scrub_running = False
+        threading.Thread(target=worker,daemon=True).start()
 
     def finish_seek(self, _event=None):
         self.dragging_seek = False
+        self.scrub_target = None
         self.schedule_preview()
-
-    def seek_storyboard(self, event):
-        if not self.storyboard_times:
-            return
-        selected = self.tree.selection()
-        job = self.jobs.get(selected[0], {}) if selected else {}
-        strip = job.get('storyboard', (None,))[0]
-        width = max(1, min(self.storyboard.winfo_width(), strip.width if strip else self.storyboard.winfo_width()))
-        fraction = min(1.0, max(0.0, event.x / width))
-        index = round(fraction * (len(self.storyboard_times) - 1))
-        seconds = self.storyboard_times[index]
-        self.seek_var.set(seconds)
-        self.on_seek(seconds)
-
-    def load_storyboard(self, iid, job):
-        key = (str(self.template), tuple(self.get_rect()), tuple(self.output_size()), MODES[self.mode_var.get()], self.get_zoom())
-        if job.get('storyboardPending') == key:
-            return
-        self.storyboard_ticket += 1
-        ticket = self.storyboard_ticket
-        self.storyboard_times = []
-        self.storyboard.delete('all')
-        if not job.get('info'):
-            return
-        if job.get('storyboard') and job.get('storyboardKey') == key:
-            self.show_storyboard(iid, job['storyboard'][0], job['storyboard'][1])
-            return
-        duration = job['info']['duration']
-        count = min(9, max(3, int(duration // 10) + 1))
-        points = sorted(set(round(max(0, min(duration - .15, duration * i / (count - 1))), 2)
-                            for i in range(count)))
-        job['storyboardPending'] = key
-        template, rect, size, mode, zoom = key
-
-        def worker():
-            try:
-                frames = [core.preview(job['path'], template, rect, size, mode, seconds, zoom) for seconds in points]
-                for frame in frames:
-                    frame.thumbnail((640, 640), Image.Resampling.LANCZOS)
-                timeline_frames = list(zip(points, [frame.copy() for frame in frames]))
-                cell_w, cell_h = 112, 70
-                strip = Image.new('RGB', (cell_w * len(frames), cell_h), '#1b252c')
-                draw = ImageDraw.Draw(strip)
-                for index, (frame, seconds) in enumerate(zip(frames, points)):
-                    frame.thumbnail((cell_w - 4, cell_h - 20), Image.Resampling.LANCZOS)
-                    x = index * cell_w + (cell_w - frame.width) // 2
-                    strip.paste(frame, (x, 1))
-                    draw.text((index * cell_w + 5, cell_h - 17), f'{seconds:.1f}s', fill='#b5efd0')
-                self.events.put(('storyboard', ticket, iid, strip, points, key, timeline_frames))
-            except Exception as exc:
-                self.events.put(('storyboard_error', ticket, str(exc)))
-        threading.Thread(target=worker, daemon=True).start()
-
-    def show_storyboard(self, iid, strip, points):
-        if iid not in self.jobs:
-            return
-        self.storyboard_times = points
-        self.storyboard_photo = ImageTk.PhotoImage(strip)
-        self.storyboard.delete('all')
-        self.storyboard.create_image(0, 0, anchor='nw', image=self.storyboard_photo)
-        self.storyboard.configure(scrollregion=(0, 0, strip.width, strip.height))
-        self.jobs[iid]['storyboard'] = (strip, points)
 
     def scan_borders(self, iid, path):
         def worker():
             try:
                 notify = lambda value: self.events.put(('border_progress', iid, value))
                 with self.scan_slots:
-                    report = self.engine.source_borders(path, on_progress=notify) if hasattr(self, 'engine') else core.analyze_borders(path, on_progress=notify)
+                    with core.cancellable(self.timeline_stop):
+                        report = self.engine.source_borders(path, on_progress=notify) if hasattr(self, 'engine') else core.analyze_borders(path, on_progress=notify)
                 self.events.put(('borders', iid, report, ''))
             except Exception as exc:
                 self.events.put(('borders', iid, None, str(exc)))
@@ -1168,7 +1403,7 @@ class App(TkinterDnD.Tk):
         selected = self.tree.selection()
         job = self.jobs.get(selected[0]) if selected else None
         if job:
-            self.load_storyboard(selected[0], job)
+            self.ensure_timeline_cache(selected[0], job)
             if job.get('info'):
                 maximum = max(0, job['info']['duration'] - .15)
                 self.seek_slider.configure(to=maximum)
@@ -1226,6 +1461,10 @@ class App(TkinterDnD.Tk):
             template_size = image.size
             rect = job.get('rect') or core.detect_window(image.convert('RGBA'), detection)
         config = job.get('config') or {}
+        if config.get('outputSize'):
+            return template, rect, tuple(config['outputSize'])
+        if not config and RATIOS.get(self.ratio_var.get()):
+            return template, rect, RATIOS[self.ratio_var.get()]
         if config:
             resolution = config.get('resolution', 'original')
             if config.get('direction') == 'custom' or resolution == 'original':
@@ -1258,14 +1497,18 @@ class App(TkinterDnD.Tk):
         def worker():
             results = []
             try:
-                for iid, job in pending:
+                for index,(iid, job) in enumerate(pending):
                     if self.cancel.is_set():
                         raise ValueError('已取消边缘检查，未开始导出。')
                     template, rect, size = self.batch_geometry(job, direction, resolution_label, detection)
                     report = job.get('borderReport') or {'segments': []}
                     effective = job.get('config') or {}
-                    composite = core.analyze_composite_borders(job['path'], template, rect, size, effective.get('fit', mode), effective.get('zoom', zoom),
-                                                               report.get('segments', []))
+                    def progress(value):
+                        self.events.put(('preflight_progress',(index+value)/len(pending),
+                            f'套版边缘预检 {index+1}/{len(pending)} · {template.name} · {value:.0%} · 可取消'))
+                    with core.cancellable(self.cancel):
+                        composite = core.analyze_composite_borders(job['path'], template, rect, size, effective.get('fit', mode), effective.get('zoom', zoom),
+                                                                  report.get('segments', []), on_progress=progress)
                     job['compositeReport'] = composite
                     results.append((iid, job, template, rect, size, composite))
                 self.events.put(('border_preflight', results, ''))
@@ -1298,7 +1541,7 @@ class App(TkinterDnD.Tk):
         for iid, job, _template, _rect, _size, _composite in results:
             if iid in self.jobs:
                 existing = job.get('borderPolicy', (job.get('config') or {}).get('borderPolicy', 'ask'))
-                self.jobs[iid]['borderPolicy'] = policy if existing == 'ask' else existing
+                self.jobs[iid]['borderPolicy'] = (policy if added else 'keep') if existing == 'ask' else existing
         self.skip_border_preflight = True
         self.after(0, self.start_export)
 
@@ -1358,7 +1601,8 @@ class App(TkinterDnD.Tk):
             if not apply_name():
                 return
             for iid, name in suggestions.items():
-                self.jobs[iid]['outputName'] = name
+                if iid in self.jobs:
+                    self.jobs[iid]['outputName'] = name
                 job = next(job for key, job in pending if key == iid)
                 job['outputName'] = name
                 if remember.get():
@@ -1386,6 +1630,10 @@ class App(TkinterDnD.Tk):
         if self.importing:
             messagebox.showinfo('正在读取视频', '请等视频信息读取完成后开始导出。', parent=self)
             return
+        if any(job.get('borderScanning') for job in self.jobs.values() if not job.get('output')):
+            self.status_var.set('原片边缘仍在后台扫描，可继续预览；完成后再导出')
+            return
+        self.expand_output_jobs()
         pending = [(iid, dict(job)) for iid, job in self.jobs.items() if job['info'] and not job['output']]
         if not pending:
             messagebox.showinfo('添加视频', '请先添加视频。已完成的视频不会重复导出，需要重做时可移除再添加。', parent=self)
@@ -1445,16 +1693,18 @@ class App(TkinterDnD.Tk):
             effective = job.get('config') or config
             override = dict(effective, **{'template': str(template), 'rect': list(job_rect), 'direction': direction,
                         'templateConfirmed': True, 'borderPolicy': job.get('borderPolicy', effective.get('borderPolicy', 'ask')),
+                        'outputKey': job.get('outputKey', ''), 'outputSize': list(job_size),
                         'fit': job.get('fit', effective['fit']), 'zoom': job.get('zoom', effective['zoom'])})
             if job.get('outputName'):
                 override['outputName'] = job['outputName']
             item_configs.append(override)
         def worker():
             try:
-                session = self.engine.prepare_config([str(job['path']) for _, job in pending], config, itemConfigs=item_configs)
-                if self.cancel.is_set():
-                    raise ValueError('已取消，未开始导出。')
-                task = self.engine.export_videos(session['sessionId'], 'desktop-export')
+                with core.cancellable(self.cancel):
+                    session = self.engine.prepare_config([str(job['path']) for _, job in pending], config, itemConfigs=item_configs)
+                    if self.cancel.is_set():
+                        raise ValueError('已取消，未开始导出。')
+                    task = self.engine.export_videos(session['sessionId'], 'desktop-export')
                 if self.cancel.is_set():
                     self.engine.cancel_task(task['taskId'])
                 self.events.put(('task_started', task))
@@ -1476,11 +1726,11 @@ class App(TkinterDnD.Tk):
         self.active_task = task['taskId']
         self.monitoring_task = task['status'] in ('running', 'queued')
         engine_module.atomic_json(self.engine.state / 'desktop-last-task.json', {'taskId': self.active_task})
-        existing = {os.path.normcase(str(job['path'].resolve())): iid for iid, job in self.jobs.items()}
+        existing = {(os.path.normcase(str(job['path'].resolve())), job.get('outputKey', '')): iid for iid, job in self.jobs.items()}
         self.task_rows = {}
         for index, item in enumerate(task['items']):
             identity = os.path.normcase(str(Path(item['path']).resolve()))
-            iid = existing.get(identity)
+            iid = existing.get((identity, item.get('outputKey', '')))
             if iid is None:
                 info = item.get('info')
                 iid = self.tree.insert('', 'end', values=(item['name'],
@@ -1491,7 +1741,7 @@ class App(TkinterDnD.Tk):
             template = item.get('sourceTemplate') or cfg['template']
             if not Path(template).is_file():
                 template = cfg['template']
-            self.jobs[iid].update(template=template, rect=cfg['rect'], config=dict(cfg, template=template), outputName=item.get('outputName'))
+            self.jobs[iid].update(outputKey=item.get('outputKey', ''), template=template, rect=cfg['rect'], config=dict(cfg, template=template), outputName=item.get('outputName'))
             self.task_rows[index] = iid
         self.queue_var.set(f'视频队列 · {len(self.jobs)} 个')
         self.set_busy(task['status'] in ('running', 'queued'))
@@ -1627,17 +1877,18 @@ class App(TkinterDnD.Tk):
                     if self.importing == 0:
                         self.status_var.set('视频已就绪，检查预览后开始批量导出')
                         self.schedule_preview()
-                elif kind == 'storyboard':
-                    if event[2] in self.jobs:
-                        self.jobs[event[2]].update(storyboard=(event[3], event[4]), storyboardKey=event[5], timelineFrames=event[6], storyboardPending=None)
-                    if event[1] == self.storyboard_ticket:
-                        self.show_storyboard(event[2], event[3], event[4])
-                elif kind == 'storyboard_error' and event[1] == self.storyboard_ticket:
-                    self.preview_var.set(f'缩略图读取失败：{event[2]}')
                 elif kind == 'border_progress' and event[1] in self.jobs:
                     self.jobs[event[1]]['borderProgress'] = event[2]
                     if self.tree.selection() and self.tree.selection()[0] == event[1]:
                         self.border_var.set(f'正在后台扫描原视频黑白边 · {event[2]:.0%}，可继续预览和设置')
+                elif kind == 'scrub' and self.dragging_seek:
+                    selected = self.tree.selection()
+                    if selected and selected[0]==event[1] and abs(self.seek_var.get()-event[2])<.5:
+                        self.display_image = self.compose_scrub(event[3])
+                        self.draw_preview()
+                elif kind == 'preflight_progress':
+                    self.progress_var.set(event[1]*100)
+                    self.status_var.set(event[2])
                 elif kind == 'borders' and event[1] in self.jobs:
                     job = self.jobs[event[1]]
                     job['borderScanning'] = False
@@ -1684,11 +1935,25 @@ class App(TkinterDnD.Tk):
             except (OSError, ValueError):
                 pass
         if self.busy:
-            if not messagebox.askyesno('正在导出', '关闭窗口会取消当前导出，已完成文件会保留。确定关闭？', parent=self):
+            if not messagebox.askyesno('正在处理', '关闭窗口会取消当前检查或导出，已完成文件会保留。确定关闭？', parent=self):
                 return
+            self.closing = True
             self.cancel_export()
-            self.after(150, self.finish_close)
+            self.timeline_stop.set()
+            for job in self.jobs.values():
+                process = job.get('scrubProcess')
+                if process and process.poll() is None:
+                    process.kill()
+            # Workers are daemon threads; all preflight media calls observe cancel.
+            # The durable export receives its own cancellation marker before exit.
+            self.set_busy(False)
+            self.after(200, self.close)
         else:
+            self.timeline_stop.set()
+            for job in self.jobs.values():
+                process = job.get('scrubProcess')
+                if process and process.poll() is None:
+                    process.kill()
             self.save_settings()
             if self.local_service:
                 self.local_service.close()

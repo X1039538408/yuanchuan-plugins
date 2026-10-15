@@ -1,6 +1,6 @@
 {
   "name": "framefit",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Windows 本机视频套版桌面软件与 Codex 插件，支持项目匹配、拖动预览、边缘检查和用户点击更新。",
   "author": {
     "name": "yuanchuan"

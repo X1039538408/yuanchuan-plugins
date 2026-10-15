@@ -1,10 +1,10 @@
 # 视频套版 FrameFit
 
-FrameFit 现在以 Windows 64 位本地桌面软件为主要界面。本机软件保存模板、参数、项目映射与批量配方；Codex 插件通过软件启动的认证回环接口使用同一台电脑上的媒体处理能力。视频、路径、日志和个人模板不上传。
+FrameFit 现在以 Windows 64 位本地桌面软件为主要界面。本机软件保存模板、参数、项目映射与输出模板；Codex 插件通过软件启动的认证回环接口使用同一台电脑上的媒体处理能力。视频、路径、日志和个人模板不上传。
 
 ## 快速开始
 
-![FrameFit 本地软件实测界面](docs/desktop-annotated.svg)
+![FrameFit 本地软件实测界面](docs/desktop-screenshot.jpg)
 
 1. 从 [GitHub Releases](https://github.com/X1039538408/yuanchuan-plugins/releases) 下载 Windows x64 的 `framefit-install-<版本>-windows-x64.zip`，解压到 `%LOCALAPPDATA%\FrameFit`，运行其中的 `FrameFit.exe`。
 2. 在 Codex 添加市场 `X1039538408/yuanchuan-plugins`，安装 **视频套版 FrameFit**。保持 FrameFit 桌面软件打开，再在新任务用 `@视频套版 FrameFit`。
@@ -14,15 +14,15 @@ FrameFit 现在以 Windows 64 位本地桌面软件为主要界面。本机软�
 
 ## 图文教程
 
-操作步骤、项目目录设置、边缘检查、命名与更新请看 [FrameFit 图文教程](../../docs/framefit.md)。[真实界面标注图](docs/desktop-annotated.svg) · [本机设置截图](docs/local-settings-screenshot.png) · [项目匹配与边缘检查图](docs/project-and-borders.svg)
+操作步骤、项目目录设置、边缘检查、命名与更新请看 [FrameFit 图文教程](../../docs/framefit.md)。[真实界面图](docs/desktop-screenshot.jpg) · [本机设置截图](docs/local-settings-screenshot.jpg) · [项目匹配与边缘检查图](docs/project-and-borders.svg)
 
 ## 已接入能力
 
 - 横竖转换、自定义比例、透明／黑／白窗口识别、手动坐标、四种适配方式和自由缩放。
-- 时间轴拖动、开中尾缩略图、队列 Delete 移除、模板窗口预览和批量逐条进度。
+- 一条视频按多套版生成多种尺寸；常见比例和自定义偶数尺寸、时间轴拖动、低清画面缓存、队列 Delete 移除、模板窗口预览和批量逐条进度。
 - 排期路径与套版路径按电脑设置；唯一项目模板匹配后自动使用，多候选显示预览，缺失时暂停并要求确认上次模板。
 - 扫描原视频黑白边的近似时间段并可跳转；将开头、中间、结尾的套版结果与原片区分，发现新增黑白边时由用户选择保留或放大消除。
-- 输出前显示数量、名称与目录；语言后缀、精简／完整命名、按项目或模板分类、本机批量配方。
+- 输出前显示数量、名称与目录；语言后缀、精简／完整命名、按项目或模板分类、输出模板。
 - 保留音频、同名编号、GPU／CPU 编码、失败隔离、取消后保留已完成视频；桌面应用和 MCP 使用同一本机任务记录。
 
 边缘扫描每秒抽取一帧用于提示，时间段是抽样结果，最终边缘仍应通过预览核对。用户项目映射、配方和路径只保存在 `%LOCALAPPDATA%\FrameFit\settings.json`；运行任务、个人预设和日志保存在 `%LOCALAPPDATA%\FrameFitCodex`。两处均不属于公开发布文件。

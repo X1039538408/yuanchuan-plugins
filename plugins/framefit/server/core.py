@@ -12,6 +12,7 @@ import sys
 import threading
 import uuid
 import tempfile
+from contextlib import contextmanager
 from fractions import Fraction
 from functools import lru_cache
 
@@ -20,6 +21,17 @@ from framefit_workflow import detect_borders, group_border_samples
 
 ROOT = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 CREATE_FLAGS = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+_processing = threading.local()
+
+
+@contextmanager
+def cancellable(cancel):
+    previous = getattr(_processing, 'cancel', None)
+    _processing.cancel = cancel
+    try:
+        yield
+    finally:
+        _processing.cancel = previous
 
 
 def binary(name):
@@ -31,8 +43,28 @@ def binary(name):
 
 
 def run(args, timeout=60):
-    result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            creationflags=CREATE_FLAGS, timeout=timeout)
+    import time
+    cancel = getattr(_processing, 'cancel', None)
+    if cancel is not None and cancel.is_set():
+        raise Cancelled('已取消')
+    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=CREATE_FLAGS)
+    deadline = time.monotonic() + timeout
+    try:
+        while True:
+            if cancel is not None and cancel.is_set():
+                raise Cancelled('已取消')
+            if time.monotonic() >= deadline:
+                raise subprocess.TimeoutExpired(args, timeout)
+            try:
+                stdout, stderr = process.communicate(timeout=.1)
+                break
+            except subprocess.TimeoutExpired:
+                pass
+    finally:
+        if process.poll() is None:
+            process.kill()
+        process.communicate()
+    result = subprocess.CompletedProcess(args, process.returncode, stdout, stderr)
     if result.returncode:
         raise RuntimeError(result.stderr.decode('utf-8', 'replace')[-2500:] or '媒体文件读取失败。')
     return result
@@ -237,6 +269,18 @@ def analyze_borders(video, interval=1.0, on_progress=None):
             timer = threading.Timer(max(120, int(info['duration'] * 2)), expire)
             timer.daemon = True
             timer.start()
+            cancel = getattr(_processing, 'cancel', None)
+            finished = threading.Event()
+            def watch_cancel():
+                while not finished.wait(.1):
+                    if cancel is not None and cancel.is_set():
+                        try:
+                            process.kill()
+                        except OSError:
+                            pass
+                        return
+            watcher = threading.Thread(target=watch_cancel,daemon=True)
+            watcher.start()
             try:
                 for raw in process.stdout:
                     if on_progress and raw.startswith(b'out_time_us='):
@@ -246,6 +290,8 @@ def analyze_borders(video, interval=1.0, on_progress=None):
                             continue
                         on_progress(min(.8, max(0, fraction * .8)))
                 code = process.wait()
+                if cancel is not None and cancel.is_set():
+                    raise Cancelled('已取消边缘扫描')
                 if expired.is_set():
                     raise TimeoutError('视频边缘抽样超时，请重试或检查源文件。')
                 if code:
@@ -253,6 +299,7 @@ def analyze_borders(video, interval=1.0, on_progress=None):
                     raise RuntimeError(errors.read().decode('utf-8', 'replace')[-2500:] or '视频边缘抽样失败。')
             finally:
                 timer.cancel()
+                finished.set()
                 if process.poll() is None:
                     process.kill()
                 process.wait()
@@ -270,17 +317,33 @@ def analyze_borders(video, interval=1.0, on_progress=None):
             'checkedFrames': len(frames), 'segments': group_border_samples(samples)}
 
 
-def analyze_composite_borders(video, template, rect, output_size, mode, zoom=100, source_segments=None):
+def analyze_composite_borders(video, template, rect, output_size, mode, zoom=100, source_segments=None, on_progress=None):
+    import copy
+    def identity(path):
+        path = Path(path).resolve()
+        stat = path.stat()
+        return str(path), stat.st_size, stat.st_mtime_ns
+    key = (identity(video), identity(template), tuple(rect), tuple(output_size), mode, zoom)
+    cache = getattr(analyze_composite_borders, '_cache', {})
+    if key in cache:
+        if on_progress:
+            on_progress(1.0)
+        return copy.deepcopy(cache[key])
     info = probe(video)
     points = sorted(set((0.0, max(0.0, info['duration'] / 2), max(0.0, info['duration'] - .15))))
     source_segments = source_segments or []
     results = []
+    factor = min(1.0, 960 / max(output_size))
+    check_size = tuple(max(2, round(value * factor / 2) * 2) for value in output_size)
     with Image.open(template) as background:
-        sx, sy = output_size[0] / background.width, output_size[1] / background.height
+        sx, sy = check_size[0] / background.width, check_size[1] / background.height
     x, y, w, h = rect
     window = (round(x * sx), round(y * sy), round((x + w) * sx), round((y + h) * sy))
-    for seconds in points:
-        image = preview(video, template, rect, output_size, mode, seconds, zoom)
+    for index, seconds in enumerate(points):
+        cancel = getattr(_processing, 'cancel', None)
+        if cancel is not None and cancel.is_set():
+            raise Cancelled('已取消边缘检查')
+        image = preview(video, template, rect, check_size, mode, seconds, zoom)
         # Bars can sit inside the template's video opening, away from canvas edges.
         original = detect_borders(thumbnail(video, seconds, (640, 640)))
         for border in detect_borders(image.crop(window)):
@@ -292,8 +355,14 @@ def analyze_composite_borders(video, template, rect, output_size, mode, zoom=100
             existed = any(source_covers(source) for source in original)
             results.append(dict(border, seconds=seconds, origin='source' if existed else 'composite',
                                 outputSize=list(output_size), template=str(template)))
-    return {'samples': results,
-            'newBorders': [item for item in results if item['origin'] == 'composite']}
+        if on_progress:
+            on_progress((index + 1) / len(points))
+    report = {'samples': results, 'newBorders': [item for item in results if item['origin'] == 'composite']}
+    if len(cache) >= 128:
+        cache.pop(next(iter(cache)), None)
+    cache[key] = copy.deepcopy(report)
+    analyze_composite_borders._cache = cache
+    return report
 
 
 def remove_composite_borders(video, template, rect, output_size, mode, zoom=100, source_segments=None):

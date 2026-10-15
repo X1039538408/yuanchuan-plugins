@@ -28,6 +28,7 @@ CONFIG = {"type": "object", "additionalProperties": False, "properties": {
     "fit": {"type": "string", "enum": ["cover", "contain", "stretch", "zoom"]},
     "zoom": {"type": "number", "minimum": 10, "maximum": 500},
     "resolution": {"type": "string", "enum": ["720p", "1080p", "4k", "original"]},
+    "outputSize": {"type": ["array","null"], "items":{"type":"integer","minimum":2,"maximum":16384,"multipleOf":2},"minItems":2,"maxItems":2},
     "quality": {"type": "string", "enum": ["high", "standard"]},
     "backend": {"type": "string", "enum": ["auto", "nvenc", "cpu"]},
     "outputDir": {"type": "string"}, "preset": {"type": "string"},
@@ -38,7 +39,7 @@ CONFIG = {"type": "object", "additionalProperties": False, "properties": {
     "borderPolicy": {"type": "string", "enum": ["ask", "keep", "remove"]},
     "templateConfirmed": {"type": "boolean", "description": "Only true after the user chooses a template or confirms the preselected previous template."},
 }}
-ITEM_CONFIG = {**CONFIG, 'properties': {**CONFIG['properties'], 'outputName': {'type': 'string'}}}
+ITEM_CONFIG = {**CONFIG, 'properties': {**CONFIG['properties'], 'outputName': {'type': 'string'}, 'outputKey':{'type':'string','maxLength':100}}}
 ITEMS = {'type': 'array', 'items': ITEM_CONFIG, 'description': 'Optional per-video settings, one object per deduplicated video. Use to confirm a project candidate, decide border handling or edit outputName.'}
 SID = {"type": "string", "pattern": "^[a-zA-Z0-9_-]{1,100}$"}
 
@@ -53,7 +54,8 @@ def tool(name, title, description, properties, required=(), readonly=True, panel
 
 TOOLS = [
     tool("prepare_config", "准备视频套版", "Prepare a new session through the running FrameFit desktop software. The desktop app is the source of local settings and checks for updates when it starts.",
-         {"videos": {"type": "array", "items": {"type": "string"}}, "config": CONFIG, "sessionId": SID, "itemConfigs": ITEMS}, readonly=False),
+         {"videos": {"type": "array", "items": {"type": "string"}}, "config": CONFIG, "sessionId": SID, "itemConfigs": ITEMS,
+          "outputTemplates":{"type":"array","minItems":1,"maxItems":100,"items":CONFIG,"description":"Create one output per input video and template configuration."}}, readonly=False),
     tool("update_config", "修改套版参数", "Update the session settings shared by conversation, desktop software and panel. No video export starts.",
          {"sessionId": SID, "config": CONFIG, "itemConfigs": ITEMS}, ("sessionId", "config"), False),
     tool("preview_frame", "预览合成画面", "Create a static preview at a timestamp using the same video-above-template composition as export.",

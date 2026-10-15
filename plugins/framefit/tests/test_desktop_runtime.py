@@ -199,9 +199,85 @@ try:
         time.sleep(.02)
     assert not app.importing
     assert app.template==matched_template,'Preview retained old template after successful background matching'
+    assert not app.direction_buttons and not hasattr(app,'storyboard')
+    assert app.canvas.winfo_height()>350,app.canvas.winfo_height()
+    height=app.canvas.winfo_height()
+    app.toggle_preview_focus()
+    app.update()
+    assert app.canvas.winfo_height()>height
+    app.toggle_preview_focus()
+    app.ratio_var.set('1:1 · 1080×1080')
+    app.change_ratio()
+    assert app.output_size()==(1080,1080)
+    app.ratio_var.set('跟随套版')
+    app.change_ratio()
+    app.add_template_paths([template,matched_template])
+    job=next(iter(app.jobs.values()))
+    job['borderScanning']=True
+    app.start_export()
+    assert len(app.jobs)==1,'Expanding outputs lost an in-flight source scan'
+    job['borderScanning']=False
+    app.expand_output_jobs()
+    assert len(app.jobs)==2
+    assert len({job['outputKey'] for job in app.jobs.values()})==2
+    first=next(iter(app.jobs))
+    app.tree.selection_set(first)
+    app.select_queue_item()
+    deadline=time.monotonic()+5
+    while time.monotonic()<deadline and not app.jobs[first].get('scrubFrames'):
+        app.update()
+        time.sleep(.02)
+    assert app.jobs[first].get('scrubFrames'),'No timeline cache generated'
+    app.dragging_seek=True
+    app.on_seek(.5)
+    assert app.display_image is not None
+    app.dragging_seek=False
+    for iid in list(app.jobs):
+        app.tree.delete(iid)
+    app.jobs.clear()
+    variants=[{'template':str(template),'rect':[20,10,120,70],'direction':'custom','resolution':'original','outputSize':size}
+              for size in ([160,160],[160,200])]
+    session=app.engine.prepare_config([str(video)],{'direction':'custom','template':str(template),'resolution':'original'},outputTemplates=variants)
+    app.apply_remote_config(session)
+    assert len(app.jobs)==2,'MCP variants collapsed to one row'
+    for iid,job in app.jobs.items():
+        app.tree.selection_set(iid)
+        app.select_queue_item()
+        assert list(app.output_size())==job['config']['outputSize']
+        assert list(app.output_size()) in ([160,160],[160,200])
+    def slow_preflight(*args,**kwargs):
+        core.run([sys.executable,'-c','import time; time.sleep(30)'])
+    core.analyze_composite_borders=slow_preflight
+    app.run_border_preflight(list(app.jobs.items()),app.direction,app.size_var.get(),'auto','cover',100)
+    app.after(250,app.cancel_export)
+    deadline=time.monotonic()+3
+    while app.busy and time.monotonic()<deadline:
+        app.update()
+        time.sleep(.02)
+    assert not app.busy,'Cancel did not stop preflight media process'
+    gui.messagebox.askyesno=lambda *args,**kwargs:True
+    app.run_border_preflight(list(app.jobs.items()),app.direction,app.size_var.get(),'auto','cover',100)
+    app.after(250,app.close)
+    deadline=time.monotonic()+3
+    closed=False
+    while time.monotonic()<deadline:
+        try:
+            app.update()
+            if not app.winfo_exists():
+                closed=True
+                break
+        except gui.tk.TclError:
+            closed=True
+            break
+        time.sleep(.02)
+    assert closed,'Closing window waited for a stalled preflight'
 finally:
     gate.set()
-    app.close()
+    try:
+        if app.winfo_exists():
+            app.close()
+    except gui.tk.TclError:
+        pass
 ''',encoding='utf-8')
     env = dict(os.environ, LOCALAPPDATA=str(tmp_path/'local'), PYTHONUTF8='1')
     completed = subprocess.run([sys.executable,str(script),str(plugin),str(tmp_path)],
