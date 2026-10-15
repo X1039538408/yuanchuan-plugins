@@ -175,9 +175,16 @@ class App(TkinterDnD.Tk):
 
     def combo(self, parent, variable, values):
         widget = ttk.Combobox(parent, textvariable=variable, values=list(values), state='readonly')
+        # Widget bindings run before ttk's class binding, which otherwise changes
+        # the selected value before the settings canvas receives the wheel event.
+        widget.bind('<MouseWheel>', self.scroll_settings_wheel)
         widget.bind('<<ComboboxSelected>>', lambda _: self.schedule_preview())
         self.controls.append((widget, 'readonly'))
         return widget
+
+    def scroll_settings_wheel(self, event):
+        self.settings_canvas.yview_scroll(-int(event.delta / 120), 'units')
+        return 'break'
 
     def _layout(self):
         header = tk.Frame(self, bg=BG)
@@ -974,14 +981,22 @@ class App(TkinterDnD.Tk):
         query_size = self.output_size() if DIRECTIONS[self.direction][1][self.size_var.get()] is not None else None
 
         def worker():
+            probed = []
             for iid, path in pending:
                 try:
                     info = core.probe(path)
-                    match = find_project_candidates(path.name, schedule_root, template_root,
-                                                    mapping, output_size=query_size, direction=query_direction)
-                    self.events.put(('import', iid, info, '', match))
+                    self.events.put(('probed', iid, info))
+                    probed.append((iid, path, info))
                 except Exception as exc:
                     self.events.put(('import', iid, None, str(exc), None))
+            # Network project lookup must never delay local metadata or preview.
+            for iid, path, info in probed:
+                try:
+                    match = find_project_candidates(path.name, schedule_root, template_root,
+                                                    mapping, output_size=query_size, direction=query_direction)
+                except Exception as exc:
+                    match = {'status': 'root_unavailable', 'message': str(exc), 'candidates': []}
+                self.events.put(('import', iid, info, '', match))
         threading.Thread(target=worker, daemon=True).start()
 
     def remove_selected(self):
@@ -1103,8 +1118,9 @@ class App(TkinterDnD.Tk):
     def scan_borders(self, iid, path):
         def worker():
             try:
+                notify = lambda value: self.events.put(('border_progress', iid, value))
                 with self.scan_slots:
-                    report = self.engine.source_borders(path) if hasattr(self, 'engine') else core.analyze_borders(path)
+                    report = self.engine.source_borders(path, on_progress=notify) if hasattr(self, 'engine') else core.analyze_borders(path, on_progress=notify)
                 self.events.put(('borders', iid, report, ''))
             except Exception as exc:
                 self.events.put(('borders', iid, None, str(exc)))
@@ -1574,6 +1590,19 @@ class App(TkinterDnD.Tk):
                 elif kind == 'backend':
                     self.jobs[event[1]]['backend'] = event[2]
                     self.backend_status.set(event[3])
+                elif kind == 'probed' and event[1] in self.jobs:
+                    _, iid, info = event
+                    job = self.jobs[iid]
+                    job['info'] = info
+                    self.tree.item(iid, values=(job['path'].name, f'{info["width"]}×{info["height"]}',
+                                               f'{info["duration"]:.1f}s', '匹配项目中'))
+                    if not self.tree.selection():
+                        self.tree.selection_set(iid)
+                    if not job.get('borderReport') and not job.get('borderScanning'):
+                        job['borderScanning'] = True
+                        self.scan_borders(iid, job['path'])
+                    if self.tree.selection() and self.tree.selection()[0] == iid:
+                        self.schedule_preview()
                 elif kind == 'import':
                     _, iid, info, error, match = event
                     self.importing -= 1
@@ -1590,6 +1619,8 @@ class App(TkinterDnD.Tk):
                                        match=remote.get('match', {}), requiresTemplateReview=remote.get('requiresTemplateReview', False))
                         elif match:
                             self.resolve_project_template(iid, job)
+                        if self.tree.selection() and self.tree.selection()[0] == iid:
+                            self.select_queue_item()
                         if info and not job.get('borderReport') and not job.get('borderScanning'):
                             job['borderScanning'] = True
                             self.scan_borders(iid, job['path'])
@@ -1603,6 +1634,10 @@ class App(TkinterDnD.Tk):
                         self.show_storyboard(event[2], event[3], event[4])
                 elif kind == 'storyboard_error' and event[1] == self.storyboard_ticket:
                     self.preview_var.set(f'缩略图读取失败：{event[2]}')
+                elif kind == 'border_progress' and event[1] in self.jobs:
+                    self.jobs[event[1]]['borderProgress'] = event[2]
+                    if self.tree.selection() and self.tree.selection()[0] == event[1]:
+                        self.border_var.set(f'正在后台扫描原视频黑白边 · {event[2]:.0%}，可继续预览和设置')
                 elif kind == 'borders' and event[1] in self.jobs:
                     job = self.jobs[event[1]]
                     job['borderScanning'] = False

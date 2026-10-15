@@ -216,19 +216,56 @@ def thumbnail(video, seconds=0, maximum=(144, 88)):
     return Image.open(io.BytesIO(result.stdout)).convert('RGB')
 
 
-def analyze_borders(video, interval=1.0):
+def analyze_borders(video, interval=1.0, on_progress=None):
     info = probe(video)
     samples = []
     with tempfile.TemporaryDirectory(prefix='framefit-borders-') as temporary:
         pattern = str(Path(temporary) / 'frame-%08d.jpg')
-        args = [binary('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-nostdin', '-i', str(video),
-                '-vf', f'fps=1/{interval}:start_time=0,scale=640:-2:flags=area', '-fps_mode', 'passthrough', '-q:v', '4', pattern]
-        run(args, timeout=max(120, int(info['duration'] * 2)))
+        args = [binary('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-nostdin',
+                '-threads', '2', '-i', str(video), '-an', '-filter_threads', '1',
+                '-vf', f'fps=1/{interval}:start_time=0,scale=640:-2:flags=area', '-fps_mode', 'passthrough',
+                '-q:v', '4', '-progress', 'pipe:1', '-nostats', pattern]
+        with tempfile.TemporaryFile() as errors:
+            process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=errors, creationflags=CREATE_FLAGS)
+            expired = threading.Event()
+            def expire():
+                expired.set()
+                try:
+                    process.kill()
+                except OSError:
+                    pass
+            timer = threading.Timer(max(120, int(info['duration'] * 2)), expire)
+            timer.daemon = True
+            timer.start()
+            try:
+                for raw in process.stdout:
+                    if on_progress and raw.startswith(b'out_time_us='):
+                        try:
+                            fraction = int(raw.split(b'=', 1)[1]) / 1e6 / max(.001, info['duration'])
+                        except ValueError:
+                            continue
+                        on_progress(min(.8, max(0, fraction * .8)))
+                code = process.wait()
+                if expired.is_set():
+                    raise TimeoutError('视频边缘抽样超时，请重试或检查源文件。')
+                if code:
+                    errors.seek(0)
+                    raise RuntimeError(errors.read().decode('utf-8', 'replace')[-2500:] or '视频边缘抽样失败。')
+            finally:
+                timer.cancel()
+                if process.poll() is None:
+                    process.kill()
+                process.wait()
+                process.stdout.close()
         frames = sorted(Path(temporary).glob('frame-*.jpg'))
         for index, path in enumerate(frames):
             with Image.open(path) as frame:
                 samples.extend(dict(border, seconds=min(info['duration'], index * interval))
                                for border in detect_borders(frame))
+            if on_progress:
+                on_progress(.8 + .2 * (index + 1) / max(1, len(frames)))
+    if on_progress:
+        on_progress(1.0)
     return {'duration': info['duration'], 'sampleInterval': interval,
             'checkedFrames': len(frames), 'segments': group_border_samples(samples)}
 

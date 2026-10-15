@@ -138,3 +138,72 @@ if not restart:
     settings = json.loads((tmp_path / 'local/FrameFit/settings.json').read_text(encoding='utf-8'))
     assert settings['quality'] == '标准画质（文件更小）'
     assert '英版配方' in settings['recipes']
+
+
+def test_scroll_keeps_options_and_preview_does_not_wait_for_project_scan(tmp_path):
+    plugin = Path(__file__).resolve().parents[1]
+    script = tmp_path / 'responsive_gui.py'
+    script.write_text(r'''
+import os,sys,time,threading,traceback
+from pathlib import Path
+from PIL import Image,ImageDraw,ImageChops
+plugin,state=map(Path,sys.argv[1:])
+sys.path[:0]=[str(plugin/'desktop/source'),str(plugin/'server')]
+import app as gui
+import core
+from engine import atomic_json
+gui.check_update=lambda *_:None
+video,template=state/'video.mp4',state/'template.png'
+im=Image.new('RGB',(160,90),'#376659')
+ImageDraw.Draw(im).rectangle((20,10,139,79),fill='black')
+im.save(template)
+matched_template=state/'matched.png'
+im.save(matched_template)
+core.run([core.binary('ffmpeg'),'-v','error','-f','lavfi','-i','color=red:s=96x64:r=12:d=2','-c:v','libx264',str(video)])
+atomic_json(Path(os.environ['LOCALAPPDATA'])/'FrameFit/settings.json',{
+ 'profiles':{'landscape':{'template':str(template),'rect':[20,10,120,70],'size':'套框原始尺寸'}},
+ 'machine':{'scheduleRoot':str(state/'schedule'),'templateRoot':str(state)}})
+gate=threading.Event()
+def slow_match(*a,**kw):
+    gate.wait(15)
+    return {'status':'matched','candidates':[{'path':str(matched_template)}]}
+def slow_scan(*a,**kw):
+    gate.wait(15)
+    return {'segments':[]}
+gui.find_project_candidates=slow_match
+core.analyze_borders=slow_scan
+app=gui.App()
+app.update()
+errors=[]
+app.report_callback_exception=lambda *args:errors.append(str(args))
+try:
+    original=app.mode_var.get()
+    app.mode_combo.event_generate('<MouseWheel>',delta=-120)
+    app.update()
+    assert app.mode_var.get()==original,'Mouse wheel changed fitting mode'
+    app.add_videos([video])
+    deadline=time.monotonic()+6
+    while time.monotonic()<deadline:
+        app.update()
+        image=app.display_image
+        if image and image.getpixel((80,45))[0]>180:
+            break
+        time.sleep(.02)
+    assert not errors,errors
+    assert image and image.getpixel((80,45))[0]>180,'Video preview waited for project/border scan'
+    assert not gate.is_set()
+    gate.set()
+    deadline=time.monotonic()+4
+    while app.importing and time.monotonic()<deadline:
+        app.update()
+        time.sleep(.02)
+    assert not app.importing
+    assert app.template==matched_template,'Preview retained old template after successful background matching'
+finally:
+    gate.set()
+    app.close()
+''',encoding='utf-8')
+    env = dict(os.environ, LOCALAPPDATA=str(tmp_path/'local'), PYTHONUTF8='1')
+    completed = subprocess.run([sys.executable,str(script),str(plugin),str(tmp_path)],
+                               env=env,capture_output=True,encoding='utf-8',timeout=35)
+    assert completed.returncode == 0, completed.stdout+completed.stderr

@@ -193,7 +193,14 @@ def test_real_source_scan_reports_separate_black_and_white_time_ranges(setup):
     ])
     core.run([core.binary('ffmpeg'), '-v','error','-f','lavfi','-i','testsrc2=s=320x180:r=12:d=6',
               '-vf',filters,'-c:v','libx264','-pix_fmt','yuv420p',str(video)])
-    report = engine.source_borders(video)
+    progress = []
+    report = engine.source_borders(video, on_progress=progress.append)
+    assert progress and progress[-1] == 1
+    assert all(0 <= value <= 1 for value in progress)
+    assert progress == sorted(progress)
+    cached_progress = []
+    assert engine.source_borders(video, on_progress=cached_progress.append) == report
+    assert cached_progress == [1.0]
     assert report['checkedFrames'] == 6
     assert {segment['color'] for segment in report['segments']} == {'black','white'}
     assert len(report['segments']) == 2

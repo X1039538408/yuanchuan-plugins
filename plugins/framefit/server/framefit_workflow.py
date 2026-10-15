@@ -178,29 +178,30 @@ def _edge_band(image, color: str, threshold: int = 20, fraction: float = .985):
     """Return solid near-black/white letterbox bands touching opposite canvas edges."""
     rgb = image.convert("RGB")
     rgb.thumbnail((640, 640))
-    pixels = rgb.load()
     w, h = rgb.size
+    from PIL import ImageChops
+    red, green, blue = rgb.split()
     if color == "black":
-        matches = lambda p: max(p) <= threshold
+        extremes = ImageChops.lighter(ImageChops.lighter(red, green), blue)
+        mask = extremes.point([255 if value <= threshold else 0 for value in range(256)])
     else:
-        matches = lambda p: min(p) >= 255 - threshold
+        extremes = ImageChops.darker(ImageChops.darker(red, green), blue)
+        mask = extremes.point([255 if value >= 255 - threshold else 0 for value in range(256)])
 
     def band_at(row_or_col, vertical=True):
         length = h if vertical else w
         span = w if vertical else h
         required = max(1, int(span * fraction))
-        flags = []
-        for pos in range(length):
-            count = 0
-            for off in range(span):
-                px = pixels[off, pos] if vertical else pixels[pos, off]
-                count += matches(px)
-            flags.append(count >= required)
+        def matches_band(pos):
+            bounds = (0, pos, w, pos + 1) if vertical else (pos, 0, pos + 1, h)
+            return mask.crop(bounds).histogram()[255] >= required
+        # Only inspect contiguous edge bands. Histogram/threshold operations run
+        # in Pillow instead of millions of Python pixel comparisons per video.
         start = 0
-        while start < length and flags[start]:
+        while start < length and matches_band(start):
             start += 1
         end = length
-        while end > start and flags[end - 1]:
+        while end > start and matches_band(end - 1):
             end -= 1
         # A letterbox must have matching bars on both opposing edges, with active content between.
         return (start, length - end) if start >= 2 and length - end >= 2 and end > start else (0, 0)

@@ -454,7 +454,7 @@ class Engine:
         return dict(sessionId=sessionId, version=session["version"], seconds=seconds,
                     thumbnailDataUrl="data:image/jpeg;base64," + base64.b64encode(stream.getvalue()).decode())
 
-    def source_borders(self, video):
+    def source_borders(self, video, on_progress=None):
         path = Path(video)
         stat = path.stat()
         key = hashlib.sha256(f"{path.resolve()}\0{stat.st_size}\0{stat.st_mtime_ns}".encode()).hexdigest()
@@ -462,8 +462,10 @@ class Engine:
         with file_lock(cache.with_suffix('.lock')):
             source = read_json(cache)
             if source is None:
-                source = core.analyze_borders(path)
+                source = core.analyze_borders(path, on_progress=on_progress) if on_progress else core.analyze_borders(path)
                 atomic_json(cache, source)
+        if on_progress:
+            on_progress(1.0)
         return source
 
     def analyze_borders(self, sessionId, videoIndex=0):
