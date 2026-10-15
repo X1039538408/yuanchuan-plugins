@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="490" viewBox="0 0 1200 490" role="img" aria-labelledby="title">
+  <title id="title">项目模板匹配与黑白边检查流程</title>
+  <defs><style>.bg{fill:#11181d}.card{fill:#1b252c;stroke:#3a4b54;stroke-width:2}.t{fill:#edf3f2;font:20px 'Microsoft YaHei UI',sans-serif}.m{fill:#a8b7be;font:15px 'Microsoft YaHei UI',sans-serif}.g{fill:#7ee2c4;font:bold 18px 'Microsoft YaHei UI',sans-serif}.arrow{stroke:#7ee2c4;stroke-width:4;fill:none;marker-end:url(#a)}</style><marker id="a" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#7ee2c4"/></marker></defs>
+  <rect class="bg" width="1200" height="490" rx="22"/><text x="42" y="52" class="g">A · 按文件名找本机项目模板</text>
+  <rect class="card" x="40" y="82" width="250" height="130" rx="14"/><text class="t" x="62" y="120">视频名称</text><text class="m" x="62" y="151">标题 + 可选尺寸 / 版本</text><text class="m" x="62" y="177">提取项目文件夹名</text>
+  <path class="arrow" d="M300 146 H365"/><rect class="card" x="380" y="82" width="250" height="130" rx="14"/><text class="t" x="402" y="120">任务排期目录</text><text class="m" x="402" y="151">按项目文件夹名精确匹配</text><text class="m" x="402" y="177">不可访问时提示检查网络路径</text>
+  <path class="arrow" d="M640 146 H705"/><rect class="card" x="720" y="82" width="250" height="130" rx="14"/><text class="t" x="742" y="120">本机套版目录</text><text class="m" x="742" y="151">使用本机关键词和尺寸筛选</text><text class="m" x="742" y="177">映射只保存在本机设置</text>
+  <path class="arrow" d="M980 146 H1033"/><rect class="card" x="1045" y="82" width="120" height="130" rx="14"/><text class="t" x="1061" y="125">确认</text><text class="m" x="1060" y="158">多候选</text><text class="m" x="1060" y="181">先选择</text>
+  <text x="42" y="268" class="g">B · 分开检查原片边缘与套版新增边缘</text>
+  <rect class="card" x="40" y="296" width="330" height="142" rx="14"/><text class="t" x="62" y="334">1 秒抽样扫描原视频</text><text class="m" x="62" y="365">报告黑边 / 白边时间段和处数</text><text class="m" x="62" y="392">双击时间段跳转到该位置</text>
+  <path class="arrow" d="M380 366 H444"/><rect class="card" x="460" y="296" width="330" height="142" rx="14"/><text class="t" x="482" y="334">套版预览抽查</text><text class="m" x="482" y="365">开头 · 中间 · 结尾</text><text class="m" x="482" y="392">对比源视频报告，识别新增边缘</text>
+  <path class="arrow" d="M800 366 H864"/><rect class="card" x="880" y="296" width="285" height="142" rx="14"/><text class="t" x="902" y="334">用户决定后导出</text><text class="m" x="902" y="365">保留边缘，或等比例放大消除</text><text class="m" x="902" y="392">已完成文件在取消时保留</text>
+</svg>

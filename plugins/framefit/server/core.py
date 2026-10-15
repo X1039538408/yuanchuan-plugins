@@ -11,17 +11,19 @@ import subprocess
 import sys
 import threading
 import uuid
+import tempfile
 from fractions import Fraction
 from functools import lru_cache
 
 from PIL import Image, ImageChops
+from framefit_workflow import detect_borders, group_border_samples
 
 ROOT = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 CREATE_FLAGS = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
 
 
 def binary(name):
-    local = ROOT / 'bin' / (name + '.exe')
+    local = Path(os.getenv('FRAMEFIT_BIN_DIR') or ROOT / 'bin') / (name + '.exe')
     found = str(local) if local.exists() else shutil.which(name)
     if not found:
         raise RuntimeError(f'缺少 {name}，请完整解压软件文件夹后再启动。')
@@ -190,6 +192,9 @@ def filter_graph(image_size, rect, output_size, mode, background_fps=None, zoom=
 
 
 def preview(video, template, rect, output_size, mode, seconds=1, zoom=100):
+    info = probe(video)
+    last_frame = max(0, (math.ceil(info['duration'] * info['fps']) - 1) / info['fps'])
+    seconds = min(max(0, seconds), math.floor(last_frame * 1e6) / 1e6)
     with Image.open(template) as im:
         graph = filter_graph(im.size, rect, output_size, mode, zoom=zoom)
     args = [binary('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-ss', str(seconds),
@@ -198,6 +203,76 @@ def preview(video, template, rect, output_size, mode, seconds=1, zoom=100):
             '-f', 'image2pipe', '-c:v', 'png', 'pipe:1']
     result = run(args)
     return Image.open(io.BytesIO(result.stdout)).convert('RGB')
+
+
+def thumbnail(video, seconds=0, maximum=(144, 88)):
+    info = probe(video)
+    seconds = min(max(0, seconds), max(0, (math.ceil(info['duration'] * info['fps']) - 1) / info['fps']))
+    args = [binary('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-ss', str(max(0, seconds)),
+            '-i', str(video), '-frames:v', '1', '-vf',
+            f'scale={maximum[0]}:{maximum[1]}:force_original_aspect_ratio=decrease:flags=area',
+            '-f', 'image2pipe', '-c:v', 'mjpeg', 'pipe:1']
+    result = run(args, timeout=30)
+    return Image.open(io.BytesIO(result.stdout)).convert('RGB')
+
+
+def analyze_borders(video, interval=1.0):
+    info = probe(video)
+    samples = []
+    with tempfile.TemporaryDirectory(prefix='framefit-borders-') as temporary:
+        pattern = str(Path(temporary) / 'frame-%08d.jpg')
+        args = [binary('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-nostdin', '-i', str(video),
+                '-vf', f'fps=1/{interval}:start_time=0,scale=640:-2:flags=area', '-fps_mode', 'passthrough', '-q:v', '4', pattern]
+        run(args, timeout=max(120, int(info['duration'] * 2)))
+        frames = sorted(Path(temporary).glob('frame-*.jpg'))
+        for index, path in enumerate(frames):
+            with Image.open(path) as frame:
+                samples.extend(dict(border, seconds=min(info['duration'], index * interval))
+                               for border in detect_borders(frame))
+    return {'duration': info['duration'], 'sampleInterval': interval,
+            'checkedFrames': len(frames), 'segments': group_border_samples(samples)}
+
+
+def analyze_composite_borders(video, template, rect, output_size, mode, zoom=100, source_segments=None):
+    info = probe(video)
+    points = sorted(set((0.0, max(0.0, info['duration'] / 2), max(0.0, info['duration'] - .15))))
+    source_segments = source_segments or []
+    results = []
+    with Image.open(template) as background:
+        sx, sy = output_size[0] / background.width, output_size[1] / background.height
+    x, y, w, h = rect
+    window = (round(x * sx), round(y * sy), round((x + w) * sx), round((y + h) * sy))
+    for seconds in points:
+        image = preview(video, template, rect, output_size, mode, seconds, zoom)
+        # Bars can sit inside the template's video opening, away from canvas edges.
+        original = detect_borders(thumbnail(video, seconds, (640, 640)))
+        for border in detect_borders(image.crop(window)):
+            def source_covers(source):
+                if source['color'] != border['color']:
+                    return False
+                return all(border[side] / border[axis] <= source[side] / source[axis] + .01
+                           for side, axis in (('top', 'height'), ('bottom', 'height'), ('left', 'width'), ('right', 'width')))
+            existed = any(source_covers(source) for source in original)
+            results.append(dict(border, seconds=seconds, origin='source' if existed else 'composite',
+                                outputSize=list(output_size), template=str(template)))
+    return {'samples': results,
+            'newBorders': [item for item in results if item['origin'] == 'composite']}
+
+
+def remove_composite_borders(video, template, rect, output_size, mode, zoom=100, source_segments=None):
+    """Find a verified uniform enlargement; never claim bars disappeared without rechecking."""
+    candidate = max(100.0, zoom if mode == 'zoom' else 100.0)
+    for _ in range(18):
+        report = analyze_composite_borders(video, template, rect, output_size, 'zoom', candidate, source_segments)
+        borders = report['newBorders']
+        if not borders:
+            return {'fit': 'zoom', 'zoom': candidate, 'report': report}
+        ratio = max(max((b['top'] + b['bottom']) / b['height'],
+                        (b['left'] + b['right']) / b['width']) for b in borders)
+        candidate = math.ceil(candidate / max(.1, 1 - ratio) + 1)
+        if candidate > 500:
+            break
+    raise ValueError('在 500% 缩放范围内仍检测到新增黑白边，请手动检查窗口或选择保留。')
 
 
 class Cancelled(Exception):
@@ -240,7 +315,7 @@ def unique_output(directory, stem, output_size=(1920, 1080)):
 
 
 def export(video, template, rect, output_size, mode, directory, crf=18,
-           cancel=None, progress=None, duration_limit=None, backend='auto', on_backend=None, zoom=100):
+           cancel=None, progress=None, duration_limit=None, backend='auto', on_backend=None, zoom=100, output_name=None):
     if mode == 'zoom':
         zoom = validate_zoom(zoom)
     cancel = cancel or threading.Event()
@@ -263,7 +338,7 @@ def export(video, template, rect, output_size, mode, directory, crf=18,
         on_backend(selected, note)
     try:
         return _export_once(video, template, rect, output_size, mode, directory, crf,
-                            cancel, progress, duration_limit, selected, zoom)
+                            cancel, progress, duration_limit, selected, zoom, output_name)
     except HardwareEncodingError:
         if backend != 'auto' or selected != 'nvenc':
             raise
@@ -274,11 +349,11 @@ def export(video, template, rect, output_size, mode, directory, crf=18,
         if progress:
             progress(0)
         return _export_once(video, template, rect, output_size, mode, directory, crf,
-                            cancel, progress, duration_limit, 'cpu', zoom)
+                            cancel, progress, duration_limit, 'cpu', zoom, output_name)
 
 
 def _export_once(video, template, rect, output_size, mode, directory, crf,
-                 cancel, progress, duration_limit, backend, zoom=100):
+                 cancel, progress, duration_limit, backend, zoom=100, output_name=None):
     cancel = cancel or threading.Event()
     info = probe(video)
     duration = min(info['duration'], duration_limit) if duration_limit else info['duration']
@@ -345,7 +420,17 @@ def _export_once(video, template, rect, output_size, mode, directory, crf,
             raise RuntimeError('导出文件尺寸校验失败。')
         # Windows rename does not replace another task's output, even if created concurrently.
         while True:
-            destination = unique_output(directory, Path(video).stem, output_size)
+            if output_name:
+                name = Path(output_name)
+                if name.name != output_name or name.suffix.lower() != '.mp4' or any(c in output_name for c in '<>:"/\\|?*'):
+                    raise ValueError('输出文件名无效。')
+                destination = directory / name.name
+                count = 2
+                while destination.exists():
+                    destination = directory / f'{name.stem} ({count}).mp4'
+                    count += 1
+            else:
+                destination = unique_output(directory, Path(video).stem, output_size)
             try:
                 temporary.rename(destination)
                 break

@@ -77,6 +77,130 @@ def wait(engine, task_id, timeout=30):
     raise AssertionError("Export timed out")
 
 
+def test_per_video_templates_names_and_immutable_snapshots(setup):
+    engine, video, tmp = setup
+    second = tmp / 'v968 1920X1080 V5.mp4'
+    shutil.copyfile(video, second)
+    session = engine.prepare_config([str(video), str(second)],
+        {'resolution': 'original', 'backend': 'cpu', 'outputDir': str(tmp / 'batch'), 'language': '英'},
+        itemConfigs=[{'template': str(engine.root / 'assets/default.png'), 'rect': [50, 5, 61, 81]},
+                     {'direction': 'portrait', 'template': str(engine.root / 'assets/default_portrait.png'), 'rect': [5, 50, 81, 61]}])
+    assert session['videos'][1]['plannedOutput'].endswith('v968 90X160 英.mp4')
+    task = engine.export_videos(session['sessionId'], 'per-item')
+    final = wait(engine, task['taskId'])
+    assert final['status'] == 'completed', final
+    assert final['items'][0]['config']['rect'] != final['items'][1]['config']['rect']
+    assert core.probe(final['items'][0]['output'])['width'] == 160
+    assert core.probe(final['items'][1]['output'])['width'] == 90
+    assert all(Path(item['config']['template']).is_file() for item in final['items'])
+
+
+def test_unique_project_match_preserves_explicit_windows_and_queue_item_overrides(setup):
+    engine, video, tmp = setup
+    title = video.stem
+    schedule = tmp / 'schedule'
+    (schedule / '9月/Game-Project' / title).mkdir(parents=True)
+    templates = tmp / 'templates/Game/Project/输出'
+    templates.mkdir(parents=True)
+    chosen = templates / 'chosen.png'
+    shutil.copyfile(engine.root / 'assets/default.png', chosen)
+    atomic_json(engine.desktop_settings_path(), {'machine': {'scheduleRoot':str(schedule), 'templateRoot':str(tmp/'templates')}})
+    session = engine.prepare_config([str(video)], {'rect':[1,1,50,50], 'resolution':'original'})
+    assert session['videos'][0]['config']['rect'] == [1,1,50,50]
+    session = engine.update_config(session['sessionId'], {'zoom':135})
+    assert session['videos'][0]['config']['rect'] == [1,1,50,50]
+    session = engine.update_config(session['sessionId'], {}, itemConfigs=[{'rect':[2,2,40,40], 'outputName':'chosen.mp4'}])
+    assert session['videos'][0]['config']['rect'] == [2,2,40,40]
+    session = engine.update_config(session['sessionId'], {'quality':'standard'})
+    assert session['videos'][0]['config']['rect'] == [2,2,40,40]
+    assert session['videos'][0]['outputName'] == 'chosen.mp4'
+    if os.name == 'nt':
+        import ctypes
+        short_path = ctypes.WinDLL('kernel32').GetShortPathNameW
+        short_path.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_ulong]
+        short_path.restype = ctypes.c_ulong
+        def shortened(path):
+            buffer = ctypes.create_unicode_buffer(32768)
+            assert short_path(str(path), buffer, len(buffer))
+            return buffer.value
+        atomic_json(engine.desktop_settings_path(), {'machine': {
+            'scheduleRoot':shortened(schedule), 'templateRoot':shortened(tmp/'templates')}})
+        session = engine.prepare_config([str(video)], {'rect':[3,3,60,60], 'resolution':'original'})
+        session = engine.update_config(session['sessionId'], {'zoom':137})
+        assert session['videos'][0]['config']['rect'] == [3,3,60,60]
+
+
+def test_project_matching_uses_requested_output_instead_of_old_filename_dimensions(setup):
+    engine, video, tmp = setup
+    source = tmp / 'v968 1920X1080 V5.mp4'
+    shutil.copyfile(video, source)
+    schedule = tmp / 'schedule'
+    (schedule/'9月/Game-Project/v968').mkdir(parents=True)
+    templates = tmp/'templates/Game/Project/输出'
+    templates.mkdir(parents=True)
+    for name,size in [('landscape.png',(1920,1080)),('portrait.png',(1080,1920))]:
+        image = Image.new('RGB',size,'#376659')
+        ImageDraw.Draw(image).rectangle((100,100,size[0]-101,size[1]-101),fill='black')
+        image.save(templates/name)
+    atomic_json(engine.desktop_settings_path(),{'machine':{'scheduleRoot':str(schedule),'templateRoot':str(tmp/'templates')}})
+    session = engine.prepare_config([str(source)], {'direction':'portrait','resolution':'1080p'})
+    item = session['videos'][0]
+    assert not item.get('requiresTemplateReview')
+    assert item['config']['direction'] == 'portrait'
+    assert Path(item['config']['template']).name == 'portrait.png'
+    assert item['outputSize'] == [1080,1920]
+
+
+def test_desktop_workflow_blocks_unmatched_and_new_inner_borders_then_removes(setup, monkeypatch):
+    engine, video, tmp = setup
+    atomic_json(engine.desktop_settings_path(), {'machine': {'scheduleRoot': str(tmp / 'unavailable'), 'templateRoot': str(tmp / 'templates')}})
+    session = engine.prepare_config([str(video)], {'resolution': 'original', 'backend': 'cpu',
+        'fit': 'contain', 'outputDir': str(tmp / 'border-out')})
+    assert session['videos'][0]['requiresTemplateReview']
+    with pytest.raises(ValueError, match='套版需要确认|不可访问'):
+        engine.export_videos(session['sessionId'], 'unconfirmed')
+    session = engine.update_config(session['sessionId'], {'templateConfirmed': True})
+    real_scan = core.analyze_borders
+    calls = []
+    def scan(path):
+        calls.append(path)
+        return real_scan(path)
+    monkeypatch.setattr(core, 'analyze_borders', scan)
+    report = engine.analyze_borders(session['sessionId'])
+    assert report['source']['segments'] == []
+    assert report['newBorders'], report
+    engine.analyze_borders(session['sessionId'])
+    assert len(calls) == 1
+    with pytest.raises(ValueError, match='新增黑白边'):
+        engine.export_videos(session['sessionId'], 'ask-first')
+    session = engine.update_config(session['sessionId'], {'borderPolicy': 'remove'})
+    task = engine.export_videos(session['sessionId'], 'remove')
+    final = wait(engine, task['taskId'])
+    assert final['status'] == 'completed', final
+    cfg = final['items'][0]['config']
+    check = core.analyze_composite_borders(video, cfg['template'], cfg['rect'], final['items'][0]['outputSize'], cfg['fit'], cfg['zoom'])
+    assert not check['newBorders'], check
+
+
+def test_real_source_scan_reports_separate_black_and_white_time_ranges(setup):
+    engine, _video, tmp = setup
+    video = tmp / '黑白边分段.mp4'
+    filters = ','.join([
+        "drawbox=x=0:y=0:w=iw:h=18:color=black:t=fill:enable='lt(t,2)'",
+        "drawbox=x=0:y=ih-18:w=iw:h=18:color=black:t=fill:enable='lt(t,2)'",
+        "drawbox=x=0:y=0:w=iw:h=18:color=white:t=fill:enable='gte(t,3)*lt(t,5)'",
+        "drawbox=x=0:y=ih-18:w=iw:h=18:color=white:t=fill:enable='gte(t,3)*lt(t,5)'",
+    ])
+    core.run([core.binary('ffmpeg'), '-v','error','-f','lavfi','-i','testsrc2=s=320x180:r=12:d=6',
+              '-vf',filters,'-c:v','libx264','-pix_fmt','yuv420p',str(video)])
+    report = engine.source_borders(video)
+    assert report['checkedFrames'] == 6
+    assert {segment['color'] for segment in report['segments']} == {'black','white'}
+    assert len(report['segments']) == 2
+    assert next(s for s in report['segments'] if s['color']=='black')['start'] < 2
+    assert next(s for s in report['segments'] if s['color']=='white')['start'] >= 2
+
+
 def test_duplicate_request_missing_file_and_no_overwrite(setup):
     engine, video, tmp = setup
     session = engine.prepare_config([str(video), str(video), str(tmp / "missing.mp4")], {"resolution": "original", "backend": "cpu", "outputDir": str(tmp / "out")})
@@ -209,8 +333,8 @@ def test_auto_gpu_failure_retries_cpu_and_forced_gpu_does_not(setup, monkeypatch
     real_export = core._export_once
     calls = []
     def failing_gpu(*args):
-        calls.append(args[-2])
-        if args[-2] == "nvenc":
+        calls.append(args[-3])
+        if args[-3] == "nvenc":
             raise core.HardwareEncodingError("nvenc stopped working")
         return real_export(*args)
     monkeypatch.setattr(core, "_export_once", failing_gpu)

@@ -13,12 +13,11 @@ import time
 import mcp.types as types
 from mcp.server.lowlevel import Server
 from mcp.server.stdio import stdio_server
-from update import ensure_runtime, verify_runtime
+from local_client import call_local
 
 PANEL_URI = "ui://framefit/panel.html"
 STATE = Path(os.getenv("FRAMEFIT_STATE_DIR") or Path(os.getenv("LOCALAPPDATA", str(Path.home()))) / "FrameFitCodex")
-DEV_ROOT = os.getenv("FRAMEFIT_DEV_RUNTIME")
-verified_roots = {}
+PLUGIN_ROOT = Path(sys.executable).resolve().parents[1] if getattr(sys, 'frozen', False) else Path(__file__).resolve().parents[1]
 
 CONFIG = {"type": "object", "additionalProperties": False, "properties": {
     "direction": {"type": "string", "enum": ["landscape", "portrait", "custom"]},
@@ -32,7 +31,15 @@ CONFIG = {"type": "object", "additionalProperties": False, "properties": {
     "quality": {"type": "string", "enum": ["high", "standard"]},
     "backend": {"type": "string", "enum": ["auto", "nvenc", "cpu"]},
     "outputDir": {"type": "string"}, "preset": {"type": "string"},
+    "language": {"type": "string", "enum": ["auto", "简中", "英", "日", "韩", "other", "none"]},
+    "otherLanguage": {"type": "string"},
+    "nameMode": {"type": "string", "enum": ["compact", "full"]},
+    "outputGroup": {"type": "string", "enum": ["folder", "project", "template"]},
+    "borderPolicy": {"type": "string", "enum": ["ask", "keep", "remove"]},
+    "templateConfirmed": {"type": "boolean", "description": "Only true after the user chooses a template or confirms the preselected previous template."},
 }}
+ITEM_CONFIG = {**CONFIG, 'properties': {**CONFIG['properties'], 'outputName': {'type': 'string'}}}
+ITEMS = {'type': 'array', 'items': ITEM_CONFIG, 'description': 'Optional per-video settings, one object per deduplicated video. Use to confirm a project candidate, decide border handling or edit outputName.'}
 SID = {"type": "string", "pattern": "^[a-zA-Z0-9_-]{1,100}$"}
 
 
@@ -45,12 +52,22 @@ def tool(name, title, description, properties, required=(), readonly=True, panel
 
 
 TOOLS = [
-    tool("prepare_config", "准备视频套版", "Prepare a new local video framing session; checks for a published runtime/template update first. Accept accessible local attachment paths, video files or folders. Clear instructions may export immediately after preparation.",
-         {"videos": {"type": "array", "items": {"type": "string"}}, "config": CONFIG, "sessionId": SID}, readonly=False),
-    tool("update_config", "修改套版参数", "Update the session settings shared by conversation and panel. Changing template or detection without rect re-detects its opening. No video export starts.",
-         {"sessionId": SID, "config": CONFIG}, ("sessionId", "config"), False),
+    tool("prepare_config", "准备视频套版", "Prepare a new session through the running FrameFit desktop software. The desktop app is the source of local settings and checks for updates when it starts.",
+         {"videos": {"type": "array", "items": {"type": "string"}}, "config": CONFIG, "sessionId": SID, "itemConfigs": ITEMS}, readonly=False),
+    tool("update_config", "修改套版参数", "Update the session settings shared by conversation, desktop software and panel. No video export starts.",
+         {"sessionId": SID, "config": CONFIG, "itemConfigs": ITEMS}, ("sessionId", "config"), False),
     tool("preview_frame", "预览合成画面", "Create a static preview at a timestamp using the same video-above-template composition as export.",
          {"sessionId": SID, "videoIndex": {"type": "integer", "minimum": 0}, "seconds": {"type": "number", "minimum": 0}}, ("sessionId",), False),
+    tool("thumbnail", "生成时间轴缩略图", "Return a small local video frame for a draggable desktop or Codex timeline.",
+         {"sessionId": SID, "videoIndex": {"type": "integer", "minimum": 0}, "seconds": {"type": "number", "minimum": 0}}, ("sessionId",)),
+    tool("analyze_borders", "分析视频黑白边", "Scan source frames once, report black or white edge segments, then compare beginning/middle/end composites against the source.",
+         {"sessionId": SID, "videoIndex": {"type": "integer", "minimum": 0}}, ("sessionId",)),
+    tool("match_project_templates", "匹配本机项目套版", "Resolve a project template using this computer's private schedule/template paths and mappings.",
+         {"filename": {"type": "string", "minLength": 1},
+          "direction": {'type':'string', 'enum':['landscape','portrait','custom']},
+          "outputSize": {'type':'array','items':{'type':'integer','minimum':2},'minItems':2,'maxItems':2}}, ("filename",)),
+    tool("manage_recipes", "管理本机批量配方", "List, save or delete recipes on this computer; recipe paths and settings are not uploaded.",
+         {"action": {"type": "string", "enum": ["list", "save", "delete"]}, "name": {"type": "string"}, "sessionId": SID}, ("action",), False),
     tool("render_panel", "打开视频套版面板", "Show the interactive template, fitting, zoom, preview and batch-export panel for a prepared session.", {"sessionId": SID}, ("sessionId",), panel=True),
     tool("export_videos", "开始批量导出", "Export the prepared videos locally. Use a unique requestId for a new export and retain it on retries. Explicit user instructions suffice; no mandatory extra confirmation. Jobs pin their processing version.",
          {"sessionId": SID, "requestId": {"type": "string", "minLength": 1, "maxLength": 200}}, ("sessionId", "requestId"), False),
@@ -80,80 +97,13 @@ def read_state(kind, identifier):
             time.sleep(.01)
 
 
-async def latest_runtime():
-    if DEV_ROOT:
-        root = Path(DEV_ROOT).resolve()
-        return {"root": str(root), "version": json.loads((root / "runtime.json").read_text())["version"], "warning": "开发源码模式"}
-    return await asyncio.to_thread(ensure_runtime, STATE)
-
-
-def pinned_runtime(data):
-    if DEV_ROOT:
-        # Development override is explicit; production accepts only verified managed cache paths.
-        return Path(DEV_ROOT).resolve()
-    version = data["version"]
-    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?", version):
-        raise ValueError("任务版本号无效。")
-    root = STATE / "releases" / version
-    # Hash once per immutable release in this host; a 1-second progress poll
-    # must not repeatedly hash hundreds of MB while FFmpeg is exporting.
-    # Inventory/stat changes always trigger full verification again.
-    fingerprint = []
-    for path in sorted(root.rglob("*")):
-        if path.is_symlink():
-            raise ValueError("运行包包含不允许的符号链接。")
-        if path.is_file():
-            stat = path.stat()
-            fingerprint.append((str(path.relative_to(root)), stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns))
-    fingerprint = tuple(fingerprint)
-    if verified_roots.get(str(root)) != fingerprint:
-        verify_runtime(root, version)
-        verified_roots[str(root)] = fingerprint
-    return root
-
-
-async def run_worker(root, action, arguments):
-    if DEV_ROOT:
-        command = [sys.executable, str(Path(__file__).with_name("engine.py"))]
-    else:
-        command = [str(root / "worker" / "FrameFitWorker.exe")]
-    command += ["--runtime-root", str(root), "--state-dir", str(STATE)]
-    proc = await asyncio.create_subprocess_exec(*command, stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-        **({"creationflags": 0x08000000} if os.name == "nt" else {}))
-    try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(json.dumps({"action": action, "arguments": arguments}, ensure_ascii=False).encode("utf-8")), 180)
-    except (TimeoutError, asyncio.CancelledError):
-        proc.kill()
-        await proc.wait()
-        raise
-    try:
-        response = json.loads(stdout.decode("utf-8-sig"))
-    except (ValueError, UnicodeError):
-        raise RuntimeError("本地处理程序没有返回有效结果：" + stderr.decode("utf-8", "replace")[-1200:])
-    if not response.get("ok"):
-        raise ValueError(response.get("error", "处理失败。"))
-    return response["data"]
-
-
 async def invoke(name, arguments):
-    if name == "prepare_config" or (name == "manage_presets" and not arguments.get("sessionId")):
-        runtime = await latest_runtime()
-        root = Path(runtime["root"])
-        warning = runtime.get("warning")
-    elif "taskId" in arguments:
-        root = await asyncio.to_thread(pinned_runtime, read_state("tasks", arguments["taskId"]))
-        warning = None
-    else:
-        root = await asyncio.to_thread(pinned_runtime, read_state("sessions", arguments["sessionId"]))
-        warning = None
     if name == "render_panel":
         data = read_state("sessions", arguments["sessionId"])
+        await asyncio.to_thread(call_local, "manage_presets", {"action": "list"})
     else:
-        data = await run_worker(root, name, arguments)
-    if warning:
-        data["warning"] = warning
-    return data, root
+        data = await asyncio.to_thread(call_local, name, arguments)
+    return data, None
 
 
 async def on_list_tools(ctx, params):
@@ -170,22 +120,16 @@ async def on_call_tool(ctx, params):
         jsonschema.validate(arguments, definition.input_schema)
         data, root = await invoke(name, arguments)
         content = [types.TextContent(type="text", text=json.dumps({k: v for k, v in data.items() if k != "previewDataUrl"}, ensure_ascii=False))]
-        if name == "preview_frame":
-            content.append(types.ImageContent(type="image", mimeType="image/jpeg", data=data["previewDataUrl"].split(",", 1)[1]))
+        if name in ("preview_frame", "thumbnail"):
+            key = "previewDataUrl" if name == "preview_frame" else "thumbnailDataUrl"
+            content.append(types.ImageContent(type="image", mimeType="image/jpeg", data=data[key].split(",", 1)[1]))
         meta = None
         if name == "render_panel":
             # Resource handler serves the release pinned to this panel/session.
-            panel_roots[data["sessionId"]] = root
-            global current_panel_root
-            current_panel_root = root
             meta = {"ui": {"resourceUri": PANEL_URI}, "openai/outputTemplate": PANEL_URI}
         return types.CallToolResult(content=content, structuredContent=data, **({"_meta": meta} if meta else {}))
     except Exception as exc:
         return types.CallToolResult(content=[types.TextContent(type="text", text=str(exc))], structuredContent={"error": str(exc)}, isError=True)
-
-
-panel_roots = {}
-current_panel_root = None
 
 
 async def on_list_resources(ctx, params):
@@ -195,20 +139,14 @@ async def on_list_resources(ctx, params):
 async def on_read_resource(ctx, params):
     if str(params.uri) != PANEL_URI:
         raise ValueError("未知面板资源。")
-    root = current_panel_root
-    if root is None:
-        runtime = await latest_runtime()
-        root = Path(runtime["root"])
-    panel = root / "panel.html"
-    if DEV_ROOT:
-        panel = root / "web" / "panel.html"
+    panel = PLUGIN_ROOT / "web" / "panel.html"
     text = panel.read_text(encoding="utf-8")
     return types.ReadResourceResult(contents=[types.TextResourceContents(uri=PANEL_URI, mimeType="text/html;profile=mcp-app", text=text,
         **{"_meta": {"ui": {"csp": {"connectDomains": [], "resourceDomains": ["data:"]}}}})])
 
 
 async def main():
-    server = Server("framefit", version="1.0.0", instructions="Local Windows video framing. Prepare with accessible local paths; explicit clear user requests may export directly. Only prepare checks latest runtime. Query original task IDs; do not resubmit on status requests.",
+    server = Server("framefit", version="1.1.0", instructions="Local Windows video framing. The running desktop software owns settings, project matching and processing. Start FrameFit before calling tools. Query original task IDs; do not resubmit on status requests.",
         on_list_tools=on_list_tools, on_call_tool=on_call_tool, on_list_resources=on_list_resources, on_read_resource=on_read_resource,
         get_tool_input_schema=lambda name: next((t.input_schema for t in TOOLS if t.name == name), None))
     async with stdio_server() as (reader, writer):
@@ -220,11 +158,8 @@ if __name__ == "__main__":
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="FrameFit local MCP host")
-    parser.add_argument("--runtime-root", help="Verified runtime selected by bootstrap")
     parser.add_argument("--state-dir", help="Local state directory")
     options = parser.parse_args()
     if options.state_dir:
         STATE = Path(options.state_dir).resolve()
-    if options.runtime_root:
-        current_panel_root = Path(options.runtime_root).resolve()
     asyncio.run(main())
