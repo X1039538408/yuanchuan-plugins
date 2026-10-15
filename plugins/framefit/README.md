@@ -54,10 +54,14 @@
 
 维护者需要 GitHub 仓库写入权限，使用者只需要公开下载权限。遵循仓库 [贡献指南](../../CONTRIBUTING.md)，通过 PR 修改 `plugins/framefit` 的处理程序、面板、共享模板和预设，不覆盖其他插件。
 
-1. 更新处理版本，并同步插件两个 manifest（若技能／接口也变更）；本机运行相应测试。
+1. 更新处理版本；技能／接口／启动配置变更时，递增 `.codex-plugin/plugin.json` 中的插件版本。本机运行相应测试。
 2. 通过 PR 审核合并源码，创建 `framefit-v1.0.0` 格式的版本 tag，或手动运行 `.github/workflows/framefit-release.yml` 并填写版本。
 3. 工作流在 Windows 构建并验证 `framefit-<版本>-windows-x64.zip`，上传 GitHub Release，然后创建稳定清单 PR。
 4. 审核并合并 `codex/framefit-channel-<版本>` 的稳定清单 PR。此时其他电脑下次准备任务获取该稳定版；仅上传 Release 尚未激活稳定版。
+
+运行包已上传、激活分支已推送，但工作流未能创建 PR 时，可以从 `codex/framefit-channel-<版本>` 手动创建 PR，核对 Release 清单后合并。GitHub 可以单独限制工作流创建 PR；这不影响使用者匿名下载，参见 [GitHub 工作流权限说明](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository)。
+
+本插件面向 Windows Codex，使用 `.codex-plugin/plugin.json` 和 `.mcp.json` 兼容格式。启动器使用插件相对路径及 `cwd: "."`，首次下载允许等待 600 秒。当前客户端的 portable `mcp.json` 不接受这些超时字段，因此不要同时添加会覆盖兼容清单的 portable 根清单。插件入口版本与处理运行包版本分别维护：入口 1.0.1 可以调用稳定运行包 1.0.0。
 
 需要本机打包时，在 Windows x64 构建环境安装 `requirements-build.txt`，准备 FFmpeg／FFprobe 及其许可证和对应源码来源，然后运行：
 
@@ -78,6 +82,8 @@ python -m pytest plugins/framefit/tests -q
 ```
 
 Node 仅用于开发面板测试。测试覆盖与发布记录应区分：桥接／处理／更新器自动化验证、便携包启动验证、真实 Codex 面板与附件验收，以及独立干净电脑首次安装验收。自动化测试通过不能代替未执行的宿主或跨电脑验证。
+
+首次发布已通过 56 项 Python 测试、5 项面板桥接测试、Windows 云端便携包预览与音视频导出、本机和全新独立目录匿名下载后导出，以及 Codex CLI 自然语言调用（准备 → 预览 → 导出 → 完成查询）。独立目录测试在同一台电脑执行；尚未在第二台实体电脑逐项验收，也未将 CLI 测试当作桌面面板视觉验收。
 
 ## 许可与来源
 
