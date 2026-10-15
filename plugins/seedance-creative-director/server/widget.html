@@ -77,6 +77,37 @@
       throw new Error('当前宿主未提供面板工具调用接口，请在支持 MCP App 的宿主中打开。');
     }
     function extract(result) { return result?.structuredContent || result?.toolOutput || result || {}; }
+    function normalizeProfiles(d, adapter) {
+      const raw = vals(d.profiles?.profiles || d.profiles || d.accounts);
+      const out = [];
+      for (const entry of raw) {
+        if (entry?.data) {
+          const group = adapter === 'conversation' ? entry.data.conversation : entry.data.canvas;
+          for (const item of vals(group)) out.push(item);
+        } else if (entry?.canvas || entry?.conversation) {
+          for (const item of vals(adapter === 'conversation' ? entry.conversation : entry.canvas)) out.push(item);
+        } else out.push(entry);
+      }
+      const seen = new Set();
+      return out.filter((p) => { const id = p?.id || p?.profile || p?.profileId; if (!id || seen.has(id)) return false; seen.add(id); return true; });
+    }
+    function normalizeModels(d) {
+      const raw = d.models?.items || d.models?.modelValues || d.models?.models || d.models || [];
+      return vals(raw).flatMap((m) => typeof m === 'string' ? [{ model: m, displayName: m }] : [m]).filter(Boolean);
+    }
+    function selectedModelCapability(model, modeName) {
+      if (!model) return null;
+      const modes = vals(model.modes);
+      return modes.find((m) => (m.name || m.mode || m.modeType) === modeName) || modes[0] || null;
+    }
+    function capabilityValues(capability, flagNames) {
+      const flags = vals(capability?.flags);
+      const flag = flags.find((f) => flagNames.includes(String(f.flag || '').replace(/^--/, '')));
+      return { values: vals(flag?.values), min: flag?.min, max: flag?.max, step: flag?.step };
+    }
+    function selectionInput() {
+      return { ...state.input, provider:$('provider').value, adapter:$('adapter').value, profile:$('profile').value || undefined, projectId:$('adapter').value==='canvas'?$('container').value:undefined, sessionId:$('adapter').value==='conversation'?$('container').value:undefined, model:$('model').value || undefined };
+    }
     function currentArgs() {
       const d=state.data||{}; const provider=$('provider').value; const adapter=$('adapter').value;
       const bindings=d.assets?.bindings||d.assetBindings||[];
@@ -84,22 +115,24 @@
     }
     function render(d) {
       state.data=d; const provider=d.provider||$('provider').value; const adapter=d.adapter||$('adapter').value; $('provider').value=provider; $('adapter').value=adapter;
-      const profiles=vals(d.profiles?.profiles||d.profiles||d.accounts); setOptions('profile',profiles,p=>`${p.label||p.profile||p.id||''} ${p.status||''}`,p=>p.profile||p.id||p.profileId||'');
-      const containers=d.containers?.items||d.containers?.projects||d.projects?.projects||d.projects?.items||d.sessions||[]; setOptions('container',containers,c=>`${c.name||c.title||c.sessionName||c.projectName||c.id||''} · ${c.updatedAt||c.updateTime||''}`,c=>c.projectId||c.uuid||c.id||c.sessionId||c.session_id||'');
+      const previousProfile=$('profile').value; const profiles=normalizeProfiles(d, adapter); setOptions('profile',profiles,p=>`${p.label||p.profile||p.id||p.profileId||''} · ${p.loggedIn===false?'未登录':(p.accountVerified===false?'需重新授权':'已登录')}`,p=>p.profile||p.id||p.profileId||''); if (d.profile) $('profile').value=d.profile; else if(previousProfile) $('profile').value=previousProfile;
+      const containers=d.containers?.items||d.containers?.projects||d.projects?.projects||d.projects?.items||d.sessions||[]; setOptions('container',containers,c=>`${c.name||c.title||c.sessionName||c.projectName||c.id||c.projectId||c.sessionId||''} · ${c.updatedAt||c.updateTime||''}`,c=>c.projectId||c.uuid||c.id||c.sessionId||c.session_id||'');
       $('containerLabel').firstChild.textContent=adapter==='canvas'?'即梦画布项目':'即梦对话会话';
-      const models=d.models?.items||d.models?.modelValues||d.models?.models||d.models||[]; setOptions('model',models,m=>m.displayName||m.modelName||m.name||m.key||m, m=>m.modelName||m.name||m.key||m);
+      const models=normalizeModels(d); const previousModel=$('model').value; setOptions('model',models,m=>m.displayName||m.modelName||m.name||m.model||m.key||String(m),m=>m.modelName||m.model||m.name||m.key||String(m)); if(previousModel) $('model').value=previousModel;
       const schema=d.schema?.schema||d.schema; const props=schema?.properties||{};
       const enumFor=(keys)=>{for(const k of keys){const p=props[k];if(p?.enum)return p.enum;if(p?.values)return p.values;}return [];};
-      setOptions('mode', enumFor(['modeType','mode','generationMode']).length?enumFor(['modeType','mode','generationMode']):[d.models?.command||'auto']);
-      setOptions('ratio', enumFor(['ratio','aspectRatio','aspect_ratio']).length?enumFor(['ratio','aspectRatio','aspect_ratio']):(d.models?.ratioValues||d.models?.ratios||[]));
-      setOptions('resolution',enumFor(['resolution','size','imageSize']).length?enumFor(['resolution','size','imageSize']):(d.models?.resolutionValues||d.models?.resolutions||[]));
-      setOptions('duration',enumFor(['duration','durationSeconds','duration_seconds']).length?enumFor(['duration','durationSeconds','duration_seconds']):(d.models?.durationValues||d.models?.durations||[]));
+      const activeModel=models.find(m=>(m.modelName||m.model||m.name||m.key)===$('model').value)||models[0]; const modelModes=vals(activeModel?.modes).map(m=>m.name||m.mode||m.modeType).filter(Boolean); const activeMode=$('mode').value; setOptions('mode', enumFor(['modeType','mode','generationMode']).length?enumFor(['modeType','mode','generationMode']):(modelModes.length?modelModes:[d.models?.command||'auto'])); if(activeMode) $('mode').value=activeMode;
+      const capability=selectedModelCapability(activeModel,$('mode').value); const ratioInfo=capabilityValues(capability,['ratio','aspectRatio','aspect_ratio']); const resolutionInfo=capabilityValues(capability,['resolution','video_resolution','size','imageSize']); const durationInfo=capabilityValues(capability,['duration','durationSeconds','duration_seconds']);
+      setOptions('ratio', enumFor(['ratio','aspectRatio','aspect_ratio']).length?enumFor(['ratio','aspectRatio','aspect_ratio']):(ratioInfo.values.length?ratioInfo.values:(d.models?.ratioValues||d.models?.ratios||[])));
+      setOptions('resolution',enumFor(['resolution','size','imageSize']).length?enumFor(['resolution','size','imageSize']):(resolutionInfo.values.length?resolutionInfo.values:(d.models?.resolutionValues||d.models?.resolutions||[])));
+      const durations=durationInfo.values.length?durationInfo.values:(d.models?.durationValues||d.models?.durations||[]); setOptions('duration',enumFor(['duration','durationSeconds','duration_seconds']).length?enumFor(['duration','durationSeconds','duration_seconds']):(durations.length?durations:(durationInfo.min!=null&&durationInfo.max!=null?Array.from({length:durationInfo.max-durationInfo.min+1},(_,i)=>durationInfo.min+i):[])));
       $('credit').textContent=d.credit?`剩余积分：${d.credit}`:'剩余积分：暂不可读取';
       const assets=d.assets?.bindings||d.assetBindings||[]; $('assets').textContent=assets.length?assets.map(a=>`${a.index||''} ${a.purpose||a.name||a.path||a.nodeId||''}`).join('\n'):'暂无素材映射';
       $('prompt').value=state.input.prompt||d.prompt||$('prompt').value||''; $('summary').textContent=JSON.stringify(currentArgs(),null,2); $('submit').disabled=false;
     }
-    async function prepare(fresh=false){try{status(fresh?'正在刷新…':'正在批量读取账号、容器和模型能力…'); const r=await callTool(fresh?'refresh_video_config':'prepare_video_config',{...state.input,provider:$('provider').value,adapter:$('adapter').value,fresh}); const d=extract(r); render(d); status('已加载。请在本面板一次性完成选择。');}catch(e){status(e.message,true);}}
+    async function prepare(fresh=false){try{status(fresh?'正在刷新…':'正在批量读取账号、容器和模型能力…'); const r=await callTool(fresh?'refresh_video_config':'prepare_video_config',{...selectionInput(),fresh}); const d=extract(r); render(d); const detail=d.containers?.error||d.models?.error; status(detail?`已加载账号，但当前账号能力读取失败：${detail.message||detail.reason||'请重新授权'}`:'已加载。请在本面板一次性完成选择。',Boolean(detail));}catch(e){status(e.message,true);}}
     $('provider').onchange=()=>prepare(true); $('adapter').onchange=()=>prepare(true); $('refresh').onclick=()=>prepare(true);
+    $('profile').onchange=()=>prepare(true); $('model').onchange=()=>render(state.data||{}); $('mode').onchange=()=>render(state.data||{});
     $('validate').onclick=async()=>{try{status('正在预检…');const r=await callTool('validate_video_config',currentArgs());const d=extract(r);render({...state.data,...d});status(d.status==='valid'?'预检通过，请检查摘要后确认。':`预检未通过：${d.message||d.validation?.reason||'请修正参数'}`,d.status!=='valid');}catch(e){status(e.message,true);}};
     $('submit').onclick=async()=>{try{if(!confirm('确认使用当前账号、项目/会话和参数生成视频？'))return;status('正在提交一次生成任务…');const r=await callTool('submit_video_config',{...currentArgs(),confirmed:true});const d=extract(r);render({...state.data,...d});status(d.status==='submitted'?'已提交，后续只查询原任务。':`未提交：${d.message||d.error||'请查看详情'}`,d.status!=='submitted');}catch(e){status(e.message,true);}};
     for(const id of ['profile','container','model','mode','ratio','resolution','duration','prompt']) $(id).oninput=()=>{$('summary').textContent=JSON.stringify(currentArgs(),null,2);};
@@ -107,3 +140,4 @@
   </script>
 </body>
 </html>
+

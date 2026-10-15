@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "seedance-creative-director",
-  "version": "0.1.24",
+  "version": "0.1.25",
   "description": "从图片和简略脚本共创中文 Seedance 视频提示词；创意与约束独立维护，遇到关键矛盾和因果缺口先沟通。",
   "author": {
     "name": "Plugin owner"
@@ -28,3 +28,4 @@
     }
   }
 }
+

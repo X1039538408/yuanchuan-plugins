@@ -4,7 +4,9 @@ Seedance 创意导演是一套用于共创中文视频提示词的插件工作�
 
 你不需要先填写一整张需求表。可以先说「让这个像素少年在山门前拔剑，气氛紧张，细节你补」，再通过对话逐步确定方向。插件会区分哪些是你已经确认的要求、哪些是它提出的创意、哪些关键问题还需要回答。
 
-本文介绍仓库中 0.1.24 版本的工作规则与设计目标，不代表视频模型每次都能精确执行。插件原始入口见 [SKILL.md](../plugins/seedance-creative-director/skills/seedance-director/SKILL.md)，完整模块见 [模块索引](../plugins/seedance-creative-director/skills/seedance-director/references/modules.md)。
+本文介绍仓库中 0.1.25 版本的工作规则与设计目标，不代表视频模型每次都能精确执行。插件原始入口见 [SKILL.md](../plugins/seedance-creative-director/skills/seedance-director/SKILL.md)，完整模块见 [模块索引](../plugins/seedance-creative-director/skills/seedance-director/references/modules.md)。
+
+0.1.25 修复了右侧视频生成控制面板下拉选项为空的问题：面板优先使用 PowerShell 7，正确读取 UTF-8 控制器输出并展开嵌套账号数据；账号选择会触发级联刷新，画布模型的模式、比例、分辨率和时长从实时能力动态生成。未读取到能力时仍显示明确错误，不会伪造可选值。
 
 ## 一、创意如何展开
 
@@ -130,3 +132,4 @@ Seedance 创意导演是一套用于共创中文视频提示词的插件工作�
 - [交付检查](../plugins/seedance-creative-director/skills/seedance-director/references/quality.md)：成品整合前的检查项。
 
 这些文件描述插件应遵循的工作方式。实际遵循情况仍需在目标宿主和具体任务中验证，文件存在或结构检查通过不等于所有创意行为已经通过实测。
+

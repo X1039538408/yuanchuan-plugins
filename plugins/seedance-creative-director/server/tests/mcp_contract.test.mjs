@@ -22,6 +22,9 @@ const widget = await readFile(widgetPath, "utf8");
 assert.match(widget, /确认并生成/);
 assert.match(widget, /prepare_video_config/);
 assert.match(widget, /submit_video_config/);
+assert.match(widget, /normalizeProfiles/);
+assert.match(widget, /\$\('profile'\)\.onchange/);
+assert.match(widget, /modelModes/);
 
 if (process.platform === "win32") {
   const { execFileSync } = await import("node:child_process");
@@ -42,3 +45,4 @@ const listed = messages.find(m => m.id === 2)?.result?.tools ?? [];
 for (const name of ["prepare_video_config", "refresh_video_config", "validate_video_config", "submit_video_config", "resume_video_config"]) assert.ok(listed.some(t => t.name === name), `missing ${name}`);
 child.kill();
 console.log("MCP panel contract passed");
+

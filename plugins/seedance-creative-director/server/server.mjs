@@ -116,7 +116,7 @@ function send(message) { process.stdout.write(`${JSON.stringify(message)}\n`); }
 async function handle(message) {
   if (message.method === "notifications/initialized") return;
   if (message.method === "initialize") {
-        return send({ jsonrpc: "2.0", id: message.id, result: { protocolVersion: message.params?.protocolVersion ?? "2025-06-18", capabilities: { tools: {}, resources: {} }, serverInfo: { name: "seedance-video-panel", version: "0.1.24" } } });
+        return send({ jsonrpc: "2.0", id: message.id, result: { protocolVersion: message.params?.protocolVersion ?? "2025-06-18", capabilities: { tools: {}, resources: {} }, serverInfo: { name: "seedance-video-panel", version: "0.1.25" } } });
   }
   if (message.method === "tools/list") return send({ jsonrpc: "2.0", id: message.id, result: { tools } });
   if (message.method === "resources/list") return send({ jsonrpc: "2.0", id: message.id, result: { resources: [{ uri: widgetUri, name: "Seedance 视频生成控制面板", mimeType: "text/html;profile=mcp-app" }] } });
@@ -149,3 +149,4 @@ async function handle(message) {
 
 const input = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
 input.on("line", (line) => { if (!line.trim()) return; Promise.resolve(handle(JSON.parse(line))).catch((error) => send({ jsonrpc: "2.0", id: null, error: { code: -32603, message: error.message } })); });
+
