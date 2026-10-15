@@ -1,0 +1,25 @@
+{
+  "name": "framefit",
+  "version": "1.0.0",
+  "description": "Windows 本机视频批量套版，支持横竖转换、静帧预览、任务恢复和稳定版自动更新。",
+  "author": {
+    "name": "yuanchuan"
+  },
+  "license": "MIT",
+  "skills": "./skills",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "视频套版 FrameFit",
+    "shortDescription": "发来视频，批量套版；本机处理，稳定版自动更新",
+    "developerName": "yuanchuan",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "logo": "./assets/icon.svg",
+    "composerIcon": "./assets/icon.svg",
+    "defaultPrompt": [
+      "把我提供的视频用内置横版模板套版，1080P，高画质，保留原声。"
+    ]
+  }
+}

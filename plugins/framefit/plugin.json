@@ -1,0 +1,30 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "framefit",
+  "version": "1.0.0",
+  "description": "在 Windows 本机批量套版视频：横竖转换、模板识别、静帧预览与 GPU/CPU 导出，处理功能随稳定版本自动更新。",
+  "author": { "name": "yuanchuan" },
+  "license": "MIT",
+  "homepage": "https://github.com/X1039538408/yuanchuan-plugins/tree/main/plugins/framefit",
+  "extensions": {
+    "com.openai": {
+      "skills": "./skills",
+      "mcpServers": "./mcp.json",
+      "interface": {
+        "displayName": "视频套版 FrameFit",
+        "shortDescription": "发来视频，批量套版；本机处理，稳定版自动更新",
+        "longDescription": "在 Windows 64 位电脑本机完成竖转横、横转竖和自定义模板套版。支持窗口识别、自由缩放、静帧预览、批量导出、GPU/CPU 编码及任务恢复。对话与配置面板共用设置；处理功能、共享模板和预设在开始新任务前检查稳定版本更新。无需另装原软件、Python 或 Node，无需软件账号。首次使用需要联网下载运行包。",
+        "developerName": "yuanchuan",
+        "category": "Productivity",
+        "capabilities": ["Interactive"],
+        "logo": "./assets/icon.svg",
+        "composerIcon": "./assets/icon.svg",
+        "defaultPrompt": [
+          "把我提供的视频批量转成横版，使用内置模板，1080P，高画质，保留原声。",
+          "打开视频套版配置面板，让我选择模板、调整画面并预览。",
+          "查询刚才的套版任务，完成后打开输出文件夹。"
+        ]
+      }
+    }
+  }
+}

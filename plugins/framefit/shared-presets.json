@@ -1,0 +1,4 @@
+[
+  {"name":"横版1080P","config":{"direction":"landscape","templateId":"landscape","fit":"cover","resolution":"1080p","quality":"high","backend":"auto","detection":"auto","rect":null,"zoom":100}},
+  {"name":"竖版1080P","config":{"direction":"portrait","templateId":"portrait","fit":"cover","resolution":"1080p","quality":"high","backend":"auto","detection":"auto","rect":null,"zoom":100}}
+]

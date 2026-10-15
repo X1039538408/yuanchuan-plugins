@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "framefit": {
+      "type": "stdio",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${PLUGIN_ROOT}/bootstrap.ps1"
+      ],
+      "cwd": "${PLUGIN_ROOT}",
+      "startup_timeout_sec": 600,
+      "tool_timeout_sec": 300
+    }
+  }
+}
