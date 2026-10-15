@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seedance 视频生成</title>
+  <style>
+    :root { color-scheme: light dark; font-family: ui-sans-serif, system-ui, sans-serif; }
+    body { margin: 0; padding: 18px; background: Canvas; color: CanvasText; }
+    h1 { font-size: 19px; margin: 0 0 14px; }
+    h2 { font-size: 13px; margin: 18px 0 8px; opacity: .8; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
+    select, input, textarea, button { font: inherit; border-radius: 8px; border: 1px solid color-mix(in srgb, CanvasText 18%, transparent); padding: 8px; background: Canvas; color: CanvasText; }
+    textarea { min-height: 90px; resize: vertical; }
+    button { cursor: pointer; background: color-mix(in srgb, Highlight 20%, Canvas); }
+    button.primary { background: Highlight; color: HighlightText; border-color: Highlight; font-weight: 700; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .status { padding: 9px; border-radius: 8px; background: color-mix(in srgb, CanvasText 8%, transparent); white-space: pre-wrap; font-size: 12px; }
+    .error { color: #d33; }
+    .muted { opacity: .65; font-size: 11px; }
+    .summary { max-height: 140px; overflow: auto; font-size: 11px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Seedance 视频生成配置</h1>
+  <div id="status" class="status">正在加载实时选项…</div>
+  <section>
+    <h2>生成平台</h2>
+    <div class="grid">
+      <label>平台<select id="provider"><option value="dreamina">即梦 CLI</option><option value="libtv">LibTV</option></select></label>
+      <label>适配器<select id="adapter"><option value="canvas">即梦画布</option><option value="conversation">即梦对话</option></select></label>
+    </div>
+  </section>
+  <section>
+    <h2>账号与容器</h2>
+    <div class="grid">
+      <label>账号<select id="profile"></select></label>
+      <label id="containerLabel">项目或会话<select id="container"></select></label>
+    </div>
+    <div id="credit" class="muted"></div>
+  </section>
+  <section>
+    <h2>模型与参数</h2>
+    <div class="grid">
+      <label>模型<select id="model"></select></label>
+      <label>模式<select id="mode"></select></label>
+      <label>比例<select id="ratio"></select></label>
+      <label>分辨率<select id="resolution"></select></label>
+      <label>时长<select id="duration"></select></label>
+    </div>
+  </section>
+  <section>
+    <h2>素材与提示词</h2>
+    <div id="assets" class="muted">暂无素材映射</div>
+    <label>最终提示词<textarea id="prompt" placeholder="由导演插件传入 LibTV 版或即梦版定稿提示词"></textarea></label>
+  </section>
+  <section>
+    <h2>提交摘要</h2>
+    <div id="summary" class="summary"></div>
+  </section>
+  <div class="bar">
+    <button id="refresh">刷新能力</button>
+    <button id="validate">预检</button>
+    <button id="submit" class="primary" disabled>确认并生成</button>
+  </div>
+  <script>
+    const state = { data: null, input: {} };
+    const $ = (id) => document.getElementById(id);
+    const status = (text, error = false) => { $('status').textContent = text; $('status').className = `status${error ? ' error' : ''}`; };
+    const vals = (v) => Array.isArray(v) ? v : (v == null ? [] : [v]);
+    const setOptions = (id, items, label = x => x, value = x => x) => { const el=$(id); el.innerHTML=''; vals(items).forEach(x=>{const o=document.createElement('option');o.value=value(x);o.textContent=label(x);el.appendChild(o);}); };
+    async function callTool(name, args) {
+      if (window.openai?.callTool) return await window.openai.callTool(name, args);
+      window.parent.postMessage({ jsonrpc:'2.0', id:Date.now(), method:'tools/call', params:{name, arguments:args}}, '*');
+      throw new Error('当前宿主未提供面板工具调用接口，请在支持 MCP App 的宿主中打开。');
+    }
+    function extract(result) { return result?.structuredContent || result?.toolOutput || result || {}; }
+    function currentArgs() {
+      const d=state.data||{}; const provider=$('provider').value; const adapter=$('adapter').value;
+      const bindings=d.assets?.bindings||d.assetBindings||[];
+      return { provider, adapter, profile:$('profile').value, projectId:adapter==='canvas'?$('container').value:undefined, sessionId:adapter==='conversation'?$('container').value:undefined, model:$('model').value, mode:$('mode').value, prompt:$('prompt').value, parameters:{ratio:$('ratio').value,resolution:$('resolution').value,duration:$('duration').value}, assetRefs:provider==='libtv'?bindings:undefined, assets:provider==='dreamina'?bindings:undefined };
+    }
+    function render(d) {
+      state.data=d; const provider=d.provider||$('provider').value; const adapter=d.adapter||$('adapter').value; $('provider').value=provider; $('adapter').value=adapter;
+      const profiles=vals(d.profiles?.profiles||d.profiles||d.accounts); setOptions('profile',profiles,p=>`${p.label||p.profile||p.id||''} ${p.status||''}`,p=>p.profile||p.id||p.profileId||'');
+      const containers=d.containers?.items||d.containers?.projects||d.projects?.projects||d.projects?.items||d.sessions||[]; setOptions('container',containers,c=>`${c.name||c.title||c.sessionName||c.projectName||c.id||''} · ${c.updatedAt||c.updateTime||''}`,c=>c.projectId||c.uuid||c.id||c.sessionId||c.session_id||'');
+      $('containerLabel').firstChild.textContent=adapter==='canvas'?'即梦画布项目':'即梦对话会话';
+      const models=d.models?.items||d.models?.modelValues||d.models?.models||d.models||[]; setOptions('model',models,m=>m.displayName||m.modelName||m.name||m.key||m, m=>m.modelName||m.name||m.key||m);
+      const schema=d.schema?.schema||d.schema; const props=schema?.properties||{};
+      const enumFor=(keys)=>{for(const k of keys){const p=props[k];if(p?.enum)return p.enum;if(p?.values)return p.values;}return [];};
+      setOptions('mode', enumFor(['modeType','mode','generationMode']).length?enumFor(['modeType','mode','generationMode']):[d.models?.command||'auto']);
+      setOptions('ratio', enumFor(['ratio','aspectRatio','aspect_ratio']).length?enumFor(['ratio','aspectRatio','aspect_ratio']):(d.models?.ratioValues||d.models?.ratios||[]));
+      setOptions('resolution',enumFor(['resolution','size','imageSize']).length?enumFor(['resolution','size','imageSize']):(d.models?.resolutionValues||d.models?.resolutions||[]));
+      setOptions('duration',enumFor(['duration','durationSeconds','duration_seconds']).length?enumFor(['duration','durationSeconds','duration_seconds']):(d.models?.durationValues||d.models?.durations||[]));
+      $('credit').textContent=d.credit?`剩余积分：${d.credit}`:'剩余积分：暂不可读取';
+      const assets=d.assets?.bindings||d.assetBindings||[]; $('assets').textContent=assets.length?assets.map(a=>`${a.index||''} ${a.purpose||a.name||a.path||a.nodeId||''}`).join('\n'):'暂无素材映射';
+      $('prompt').value=state.input.prompt||d.prompt||$('prompt').value||''; $('summary').textContent=JSON.stringify(currentArgs(),null,2); $('submit').disabled=false;
+    }
+    async function prepare(fresh=false){try{status(fresh?'正在刷新…':'正在批量读取账号、容器和模型能力…'); const r=await callTool(fresh?'refresh_video_config':'prepare_video_config',{...state.input,provider:$('provider').value,adapter:$('adapter').value,fresh}); const d=extract(r); render(d); status('已加载。请在本面板一次性完成选择。');}catch(e){status(e.message,true);}}
+    $('provider').onchange=()=>prepare(true); $('adapter').onchange=()=>prepare(true); $('refresh').onclick=()=>prepare(true);
+    $('validate').onclick=async()=>{try{status('正在预检…');const r=await callTool('validate_video_config',currentArgs());const d=extract(r);render({...state.data,...d});status(d.status==='valid'?'预检通过，请检查摘要后确认。':`预检未通过：${d.message||d.validation?.reason||'请修正参数'}`,d.status!=='valid');}catch(e){status(e.message,true);}};
+    $('submit').onclick=async()=>{try{if(!confirm('确认使用当前账号、项目/会话和参数生成视频？'))return;status('正在提交一次生成任务…');const r=await callTool('submit_video_config',{...currentArgs(),confirmed:true});const d=extract(r);render({...state.data,...d});status(d.status==='submitted'?'已提交，后续只查询原任务。':`未提交：${d.message||d.error||'请查看详情'}`,d.status!=='submitted');}catch(e){status(e.message,true);}};
+    for(const id of ['profile','container','model','mode','ratio','resolution','duration','prompt']) $(id).oninput=()=>{$('summary').textContent=JSON.stringify(currentArgs(),null,2);};
+    state.input=window.openai?.toolInput||{}; $('provider').value=state.input.provider||'dreamina'; $('adapter').value=state.input.adapter||'canvas'; $('prompt').value=state.input.prompt||''; prepare(false);
+  </script>
+</body>
+</html>

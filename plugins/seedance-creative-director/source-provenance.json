@@ -1,0 +1,40 @@
+{
+  "upstream": {
+    "repository": "https://github.com/xiaoliangliang/seedance-2.5-prompt-skill",
+    "commit": "ec6995b6dcff9a850fd8b546699d929a5bfd1fc1",
+    "license": "MIT"
+  },
+  "user_sources": [
+    {
+      "name": "脚本优化.txt",
+      "bytes": 19679,
+      "sha256": "0464eeb1e15bd67b745d111c4fafa76c0517e5f61fce3b7e17fd44fdf709753b"
+    },
+    {
+      "name": "AI电影镜头提示词万能手册.md",
+      "bytes": 105002,
+      "sha256": "2d0af37f9292b0a2637d5100a339c56905d61789f392d74ba3165cc1c60ee3c7"
+    },
+    {
+      "name": "01_电影总目录.md",
+      "bytes": 25633,
+      "sha256": "de04742d931d6c7f6c3f73a408d6e5021c4136dc03436092d20c23e63a09364b"
+    },
+    {
+      "name": "02_运镜与镜头术语手册.md",
+      "bytes": 45021,
+      "sha256": "0f0410904729377847d23dea45463fdd6bce1fde5b0caac5ccc0645c517db672"
+    },
+    {
+      "name": "03_AI镜头提示词速查手册.md",
+      "bytes": 23837,
+      "sha256": "6277caf7019a2f1480a6e34cee0ff9a1c2e056fdeb6b28b929def29371a03728"
+    },
+    {
+      "name": "04_剧本提示词专业手册.md",
+      "bytes": 44475,
+      "sha256": "8237aa3b7b6cc51397d9cae3330585ba77b3db8ce40238a95f4b4d36250c5490"
+    }
+  ],
+  "source_policy": "Curated adaptations only; original user documents are not bundled."
+}

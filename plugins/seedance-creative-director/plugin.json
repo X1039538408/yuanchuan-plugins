@@ -1,0 +1,30 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "seedance-creative-director",
+  "version": "0.1.24",
+  "description": "从图片和简略脚本共创中文 Seedance 视频提示词；创意与约束独立维护，遇到关键矛盾和因果缺口先沟通。",
+  "author": {
+    "name": "Plugin owner"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Seedance 创意导演",
+        "shortDescription": "看图共创中文提示词，关键矛盾先沟通",
+        "longDescription": "读取参考图和脚本，主动补充动作、表演、运镜、光影与情节衔接。涉及人物动机、关键因果或故事方向的缺口时，提出具体问题，依据你的回答继续创作。镜头过多或连续性复杂时可推荐宫格分镜，但必须经你确认后才调用 ChatGPT 内置生图工具制作宫格图。创意、约束、平台输出分开维护。提示词完成后可选择 LibTV 或即梦 CLI；即梦区分画布和对话，支持多账号、项目/会话选择、实时模型参数、右侧一次性配置面板和断点恢复。",
+        "developerName": "Plugin owner",
+        "category": "Productivity",
+        "capabilities": [
+          "Interactive"
+        ],
+        "logo": "./assets/icon.svg",
+        "composerIcon": "./assets/icon.svg",
+        "defaultPrompt": [
+          "根据我提供的图片和简略脚本，共创一版中文 Seedance 视频提示词。可以主动补全；关键矛盾和前因后果缺口先与我沟通。",
+          "检查这段剧情的人物动机、道具状态和事件因果，先问清影响故事方向的问题，再整合完整提示词。",
+          "根据我的最新修改更新完整提示词，保留其他已确认内容。镜头过多时可以先推荐宫格，但未经我确认不要启用。"
+        ]
+      }
+    }
+  }
+}

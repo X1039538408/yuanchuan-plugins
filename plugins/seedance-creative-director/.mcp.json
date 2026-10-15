@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "seedance-video-panel": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${PLUGIN_ROOT}/server/server.mjs"
+      ],
+      "env": {},
+      "cwd": "${PLUGIN_ROOT}"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "yuanchuan-plugins",
+  "interface": {
+    "displayName": "yuanchuan 插件市场"
+  },
+  "plugins": [
+    {
+      "name": "seedance-creative-director",
+      "source": {
+        "source": "local",
+        "path": "./plugins/seedance-creative-director"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

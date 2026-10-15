@@ -1,0 +1,6 @@
+interface:
+  display_name: "Seedance 创意导演"
+  short_description: "看图与简略脚本共创中文视频提示词，主动补全并先沟通关键矛盾"
+  default_prompt: "使用 $seedance-director 根据图片和脚本共创中文视频提示词；关键矛盾和因果缺口先与我沟通。"
+policy:
+  allow_implicit_invocation: true
