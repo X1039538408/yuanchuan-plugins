@@ -63,7 +63,7 @@ def smoke(archive, work):
     manifest_hash = sha256(root / "runtime.json")
     env = {key: value for key, value in os.environ.items()
            if not key.upper().startswith(("PYTHON", "FRAMEFIT", "NODE", "VIRTUAL_ENV", "CONDA", "_PYI"))}
-    windows = Path(env["SystemRoot"])
+    windows = Path(next(value for key, value in env.items() if key.upper() == "SYSTEMROOT"))
     env.update(PATH=str(windows / "System32") + os.pathsep + str(windows),
                FRAMEFIT_STATE_DIR=str(state), LOCALAPPDATA=str(work / "local app data"))
 
