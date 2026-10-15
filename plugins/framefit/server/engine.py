@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from contextlib import contextmanager
 import ctypes
 import hashlib
@@ -20,13 +21,19 @@ import uuid
 
 from PIL import Image
 import core
+import framefit_workflow as workflow
 
 ID = re.compile(r"^[a-zA-Z0-9_-]{1,100}$")
 DEFAULTS = dict(direction="landscape", templateId="landscape", detection="auto", rect=None,
-                fit="cover", zoom=100, resolution="1080p", quality="high", backend="auto")
+                fit="cover", zoom=100, resolution="1080p", quality="high", backend="auto",
+                language="auto", otherLanguage="", nameMode="compact", outputGroup="folder",
+                borderPolicy="ask", templateConfirmed=False, outputSize=None)
 CHOICES = dict(direction=("landscape", "portrait", "custom"), detection=("auto", "black", "white", "transparent"),
                fit=("cover", "contain", "stretch", "zoom"), resolution=("720p", "1080p", "4k", "original"),
-               quality=("high", "standard"), backend=("auto", "nvenc", "cpu"))
+               quality=("high", "standard"), backend=("auto", "nvenc", "cpu"),
+               language=("auto", "简中", "英", "日", "韩", "other", "none"),
+               nameMode=("compact", "full"), outputGroup=("folder", "project", "template"),
+               borderPolicy=("ask", "keep", "remove"))
 FIT_LABELS = {"等比填满（推荐）": "cover", "完整显示": "contain", "完整显示（可能留黑边）": "contain",
               "拉伸铺满": "stretch", "自由缩放": "zoom"}
 
@@ -138,9 +145,6 @@ class Engine:
         # GUI's _MEIPASS points inside _internal; portable release stores media at package root.
         core.ROOT = self.root
         self._media = os.getenv("FRAMEFIT_BIN_DIR")
-        if self._media:
-            original = core.binary
-            core.binary = lambda name: str(Path(self._media) / (name + (".exe" if os.name == "nt" else ""))) if (Path(self._media) / (name + (".exe" if os.name == "nt" else ""))).is_file() else original(name)
         self.state.mkdir(parents=True, exist_ok=True)
 
     def session_path(self, session_id):
@@ -148,6 +152,13 @@ class Engine:
 
     def task_path(self, task_id):
         return self.state / "tasks" / (valid_id(task_id) + ".json")
+
+    def desktop_settings_path(self):
+        return Path(os.getenv("LOCALAPPDATA", str(Path.home()))) / "FrameFit" / "settings.json"
+
+    def desktop_settings(self):
+        value = read_json(self.desktop_settings_path(), {})
+        return value if isinstance(value, dict) else {}
 
     def load_session(self, session_id):
         data = read_json(self.session_path(session_id))
@@ -210,6 +221,10 @@ class Engine:
             if cfg[key] not in choices:
                 raise ValueError(f"{key} 参数无效。")
         cfg["zoom"] = core.validate_zoom(cfg["zoom"])
+        requested_size = cfg.get('outputSize')
+        if requested_size is not None and (not isinstance(requested_size, list) or len(requested_size)!=2 or
+                any(isinstance(value,bool) or not isinstance(value,int) or value<2 or value>16384 or value%2 for value in requested_size)):
+            raise ValueError('outputSize 需要两个 2～16384 的正偶数。')
         template = cfg.get("template")
         if not template:
             template_id = cfg.get("templateId", cfg["direction"])
@@ -241,12 +256,14 @@ class Engine:
                 size = {"720p": (1280, 720), "1080p": (1920, 1080), "4k": (3840, 2160)}[cfg["resolution"]]
                 if cfg["direction"] == "portrait":
                     size = size[::-1]
+        if requested_size:
+            size = tuple(requested_size)
         cfg["template"] = str(template)
         cfg["rect"] = list(rect)
         cfg["outputDir"] = str(Path(cfg.get("outputDir") or Path.home() / "Videos" / "套版导出").expanduser().resolve())
         return cfg, list(size)
 
-    def prepare_config(self, videos=None, config=None, sessionId=None):
+    def prepare_config(self, videos=None, config=None, sessionId=None, itemConfigs=None, outputTemplates=None):
         with file_lock(self.state / "sessions.lock"):
             previous = self.load_session(sessionId) if sessionId else None
             incoming = dict(config or {})
@@ -255,8 +272,17 @@ class Engine:
                 name = incoming.pop("preset")
                 preset = next((p for p in self.presets() if p["name"] == name), None)
                 if preset is None:
+                    desktop_recipe = self.desktop_settings().get("recipes", {}).get(name)
+                    if isinstance(desktop_recipe, dict):
+                        preset = {"config": desktop_recipe.get("engineConfig") or desktop_recipe.get("config")}
+                        if outputTemplates is None and desktop_recipe.get('outputTemplates'):
+                            outputTemplates = desktop_recipe['outputTemplates']
+                if preset is None:
                     raise ValueError("未找到该预设。")
                 preset_config = preset["config"]
+                preset_config = {k: v for k, v in preset_config.items() if k not in ('templateConfirmed', 'borderPolicy')}
+            if outputTemplates is None and itemConfigs is None and previous is None and not incoming.get('template'):
+                outputTemplates = self.desktop_settings().get('outputTemplates') or None
             direction = incoming.get("direction", preset_config.get("direction", previous["config"]["direction"] if previous else "landscape"))
             if not previous or direction != previous["config"]["direction"]:
                 saved_profiles = read_json(self.state / "profiles.json", {})
@@ -279,20 +305,43 @@ class Engine:
             cfg, size = self.validate(cfg)
             if videos is None:
                 videos = [v["path"] for v in previous["videos"]] if previous else []
+                if previous and itemConfigs is None:
+                    itemConfigs = [dict(item.get('overrides',{}), outputKey=item.get('outputKey','')) for item in previous['videos']]
+            if itemConfigs is not None and (not isinstance(itemConfigs,list) or any(not isinstance(v,dict) for v in itemConfigs)):
+                raise ValueError('itemConfigs 需要配置对象数组。')
             if not isinstance(videos, list) or any(not isinstance(v, str) or not v.strip() for v in videos):
                 raise ValueError("videos 必须是视频路径数组。")
+            if outputTemplates is not None:
+                if not isinstance(outputTemplates,list) or not 1<=len(outputTemplates)<=100 or any(not isinstance(v,dict) for v in outputTemplates):
+                    raise ValueError('outputTemplates 需要 1～100 个套版设置。')
+                if itemConfigs is not None:
+                    raise ValueError('outputTemplates 与 itemConfigs 不能同时提供。')
+                source_paths = []
+                for value in videos:
+                    path = Path(value).expanduser().resolve()
+                    source_paths.extend(sorted(p for p in path.iterdir() if p.is_file() and p.suffix.lower() in {'.mp4','.mov','.mkv','.avi','.webm','.m4v','.ts','.wmv'}) if path.is_dir() else [path])
+                sources = list(dict.fromkeys(str(path) for path in source_paths))
+                videos = [path for path in sources for variant in outputTemplates]
+                itemConfigs = [dict(variant, outputKey=str(index), templateConfirmed=True)
+                               for path in sources for index,variant in enumerate(outputTemplates)]
             expanded = []
             extensions = {".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v", ".ts", ".wmv"}
             for value in videos:
                 path = Path(value).expanduser().resolve()
                 expanded.extend(sorted(p for p in path.iterdir() if p.is_file() and p.suffix.lower() in extensions) if path.is_dir() else [path])
             items, seen = [], set()
-            for path in expanded:
-                identity = os.path.normcase(str(path))
+            retained_overrides = []
+            for position,path in enumerate(expanded):
+                overrides = itemConfigs[position] if itemConfigs is not None and len(itemConfigs)==len(expanded) else {}
+                output_key = overrides.get('outputKey', '')
+                if not isinstance(output_key,str) or len(output_key)>100:
+                    raise ValueError('outputKey 需要最多 100 字符的字符串。')
+                identity = (os.path.normcase(str(path)),output_key)
                 if identity in seen:
                     continue
                 seen.add(identity)
-                item = dict(path=str(path), name=path.name)
+                item = dict(path=str(path), name=path.name, outputKey=output_key)
+                retained_overrides.append(overrides)
                 try:
                     if not path.is_file():
                         raise ValueError("视频不存在或当前不可访问。")
@@ -300,10 +349,64 @@ class Engine:
                 except Exception as exc:
                     item["error"] = str(exc)
                 items.append(item)
+            if itemConfigs is not None and (not isinstance(itemConfigs, list) or len(itemConfigs) not in (len(items),len(expanded)) or any(not isinstance(v, dict) for v in itemConfigs)):
+                raise ValueError('itemConfigs 需要与去重后的视频队列一一对应。')
+            if itemConfigs is not None and len(itemConfigs)==len(expanded):
+                itemConfigs = retained_overrides
+            desktop_workflow = bool(self.desktop_settings().get('machine'))
+            previous_items = {(item['path'],item.get('outputKey','')): item for item in previous.get('videos', [])} if previous else {}
+            for index, item in enumerate(items):
+                overrides = dict(itemConfigs[index]) if itemConfigs is not None else (
+                    dict(previous_items.get((item['path'],item.get('outputKey','')), {}).get('overrides', {})))
+                item['overrides'] = dict(overrides)
+                if item.get('error'):
+                    continue
+                item_cfg = dict(cfg)
+                item_rect_source = rect_source
+                output_name = overrides.pop('outputName', None)
+                overrides.pop('outputKey', None)
+                if output_name:
+                    item['outputName'] = self.safe_filename(output_name)
+                if 'template' in overrides and 'rect' not in overrides:
+                    item_cfg['rect'] = None
+                item_cfg.update(overrides)
+                if 'rect' in overrides:
+                    item_rect_source = 'auto' if overrides['rect'] is None else 'manual'
+                if desktop_workflow and not (item_cfg.get('templateConfirmed') or 'template' in overrides):
+                    query_size = None
+                    if item_cfg['resolution'] != 'original' and item_cfg['direction'] != 'custom':
+                        query_size = list({'720p':(1280,720), '1080p':(1920,1080), '4k':(3840,2160)}[item_cfg['resolution']])
+                        if item_cfg['direction'] == 'portrait':
+                            query_size.reverse()
+                    match = self.match_project_templates(item['name'], direction=item_cfg['direction'],
+                        outputSize=query_size)
+                    item['match'] = match
+                    if match['status'] == 'matched':
+                        chosen = match['candidates'][0]
+                        chosen_identity = os.path.normcase(str(Path(chosen['path']).resolve()))
+                        same_template = os.path.normcase(str(Path(item_cfg.get('template', '')).resolve())) == chosen_identity
+                        prior = previous_items.get((item['path'],item.get('outputKey','')), {})
+                        prior_cfg = prior.get('config', {})
+                        carry_manual = (prior.get('rectSource') == 'manual' and
+                            os.path.normcase(str(Path(prior_cfg.get('template', '')).resolve())) == chosen_identity and
+                            not any(key in incoming for key in ('rect', 'template', 'templateId', 'detection')) and 'rect' not in overrides)
+                        if carry_manual:
+                            item_cfg['rect'] = prior_cfg['rect']
+                        explicit_rect = incoming.get('rect') is not None or overrides.get('rect') is not None or (
+                            same_template and item_cfg.get('rect') is not None and rect_source == 'manual') or carry_manual
+                        item_cfg.update(template=chosen['path'], rect=item_cfg['rect'] if explicit_rect else None)
+                        item_rect_source = 'manual' if explicit_rect else 'auto'
+                    else:
+                        item['requiresTemplateReview'] = True
+                item['config'], item['outputSize'] = self.validate(item_cfg)
+                item['rectSource'] = item_rect_source
+                item['plannedOutput'] = self.planned_output(item)
             session = dict(sessionId=sessionId or uuid.uuid4().hex, version=self.version, config=cfg,
-                           videos=items, outputSize=size, rect=cfg["rect"], rectSource=rect_source, templates=self.templates(), presets=self.presets())
+                           videos=items, workflowEnabled=desktop_workflow, outputSize=size, rect=cfg["rect"], rectSource=rect_source, templates=self.templates(), presets=self.presets())
             atomic_json(self.session_path(session["sessionId"]), session)
             saved = dict(cfg)
+            saved['templateConfirmed'] = False
+            saved['borderPolicy'] = 'ask'
             if any(saved["template"] == t["path"] for t in session["templates"]):
                 saved.pop("template", None)
             if rect_source == "auto":
@@ -313,8 +416,35 @@ class Engine:
             atomic_json(self.state / "profiles.json", profiles)
             return session
 
-    def update_config(self, sessionId, config):
-        return self.prepare_config(None, config, sessionId)
+    def update_config(self, sessionId, config, itemConfigs=None):
+        return self.prepare_config(None, config, sessionId, itemConfigs)
+
+    @staticmethod
+    def safe_filename(value):
+        if not isinstance(value, str) or not value.strip() or value.endswith((' ', '.')) or re.search(r'[<>:"/\\|?*\x00-\x1f]', value):
+            raise ValueError('名称不可包含路径或 Windows 文件名禁用字符。')
+        if value.split('.')[0].upper() in {'CON', 'PRN', 'AUX', 'NUL', *(f'COM{i}' for i in range(1,10)), *(f'LPT{i}' for i in range(1,10))}:
+            raise ValueError('名称不能使用 Windows 保留名称。')
+        return value
+
+    def planned_output(self, item):
+        cfg, size = item['config'], item['outputSize']
+        parsed = workflow.parse_video_name(item['name'])
+        language = parsed['language'] if cfg['language'] == 'auto' else cfg['otherLanguage'] if cfg['language'] == 'other' else '' if cfg['language'] == 'none' else cfg['language']
+        name = item.get('outputName') or workflow.output_filename(item['name'], size, language)
+        project = item.get('match', {}).get('projectFolder') or parsed['projectFolder']
+        if cfg['nameMode'] == 'full' and not item.get('outputName'):
+            ratio = math.gcd(*size)
+            name = f"{parsed['baseName']}_{project}_{language or '无语言'}_{size[0]//ratio}-{size[1]//ratio}.mp4"
+        self.safe_filename(name)
+        if not name.lower().endswith('.mp4'):
+            raise ValueError('建议文件名必须以 .mp4 结尾。')
+        directory = Path(cfg['outputDir'])
+        if cfg['outputGroup'] == 'project':
+            directory /= self.safe_filename(project)
+        elif cfg['outputGroup'] == 'template':
+            directory /= self.safe_filename(Path(cfg['template']).stem)
+        return str(directory / name)
 
     def preview_frame(self, sessionId, videoIndex=0, seconds=1):
         import base64
@@ -331,8 +461,8 @@ class Engine:
         # Seeking after the last frame's PTS can yield no image, especially at low FPS.
         last_frame = max(0, (math.ceil(info["duration"] * info["fps"]) - 1) / info["fps"])
         seconds = min(seconds, math.floor(last_frame * 1e6) / 1e6)
-        cfg = session["config"]
-        image = core.preview(item["path"], cfg["template"], cfg["rect"], session["outputSize"], cfg["fit"], seconds, cfg["zoom"])
+        cfg = item.get('config', session['config'])
+        image = core.preview(item["path"], cfg["template"], cfg["rect"], item.get('outputSize', session['outputSize']), cfg["fit"], seconds, cfg["zoom"])
         image.thumbnail((1200, 1200))
         stream = io.BytesIO()
         image.save(stream, format="JPEG", quality=88)
@@ -343,9 +473,109 @@ class Engine:
         return dict(sessionId=sessionId, version=session["version"], seconds=seconds, previewPath=str(preview_path),
                     previewDataUrl="data:image/jpeg;base64," + base64.b64encode(data).decode())
 
+    def thumbnail(self, sessionId, videoIndex=0, seconds=0):
+        session = self.load_session(sessionId)
+        if not isinstance(videoIndex, int) or isinstance(videoIndex, bool) or not 0 <= videoIndex < len(session["videos"]):
+            raise ValueError("请选择队列中的视频。")
+        item = session["videos"][videoIndex]
+        if item.get("error"):
+            raise ValueError(item["error"])
+        seconds = float(seconds)
+        if not math.isfinite(seconds) or seconds < 0:
+            raise ValueError('缩略图时间需要是非负有限数字。')
+        seconds = min(seconds, max(0.0, item["info"]["duration"] - .15))
+        image = core.thumbnail(item["path"], seconds)
+        stream = io.BytesIO()
+        image.save(stream, format="JPEG", quality=76)
+        return dict(sessionId=sessionId, version=session["version"], seconds=seconds,
+                    thumbnailDataUrl="data:image/jpeg;base64," + base64.b64encode(stream.getvalue()).decode())
+
+    def source_borders(self, video, on_progress=None):
+        path = Path(video)
+        stat = path.stat()
+        key = hashlib.sha256(f"{path.resolve()}\0{stat.st_size}\0{stat.st_mtime_ns}".encode()).hexdigest()
+        cache = self.state / "analysis" / (key + ".json")
+        with file_lock(cache.with_suffix('.lock')):
+            source = read_json(cache)
+            if source is None:
+                source = core.analyze_borders(path, on_progress=on_progress) if on_progress else core.analyze_borders(path)
+                atomic_json(cache, source)
+        if on_progress:
+            on_progress(1.0)
+        return source
+
+    def analyze_borders(self, sessionId, videoIndex=0):
+        session = self.load_session(sessionId)
+        if not isinstance(videoIndex, int) or isinstance(videoIndex, bool) or not 0 <= videoIndex < len(session['videos']):
+            raise ValueError('请选择队列中的视频。')
+        item = session['videos'][videoIndex]
+        if item.get('error'):
+            raise ValueError(item['error'])
+        path = Path(item['path'])
+        source = self.source_borders(path)
+        cfg = item.get('config', session['config'])
+        composite = core.analyze_composite_borders(path, cfg["template"], cfg["rect"],
+                                                   item.get('outputSize', session['outputSize']), cfg["fit"], cfg["zoom"],
+                                                   source.get("segments", []))
+        return dict(sessionId=sessionId, version=session["version"], source=source,
+                    composite=composite, newBorders=composite["newBorders"])
+
+    def match_project_templates(self, filename, outputSize=None, direction=None):
+        if not isinstance(filename, str) or not filename.strip():
+            raise ValueError("请提供视频文件名。")
+        if direction not in (None, 'landscape', 'portrait', 'custom'):
+            raise ValueError('输出方向无效。')
+        if outputSize is not None and (not isinstance(outputSize, list) or len(outputSize) != 2 or
+                any(isinstance(value, bool) or not isinstance(value, int) or value < 2 for value in outputSize)):
+            raise ValueError('输出尺寸需要两个正整数。')
+        legacy = Path(os.getenv("LOCALAPPDATA", str(Path.home()))) / "FrameFit" / "settings.json"
+        config = read_json(legacy, {}) or {}
+        machine = config.get("machine", {})
+        schedule = machine.get("scheduleRoot", r"\\192.168.122.30\团队文件-圆串网络\任务排期\2026")
+        template = machine.get("templateRoot", r"D:\Wu liao")
+        mapping = dict(machine, projects=machine.get("projects", {}))
+        if not mapping.get("gameKeywords"):
+            mapping["gameKeywords"] = ["超凡", "无尽迷途"]
+        return workflow.find_project_candidates(filename, schedule, template, mapping, output_size=outputSize, direction=direction)
+
+    def manage_recipes(self, action, name=None, sessionId=None):
+        desktop_path = self.desktop_settings_path()
+        if action == "list":
+            local = self.desktop_settings().get("recipes", {})
+            return {"recipes": [dict(name=k, config=v)
+                                for k, v in local.items() if isinstance(v, dict)]}
+        if action not in ("save", "delete") or not isinstance(name, str) or not 1 <= len(name.strip()) <= 100:
+            raise ValueError("请选择 list/save/delete 并填写配方名称。")
+        with file_lock(self.state / "recipes.lock"):
+            settings = self.desktop_settings()
+            recipes = settings.get("recipes", {}) if isinstance(settings.get("recipes"), dict) else {}
+            if action == "save":
+                if not sessionId:
+                    raise ValueError("保存配方需要 sessionId。")
+                session = self.load_session(sessionId)
+                direction = session["config"]["direction"]
+                profile = settings.get("profiles", {}).get(direction, {})
+                recipe = recipes.get(name.strip(), {})
+                recipe.update(direction=direction, profile=profile,
+                              engineConfig=dict(session["config"], resolution=("original" if session["config"]["resolution"] == "original" else session["config"]["resolution"])),
+                              quality="高画质" if session["config"]["quality"] == "high" else "标准画质（文件更小）",
+                              backend={"auto": "自动（优先 GPU）", "nvenc": "NVIDIA GPU · NVENC", "cpu": "CPU · 兼容模式"}[session["config"]["backend"]],
+                              output=session["config"]["outputDir"], language=settings.get("language", "自动识别"),
+                              otherLanguage=settings.get("otherLanguage", ""), nameMode=settings.get("nameMode", "精简命名"),
+                              outputGroup=settings.get("outputGroup", "统一文件夹"))
+                recipes[name.strip()] = recipe
+            else:
+                recipes.pop(name.strip(), None)
+            settings["recipes"] = recipes
+            atomic_json(desktop_path, settings)
+        return {"recipes": [dict(name=k, config=v) for k, v in recipes.items()]}
+
     def _command(self, job_id):
         if getattr(sys, "frozen", False):
-            command = [sys.executable]
+            worker = self.root / "worker" / ("FrameFitWorker.exe" if os.name == "nt" else "FrameFitWorker")
+            if not worker.is_file():
+                raise RuntimeError("本机 FrameFit Worker 未安装，请重新安装软件包。")
+            command = [str(worker)]
         else:
             command = [sys.executable, str(Path(__file__).resolve())]
         return command + ["--runtime-root", str(self.root), "--state-dir", str(self.state), "--job", job_id]
@@ -355,8 +585,12 @@ class Engine:
         flags = subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
         log = self.state / "tasks" / (task["taskId"] + ".stderr.log")
         with open(log, "ab") as errors:
+            environment = dict(os.environ)
+            environment['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
+            if (self.root / 'bin').is_dir():
+                environment['FRAMEFIT_BIN_DIR'] = str(self.root / 'bin')
             proc = subprocess.Popen(self._command(task["taskId"]), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                                    stderr=errors, creationflags=flags, start_new_session=os.name != "nt")
+                                    stderr=errors, env=environment, creationflags=flags, start_new_session=os.name != "nt")
         # Worker owns later state; do not overwrite progress after spawning.
         return dict(task, pid=proc.pid)
 
@@ -377,13 +611,35 @@ class Engine:
             # Each task owns its immutable template snapshot as well as frozen parameters.
             task_assets = self.state / "tasks" / task_id
             task_assets.mkdir(parents=True, exist_ok=True)
-            template_snapshot = task_assets / ("template" + Path(cfg["template"]).suffix.lower())
-            shutil.copyfile(cfg["template"], template_snapshot)
-            cfg["template"] = str(template_snapshot)
+            shared_snapshot = task_assets / ('template' + Path(cfg['template']).suffix.lower())
+            shutil.copyfile(cfg['template'], shared_snapshot)
+            frozen_items = []
+            for index, video in enumerate(session['videos']):
+                item = dict(video, status='failed' if video.get('error') else 'queued', progress=0)
+                if not video.get('error'):
+                    if video.get('requiresTemplateReview'):
+                        raise ValueError(f"{video['name']}：{video.get('match', {}).get('message') or '项目套版需要确认'}；请选择候选或确认使用上次模板。")
+                    item_cfg, item_size = self.validate(video.get('config', cfg))
+                    if session.get('workflowEnabled') and item_cfg['borderPolicy'] != 'keep':
+                        report = self.analyze_borders(sessionId, index)
+                        if report['newBorders']:
+                            if item_cfg['borderPolicy'] == 'ask':
+                                raise ValueError(f"{video['name']}：检测到 {len(report['newBorders'])} 处套版新增黑白边；请查看 analyze_borders 并选择 borderPolicy=keep 或 remove。")
+                            if item_cfg['borderPolicy'] == 'remove':
+                                correction = core.remove_composite_borders(video['path'], item_cfg['template'], item_cfg['rect'], item_size,
+                                                                          item_cfg['fit'], item_cfg['zoom'], report['source']['segments'])
+                                item_cfg.update(fit=correction['fit'], zoom=correction['zoom'])
+                        item['borderReport'] = report
+                    snapshot = task_assets / (f'template-{index}' + Path(item_cfg['template']).suffix.lower())
+                    shutil.copyfile(item_cfg['template'], snapshot)
+                    item.update(config=item_cfg, outputSize=item_size, sourceTemplate=item_cfg['template'])
+                    item['plannedOutput'] = self.planned_output(item)
+                    item_cfg['template'] = str(snapshot)
+                frozen_items.append(item)
+            cfg['template'] = str(shared_snapshot)
             task = dict(taskId=task_id, sessionId=sessionId, version=self.version, runtimeRoot=str(self.root),
                         status="queued", progress=0, config=cfg, outputSize=size, createdAt=time.time(),
-                        items=[dict(path=v["path"], name=v["name"], status="failed" if v.get("error") else "queued",
-                                    progress=0, **({"error": v["error"]} if v.get("error") else {})) for v in session["videos"]])
+                        items=frozen_items)
             return self._start(task)
 
     def get_task(self, taskId):
@@ -410,8 +666,23 @@ class Engine:
             task = self.get_task(taskId)
             if task["status"] in ("running", "queued", "completed"):
                 return task
-            if Path(task["runtimeRoot"]).resolve() != self.root:
-                raise ValueError("继续任务必须使用任务原来的运行版本。")
+            pinned_root = Path(task["runtimeRoot"]).resolve()
+            if pinned_root != self.root:
+                if not (pinned_root / "runtime.json").is_file():
+                    raise ValueError("原任务版本已不可用，无法继续该任务。")
+                original_root = core.ROOT
+                pinned = Engine(pinned_root, self.state)
+                self.task_path(taskId).with_suffix(".cancel").unlink(missing_ok=True)
+                for item in task["items"]:
+                    if item["status"] != "completed":
+                        item.update(status="queued", progress=0)
+                        item.pop("error", None)
+                task.update(status="queued", createdAt=time.time())
+                task.pop("pid", None)
+                try:
+                    return pinned._start(task)
+                finally:
+                    core.ROOT = original_root
             self.task_path(taskId).with_suffix(".cancel").unlink(missing_ok=True)
             for item in task["items"]:
                 if item["status"] != "completed":
@@ -434,6 +705,8 @@ class Engine:
             if action == "save":
                 session = self.load_session(sessionId)
                 cfg = dict(session["config"])
+                cfg['templateConfirmed'] = False
+                cfg['borderPolicy'] = 'ask'
                 if session.get("rectSource") == "auto":
                     cfg["rect"] = None
                 # Built-in template path resolves against the current release at next use.
@@ -499,10 +772,13 @@ class Engine:
                         item.update(backend=value, backendNote=note)
                         save(True)
                     try:
-                        output = core.export(item["path"], cfg["template"], cfg["rect"], task["outputSize"], cfg["fit"],
-                                             cfg["outputDir"], 18 if cfg["quality"] == "high" else 23,
-                                             cancel=cancel, progress=progress, backend=cfg["backend"], on_backend=backend,
-                                             zoom=cfg["zoom"])
+                        item_cfg = item.get('config', cfg)
+                        destination = Path(item.get('plannedOutput') or item_cfg['outputDir'])
+                        output = core.export(item["path"], item_cfg["template"], item_cfg["rect"], item.get('outputSize', task['outputSize']), item_cfg["fit"],
+                                             destination.parent if item.get('plannedOutput') else destination,
+                                             18 if item_cfg["quality"] == "high" else 23,
+                                             cancel=cancel, progress=progress, backend=item_cfg["backend"], on_backend=backend,
+                                             zoom=item_cfg["zoom"], output_name=destination.name if item.get('plannedOutput') else None)
                         item.update(status="completed", progress=1, output=str(output))
                     except core.Cancelled:
                         item.update(status="cancelled")
@@ -536,7 +812,8 @@ def main():
         return
     try:
         request = json.load(sys.stdin)
-        allowed = ("prepare_config", "update_config", "preview_frame", "export_videos", "get_task", "cancel_task",
+        allowed = ("prepare_config", "update_config", "preview_frame", "thumbnail", "analyze_borders",
+                   "match_project_templates", "manage_recipes", "export_videos", "get_task", "cancel_task",
                    "resume_task", "manage_presets", "open_output")
         if request.get("action") not in allowed:
             raise ValueError("未知处理操作。")

@@ -1,7 +1,7 @@
 {
   "name": "framefit",
-  "version": "1.0.1",
-  "description": "Windows 本机视频批量套版，支持横竖转换、静帧预览、任务恢复和稳定版自动更新。",
+  "version": "1.2.0",
+  "description": "Windows 本机视频套版桌面软件与 Codex 插件，支持项目匹配、拖动预览、边缘检查和用户点击更新。",
   "author": {
     "name": "yuanchuan"
   },
@@ -10,7 +10,7 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "视频套版 FrameFit",
-    "shortDescription": "发来视频，批量套版；本机处理，稳定版自动更新",
+    "shortDescription": "本机软件设置与处理，Codex 共享项目模板和任务",
     "developerName": "yuanchuan",
     "category": "Productivity",
     "capabilities": [
@@ -19,7 +19,7 @@
     "logo": "./assets/icon.svg",
     "composerIcon": "./assets/icon.svg",
     "defaultPrompt": [
-      "把我提供的视频用内置横版模板套版，1080P，高画质，保留原声。"
+      "先用 FrameFit 本机软件配置，将我提供的视频批量套版，预览并检查黑白边后导出。"
     ]
   },
   "requires_local_executor": true
