@@ -1,6 +1,6 @@
 {
   "name": "framefit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Windows 本机视频批量套版，支持横竖转换、静帧预览、任务恢复和稳定版自动更新。",
   "author": {
     "name": "yuanchuan"
@@ -21,5 +21,6 @@
     "defaultPrompt": [
       "把我提供的视频用内置横版模板套版，1080P，高画质，保留原声。"
     ]
-  }
+  },
+  "requires_local_executor": true
 }
