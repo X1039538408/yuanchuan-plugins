@@ -111,4 +111,3 @@ misrepresented as being the original software.
 
 Jean-loup Gailly
 Mark Adler
-
