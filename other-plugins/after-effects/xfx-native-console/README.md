@@ -12,9 +12,9 @@ Windows x64 的 After Effects 原生插件安装器。安装器会自动发现�
 安装器支持命令行：
 
 ```powershell
-XFXNativeConsoleInstaller-1.0.17.exe --list
-XFXNativeConsoleInstaller-1.0.17.exe --target "D:\Adobe\Adobe After Effects 2026\Support Files"
-XFXNativeConsoleInstaller-1.0.17.exe --target "D:\Adobe\Adobe After Effects 2026\Support Files" --silent --log "D:\Logs\xfx-install.log"
+.\XFXNativeConsoleInstaller-1.0.17.exe --list
+.\XFXNativeConsoleInstaller-1.0.17.exe --target "D:\Adobe\Adobe After Effects 2026\Support Files"
+.\XFXNativeConsoleInstaller-1.0.17.exe --target "D:\Adobe\Adobe After Effects 2026\Support Files" --silent --log "D:\Logs\xfx-install.log"
 ```
 
 ## 功能
