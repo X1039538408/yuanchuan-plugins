@@ -2,6 +2,8 @@
 
 ## 2026-10-18
 
+- 为 XFX 中文控制台补充下载、安装与使用图文教程，包含六张配图及可离线阅读的静态网页。
+
 - 收录 XFX 中文控制台 1.0.17 Windows x64 一键安装器，放在 `other-plugins/after-effects/xfx-native-console/`。
 - 增加安装说明、SHA-256 校验值和测试版验收边界；不登记到 Codex `marketplace.json`。
 
@@ -30,4 +32,3 @@
 - 收录 Seedance 创意导演 0.1.24。
 - 增加 GitHub 市场目录、安装与更新说明。
 - 原有创意、约束、控制器文件保持不变。
-
