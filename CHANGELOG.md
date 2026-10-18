@@ -1,5 +1,10 @@
 # 更新记录
 
+## 2026-10-18
+
+- 收录 XFX 中文控制台 1.0.17 Windows x64 一键安装器，放在 `other-plugins/after-effects/xfx-native-console/`。
+- 增加安装说明、SHA-256 校验值和测试版验收边界；不登记到 Codex `marketplace.json`。
+
 ## FrameFit 插件 1.0.1
 
 - 修复真实 Codex 客户端未加载 MCP 工具的问题：采用 Codex 兼容清单与插件相对工作目录，保留首次下载超时配置。
