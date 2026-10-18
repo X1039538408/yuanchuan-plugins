@@ -2,6 +2,8 @@
 
 Windows x64 的 After Effects 原生插件安装器。安装器会自动发现已登记的 After Effects 安装目录，写入 XFXNativeConsole.aex、中文默认词库、第三方声明和中文工具栏脚本。
 
+**第一次使用？请先看 [下载、安装与使用图文教程](tutorial/README.md)。** 包含 GitHub 下载按钮实拍、安装流程图、搜索、快捷槽、设置和快照截图。
+
 ## 一键安装
 
 1. 完全关闭 After Effects，并保存工程。
