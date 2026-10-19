@@ -1,27 +1,27 @@
-# XFX 中文控制台 · 下载、安装与使用图文教程
+# 效果控制台 · 下载、安装与使用图文教程
 
-适用 Windows x64 / After Effects，当前发布版本 **1.0.17 测试版**。更新日期：2026-10-18。无需 Python、Node 或 .NET。
+适用 Windows x64 / After Effects，当前发布版本 **1.0.18 测试版**。更新日期：2026-10-19。无需 Python、Node 或 .NET。
 
-[下载一键安装 EXE](https://github.com/X1039538408/yuanchuan-plugins/raw/refs/heads/main/other-plugins/after-effects/xfx-native-console/XFXNativeConsoleInstaller-1.0.17.exe) · [插件发布目录](https://github.com/X1039538408/yuanchuan-plugins/tree/main/other-plugins/after-effects/xfx-native-console) · [离线网页教程](index.html)
+[下载一键安装 EXE](https://github.com/X1039538408/yuanchuan-plugins/raw/refs/heads/main/other-plugins/after-effects/xfx-native-console/EffectConsoleInstaller-1.0.18.exe) · [插件发布目录](https://github.com/X1039538408/yuanchuan-plugins/tree/main/other-plugins/after-effects/xfx-native-console) · [离线网页教程](index.html)
 
-> 安装前先保存工程并退出所有 AE。此版安装器会强制结束仍运行的 AE，未保存工程会丢失。
+> 安装前先保存工程并退出所有 AE。如果 AE 仍在运行，安装器会停止并提示先保存工程、自行退出后重试，不会关闭 AE。
 
 ## 1. 从 GitHub 下载
 
-**直接下载：** 点击上方“下载一键安装 EXE”，浏览器将下载 **XFXNativeConsoleInstaller-1.0.17.exe**（约 5 MB，无需解压）。
+**直接下载：** 点击上方“下载一键安装 EXE”，浏览器将下载 **EffectConsoleInstaller-1.0.18.exe**（约 5 MB，无需解压）。
 
 **从仓库查找：** 打开插件发布目录，进入 other-plugins → after-effects → xfx-native-console，点击同名 EXE 文件。在文件页右上角点击向下箭头 **Download raw file（下载原始文件）**；也可点击 **Raw / View raw（原始版 / 查看原始内容）**。
 
 ![GitHub 文件页右上角：原始版、复制和向下箭头下载按钮](images/github-download.png)
 
-*图 1：2026-10-18 GitHub 文件页下载控件实拍。向下箭头在“原始版”和复制按钮右侧；浏览器翻译可能改变文字。页面提示无法预览二进制文件属于正常情况，使用下载按钮即可。*
+*图 1：2026-10-19 GitHub 文件页下载控件实拍。向下箭头在“原始版”和复制按钮右侧；浏览器翻译可能改变文字。页面提示无法预览二进制文件属于正常情况，使用下载按钮即可。*
 
 下载后检查文件名以 .exe 结尾。如果取得的是网页 HTML，请返回文件页使用下载原始文件入口。无需克隆仓库、下载整个源码 ZIP 或在 Codex 市场安装。
 
-可选校验：在 PowerShell 运行 `Get-FileHash .\XFXNativeConsoleInstaller-1.0.17.exe -Algorithm SHA256`，应与下值一致：
+可选校验：在 PowerShell 运行 `Get-FileHash .\EffectConsoleInstaller-1.0.18.exe -Algorithm SHA256`，应与下值一致：
 
 ```text
-B5B922563E34B3E89B8063EA82CBC25569989976D4DE14889CBE8F93EC860C45
+01DE106025E3FF74FC733910B840CE7CD7D0B4F6038807F74D6D86212E7D6384
 ```
 
 ## 2. 安装到 After Effects
@@ -31,17 +31,17 @@ B5B922563E34B3E89B8063EA82CBC25569989976D4DE14889CBE8F93EC860C45
 *图 2：下载安装流程示意，不是 Windows 安装窗口截图。*
 
 1. **保存工程并完全退出所有 AE。** 确认没有仍在运行的 After Effects。
-2. 双击刚下载的 **XFXNativeConsoleInstaller-1.0.17.exe**。
+2. 双击刚下载的 **EffectConsoleInstaller-1.0.18.exe**。
 3. Windows 出现管理员权限提示时，核对是你刚启动的安装器后，选择“是”。
 4. 等待安装结果，查看窗口列出的实际 AE 安装目录。安装器会自动发现有效 AE 目录并尝试安装到所有发现的版本。
-5. 重新打开 AE，在“窗口”菜单查找 **XFX 中文控制台**，或按默认 **Ctrl+空格**。
+5. 重新打开 AE，在“窗口”菜单查找 **效果控制台**，或按默认 **Ctrl+空格**。
 
 **安装成功后你会得到什么？** AEX 插件、默认中文词库、第三方许可和中文 ScriptUI 工具栏。已有自定义词库、个人设置和旧版图片保留；旧安装文件保留备份。
 
 如果没有检测到自定义目录，可在已下载 EXE 的目录打开 PowerShell，并指定 AE 的 **Support Files** 目录：
 
 ```powershell
-.\XFXNativeConsoleInstaller-1.0.17.exe --target 'D:\Adobe\Adobe After Effects 2026\Support Files'
+.\EffectConsoleInstaller-1.0.18.exe --target 'D:\Adobe\Adobe After Effects 2026\Support Files'
 ```
 
 上面路径只是示例，请替换为你的真实安装位置；发现 AE 目录不表示该版本已完成兼容性实测。Windows 阻止运行时，先确认来源与 SHA-256，并阅读系统给出的原因；若未获允许，安装不会完成。
@@ -97,7 +97,7 @@ B5B922563E34B3E89B8063EA82CBC25569989976D4DE14889CBE8F93EC860C45
 
 *图 6：已有 1.0.17 AE 宿主快照保存框实拍，路径和文件名为测试示例。历史截图不代表当前构建完成全部宿主验收。*
 
-确认后才按完整分辨率渲染，取消不生成文件。1.0.17 已移除旧快照图库与固定截图位置；旧图片保留。
+确认后才按完整分辨率渲染，取消不生成文件。1.0.18 已移除旧快照图库与固定截图位置；旧图片保留。
 
 导出入口另提供透明 PNG、白底 JPG 和图片剪贴板。高位深及色彩管理项目需核对输出颜色；跨应用粘贴仍需实机验收。
 
@@ -112,6 +112,16 @@ B5B922563E34B3E89B8063EA82CBC25569989976D4DE14889CBE8F93EC860C45
 | 效果没有应用 | 检查当前合成和图层选择，查看错误提示，必要时 Ctrl+Z |
 | 搜不到某个效果 | 尝试英文原名，确认 AE 已安装对应效果；编辑词库后刷新索引 |
 
-**卸载：** 保存工程并退出 AE，在每个已安装的 Support Files 中移除 Plug-ins\XFXNativeConsole.aex 即可停用；工具栏可移除 Scripts\ScriptUI Panels\XFX 中文控制台.jsx。保留个人词库、文档目录中的 LoYoi\XFXNative 和备份。完整回滚步骤见[安装说明](https://github.com/X1039538408/yuanchuan-plugins/tree/main/other-plugins/after-effects/xfx-native-console/INSTALL.md)。
+**卸载：** 保存工程并退出 AE，在每个已安装的 Support Files 中移除 Plug-ins\XFXNativeConsole.aex 即可停用；工具栏可移除 Scripts\ScriptUI Panels\效果控制台.jsx。保留个人词库、文档目录中的 LoYoi\XFXNative 和备份。完整回滚步骤见[安装说明](https://github.com/X1039538408/yuanchuan-plugins/tree/main/other-plugins/after-effects/xfx-native-console/INSTALL.md)。
 
-当前为测试版；物理按键、输入法组合、全部第三方效果及 ScriptUI 完整停靠仍待验收。本次构建的 UI 和快照测试失败记录见[验证说明](https://github.com/X1039538408/yuanchuan-plugins/tree/main/other-plugins/after-effects/xfx-native-console/VERIFICATION.md)，不能把配图理解为全部功能验收通过。
+当前为测试版；物理按键、输入法组合、全部第三方效果及 ScriptUI 完整停靠仍待验收。当前版本构建与已知验收限制见[验证说明](https://github.com/X1039538408/yuanchuan-plugins/tree/main/other-plugins/after-effects/xfx-native-console/VERIFICATION.md)，不能把配图理解为全部功能验收通过。
+
+## 8. 一键卸载与手动删除
+
+先保存工程并自行退出 AE，下载并运行 [EffectConsoleUninstaller-1.0.18.exe](https://github.com/X1039538408/yuanchuan-plugins/raw/refs/heads/main/other-plugins/after-effects/xfx-native-console/EffectConsoleUninstaller-1.0.18.exe)，允许管理员权限，核对目标目录并确认。AE 仍运行时会提示保存退出，不会结束进程。
+
+![保存退出、确认卸载、检查入口消失的卸载流程示意](images/uninstall-flow.svg)
+
+*流程示意，不是 Windows 卸载实拍。卸载只移除本插件活动文件，保留个人词库、设置、旧快照及备份。旧图若出现 XFX 名称，属于历史截图；当前名称为效果控制台。*
+
+详见 [一键卸载、手动删除和个人数据清理图文教程](https://github.com/X1039538408/yuanchuan-plugins/blob/main/other-plugins/after-effects/xfx-native-console/UNINSTALL.md)。[浏览源码](https://github.com/X1039538408/yuanchuan-plugins/tree/main/other-plugins/after-effects/xfx-native-console/source) 或 [下载源码 ZIP](https://github.com/X1039538408/yuanchuan-plugins/raw/refs/heads/main/other-plugins/after-effects/xfx-native-console/EffectConsole-1.0.18-source.zip)。

@@ -1,45 +1,26 @@
-# XFX 中文控制台（After Effects）
+# 效果控制台（After Effects）
 
-Windows x64 的 After Effects 原生插件安装器。安装器会自动发现已登记的 After Effects 安装目录，写入 XFXNativeConsole.aex、中文默认词库、第三方声明和中文工具栏脚本。
+原 XFX 中文控制台，现名 **效果控制台**。Windows x64 原生 AEX 插件，当前为 **1.0.18 测试版**。
 
-**第一次使用？请先看 [下载、安装与使用图文教程](tutorial/README.md)。** 包含 GitHub 下载按钮实拍、安装流程图、搜索、快捷槽、设置和快照截图。
+- [下载一键安装器 EffectConsoleInstaller-1.0.18.exe](https://github.com/X1039538408/yuanchuan-plugins/raw/refs/heads/main/other-plugins/after-effects/xfx-native-console/EffectConsoleInstaller-1.0.18.exe)
+- [下载一键卸载器 EffectConsoleUninstaller-1.0.18.exe](https://github.com/X1039538408/yuanchuan-plugins/raw/refs/heads/main/other-plugins/after-effects/xfx-native-console/EffectConsoleUninstaller-1.0.18.exe)
+- [下载、安装与使用图文教程](tutorial/README.md)
+- [一键卸载、手动删除与个人数据清理教程](UNINSTALL.md)
+- [浏览完整原生源码](source/README.md) · [下载源码 ZIP](EffectConsole-1.0.18-source.zip)
+- [安装与回滚](INSTALL.md) · [使用说明](USAGE.md) · [构建验证和已知限制](VERIFICATION.md) · [第三方许可](THIRD-PARTY-NOTICES.txt) · [SHA-256](SHA256SUMS.txt)
 
-## 一键安装
+## 安装或卸载前
 
-1. 完全关闭 After Effects，并保存工程。
-2. [下载 XFXNativeConsoleInstaller-1.0.17.exe](https://github.com/X1039538408/yuanchuan-plugins/raw/refs/heads/main/other-plugins/after-effects/xfx-native-console/XFXNativeConsoleInstaller-1.0.17.exe) 并运行。
-3. 在 Windows 管理员权限提示中选择“是”。安装器会显示实际写入的 AE 目录。
-4. 重新打开 AE，按 **Ctrl+Space**，或从“窗口”菜单打开 XFX 中文控制台。
+请先切回 AE 保存所有工程，再自行退出所有 AE。检测到 AE 正在运行时，安装器和卸载器都会停止并提示先保存、退出后重新运行，**不会结束进程，也不会向 AE 发送关闭请求**。静默模式仍会阻止操作，返回 1 并记录原因。
 
-安装器支持命令行：
+安装器会尝试处理全部发现的有效 AE 目录；自定义路径可用 --target 指定。卸载器运行后会列出目标，确认后仅移除本插件的活动文件。个人设置、用户词库、快照与备份保留。无需 Python、Node 或 .NET。
 
-```powershell
-.\XFXNativeConsoleInstaller-1.0.17.exe --list
-.\XFXNativeConsoleInstaller-1.0.17.exe --target "D:\Adobe\Adobe After Effects 2026\Support Files"
-.\XFXNativeConsoleInstaller-1.0.17.exe --target "D:\Adobe\Adobe After Effects 2026\Support Files" --silent --log "D:\Logs\xfx-install.log"
-```
+## 功能与兼容
 
-## 功能
+中文、全拼、首字母和英文搜索；收藏、置顶、九个快捷槽；合成帧快照与导出；主题与用户译名词库。默认 Ctrl+空格，旧配置中自定义按键保留。
 
-- 中文、全拼、首字母和英文搜索效果及预设。
-- 收藏、最近使用、置顶排序和九个快捷槽。
-- 当前合成帧 PNG 快照、透明 PNG、白底 JPG 和剪贴板导出。
-- 中文 ScriptUI 工具栏、深浅主题和用户译名词库。
+技术文件名 XFXNativeConsole.aex、个人数据目录 LoYoi/XFXNative 和仓库目录名保持兼容。升级时旧“XFX 中文控制台.jsx”备份后停用，新工具栏为“效果控制台.jsx”。
 
-## 版本边界
+本仓库源码需自行准备 Adobe AE SDK，SDK 和参考软件不分发。自有代码尚未声明开源许可；第三方内容保留其许可。当前版本尚未完成最新真实 AE 宿主、全部第三方效果及全部 UI 验收，见 VERIFICATION.md。
 
-这是 1.0.17 测试版。未知第三方效果保留原名；完整第三方效果覆盖、物理输入法组合、原版逐像素对照和 ScriptUI 拖入 AE 分组后的停靠仍需人工验收。安装器会保留用户词库和旧文件备份。
-
-**请先保存工程并退出 AE。此版安装器会强制结束仍在运行的 AE 进程，未保存工程会丢失。** 安装时会尝试更新所有发现的有效 AE 目录；这不表示所有 AE 版本已经实测兼容。
-
-[安装、卸载和回滚说明](INSTALL.md) · [使用说明](USAGE.md) · [本次构建验证](VERIFICATION.md) · [第三方许可](THIRD-PARTY-NOTICES.txt)
-
-本次仅分发安装器和说明，不分发 Adobe SDK 或参考软件安装包。本仓库未为 XFX 自有代码声明开源许可；第三方内容按随包声明保留许可。无需额外登录，无需 Python、Node 或 .NET。
-
-SHA-256：
-
-```text
-B5B922563E34B3E89B8063EA82CBC25569989976D4DE14889CBE8F93EC860C45  XFXNativeConsoleInstaller-1.0.17.exe
-```
-
-本目录按市场仓库贡献指南作为非 Codex、Windows/After Effects 插件收录，不登记到 Codex marketplace.json。
+此为 AE 插件，不能通过 Codex 市场直接安装。旧 1.0.17 安装器已从当前主线移除，请使用 1.0.18；历史提交中的旧 EXE 不再作为下载入口。

@@ -1,50 +1,34 @@
-# XFX 中文控制台安装、升级和卸载
+# 效果控制台 1.0.18 安装与卸载
 
-适用 Windows x64 / After Effects。此包为 1.0.17 测试版，宿主验收边界见 [VERIFICATION.md](VERIFICATION.md)。
+请先保存工程并自行退出所有 AE，再运行 XFXNativeConsoleInstaller.exe（源码构建产物名）。发行包名称为 EffectConsoleInstaller-1.0.18.exe。需要 Windows 管理员权限。
 
-## 一键安装
+AE 正在运行时安装器会停止并提示先保存、退出后重试；不会结束或发送关闭请求给 AE。静默模式返回 1 并记录原因。安装或卸载均有相同保护。
 
-1. 保存所有工程并完全退出 AE。**此版安装器会强制结束仍在运行的 After Effects 进程，未保存工程会丢失。**
-2. 双击本目录的 `XFXNativeConsoleInstaller-1.0.17.exe`，接受 Windows 管理员权限提示。
-3. 安装完成后查看实际安装目录，重新打开 AE，按默认的 `Ctrl+Space` 或从“窗口”菜单打开 XFX 中文控制台。原配置中自定义的快捷键保留。
+## 安装
 
-安装器从 Adobe 的 HKLM/HKCU 注册表和常见 Program Files 目录发现所有有效 AE 目录，每个目标需已有 AfterFX.exe（或 AfterFXBeta.exe）及 Plug-ins 文件夹。会尝试安装到全部发现的有效目录；发现目录不表示该版本已通过兼容性测试。便携或未登记目录可显式指定。
-
-## 命令行
-
-在已下载文件的目录打开 PowerShell：
+默认检测 Adobe 注册表和常见 Program Files 中的有效 AE，安装到所有发现的目录；可用 --target 指定一个 Support Files。发现目录不表示宿主兼容性已经实测。
 
 ```powershell
-# 仅查看目标目录，不安装
-.\XFXNativeConsoleInstaller-1.0.17.exe --list
-
-# 安装到指定 Support Files
-.\XFXNativeConsoleInstaller-1.0.17.exe --target 'D:\Adobe\Adobe After Effects 2026\Support Files'
-
-# 等待完成并取得退出码；静默模式仍要求管理员权限
-$process = Start-Process -FilePath '.\XFXNativeConsoleInstaller-1.0.17.exe' -ArgumentList '--silent' -Wait -PassThru
-$process.ExitCode
+.\EffectConsoleInstaller-1.0.18.exe --list
+.\EffectConsoleInstaller-1.0.18.exe --target 'D:\Adobe\Adobe After Effects 2026\Support Files'
 ```
 
-`--help` 查看参数，`/quiet` 等同于 `--silent`；退出码 0 为成功、1 为失败。默认日志在系统“文档”目录 `LoYoi\XFXNative\install.log`；`--log` 可指定位置。EXE 使用编译时内置资源，无需下载额外脚本运行时。
+写入 Plug-ins 下的 XFXNativeConsole.aex、XFXNativeConsole.aliases.default.tsv、XFXNativeConsole.THIRD-PARTY-NOTICES.txt 及 Scripts/ScriptUI Panels/效果控制台.jsx。旧 XFX 中文控制台.jsx 备份后移除活动入口；用户词库和个人设置保留。新装默认 Ctrl+Space，已有自定义快捷键保留。
 
-## 升级与备份
+## 一键卸载
 
-安装器写入四个文件：
+双击 EffectConsoleUninstaller-1.0.18.exe（源码构建输出 installer/EffectConsoleUninstaller.exe），允许管理员权限，核对目录并确认。安装器也支持 --uninstall。未指定目标时处理全部检测到的有效 AE 目录。
 
-- `Plug-ins\XFXNativeConsole.aex`
-- `Plug-ins\XFXNativeConsole.aliases.default.tsv`
-- `Plug-ins\XFXNativeConsole.THIRD-PARTY-NOTICES.txt`
-- `Scripts\ScriptUI Panels\XFX 中文控制台.jsx`
+卸载只移除上述四个文件以及旧 XFX 中文控制台.jsx；用户词库、settings.ini、旧快照、备份和其他插件保持原样。不删除整个目录。目录联接和符号链接路径会被拒绝。
 
-多目标安装使用同一文件事务；失败时尝试逆序恢复旧文件。成功后的旧文件保留为 `.backup-时间戳`。断电或进程崩溃不保证自动恢复，可按日志和备份手动恢复。
+## 日志、回滚和数据
 
-已有 `Plug-ins\XFXNativeConsole.aliases.tsv`、文档目录下用户词库和个人设置保留。旧 XFXEnhancerBridge 脚本改名为 `.disabled-时间戳` 备份；其他厂商插件和脚本保持原样。
+默认日志为系统“文档”目录 LoYoi/XFXNative/install.log，--log 指定其他位置；--silent 不弹确认或结果框，需要调用者自行等待进程。退出码 0 成功，1 未完成。
 
-1.0.17 已移除旧快照图库、固定截图位置和清缓存入口；旧图片保留，新快照保存到另存为对话框选择的位置。
+安装事务跨多个目标；失败时尝试恢复已移动的旧文件。成功后 .backup-* 和 .disabled-* 备份保留。卸载先暂存所有固定文件，暂存失败时恢复；删除暂存文件失败会返回 1 并列出残留文件。断电或崩溃不保证自动恢复。
 
-## 卸载和回滚
+手动卸载时先保存工程并退出 AE，再仅移除本插件的 AEX 和工具栏等固定文件。可选个人数据清理与详细图文步骤见发布目录 UNINSTALL.md；不要删除其他插件、整个 Plug-ins 或用户文档目录。
 
-先保存工程并退出 AE。在安装成功窗口列出的每个 Support Files 目录中删除 `Plug-ins\XFXNativeConsole.aex` 即可停用；可选移除默认词库、第三方声明及 `Scripts\ScriptUI Panels\XFX 中文控制台.jsx`。保留个人词库、文档目录下的 LoYoi\XFXNative 和备份文件，以便恢复。
+## 源码与构建
 
-回滚时移走当前文件，将对应 `.backup-时间戳` 恢复为原名。工具栏 JSX 和 AEX 应配套恢复。不要删除其他厂商文件。
+在源码根目录运行 pwsh -File scripts/build-effect-console-release.ps1。Adobe SDK 需自行获取；不会随源码分发。最终用户无需 Python、Node 或 .NET。构建不等于最新 AE 宿主全部验收通过，当前仍为测试版。
