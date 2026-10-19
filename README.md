@@ -15,7 +15,7 @@
 
 | 插件 | 简介 | 下载与使用 |
 | --- | --- | --- |
-| XFX 中文控制台 | Windows x64 原生插件，提供中文／拼音效果搜索、快捷槽和合成快照，当前为测试版。 | [详细介绍](docs/xfx-native-console.md) · [一键安装器与说明](other-plugins/after-effects/xfx-native-console/README.md) |
+| 效果控制台 | Windows x64 原生插件，提供中文／拼音效果搜索、快捷槽和合成快照，当前为测试版。 | [详细介绍](docs/xfx-native-console.md) · [一键安装器与说明](other-plugins/after-effects/xfx-native-console/README.md) |
 
 此类插件通过 EXE 安装到 After Effects，不通过下方 Codex 市场入口安装。
 

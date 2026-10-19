@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64"><Configuration>Debug</Configuration><Platform>x64</Platform></ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2D4D9F5E-9E2D-4CC2-B7B7-10A38B4216D5}</ProjectGuid>
+    <RootNamespace>XFXNativeConsole</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType><UseOfMfc>false</UseOfMfc><PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType><UseOfMfc>false</UseOfMfc><PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <OutDir Condition="'$(AE_PLUGIN_BUILD_DIR)'!=''">$(AE_PLUGIN_BUILD_DIR)\AEGP\</OutDir>
+    <OutDir Condition="'$(AE_PLUGIN_BUILD_DIR)'==''">$(ProjectDir)..\..\artifacts\native\AEGP\</OutDir>
+    <IntDir>$(ProjectDir)obj\$(Platform)\$(Configuration)\</IntDir>
+    <TargetExt>.aex</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\vendor\ae-sdk\Examples\Headers;$(ProjectDir)..\..\vendor\ae-sdk\Examples\Headers\SP;$(ProjectDir)..\..\vendor\ae-sdk\Examples\Headers\Win;$(ProjectDir)..\..\vendor\ae-sdk\Examples\Resources;$(ProjectDir)..\..\vendor\ae-sdk\Examples\Util;$(ProjectDir)..\src;$(ProjectDir)..\..\vendor\zlib-inflate;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MSWindows;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary><WarningLevel>Level3</WarningLevel><TreatWarningAsError>false</TreatWarningAsError>
+      <LanguageStandard>stdcpp20</LanguageStandard><AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link><OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile><GenerateDebugInformation>true</GenerateDebugInformation><RandomizedBaseAddress>true</RandomizedBaseAddress><TargetMachine>MachineX64</TargetMachine><AdditionalDependencies>imm32.lib;uxtheme.lib;gdiplus.lib;comdlg32.lib;comctl32.lib;ole32.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\vendor\ae-sdk\Examples\Headers;$(ProjectDir)..\..\vendor\ae-sdk\Examples\Headers\SP;$(ProjectDir)..\..\vendor\ae-sdk\Examples\Headers\Win;$(ProjectDir)..\..\vendor\ae-sdk\Examples\Resources;$(ProjectDir)..\..\vendor\ae-sdk\Examples\Util;$(ProjectDir)..\src;$(ProjectDir)..\..\vendor\zlib-inflate;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MSWindows;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary><WarningLevel>Level3</WarningLevel><TreatWarningAsError>false</TreatWarningAsError>
+      <LanguageStandard>stdcpp20</LanguageStandard><AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link><OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile><RandomizedBaseAddress>true</RandomizedBaseAddress><TargetMachine>MachineX64</TargetMachine><AdditionalDependencies>imm32.lib;uxtheme.lib;gdiplus.lib;comdlg32.lib;comctl32.lib;ole32.lib;windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ResourceCompile Include="XFXNativeConsole_PiPL.rc" />
+    <ClCompile Include="XFXNativeConsole.cpp" />
+    <ClCompile Include="..\src\search_core.cpp" />
+    <ClCompile Include="..\src\settings.cpp" />
+    <ClCompile Include="..\src\ime_controller.cpp" />
+    <ClCompile Include="..\src\hotkey.cpp" />
+    <ClCompile Include="..\src\ae_script.cpp" />
+    <ClCompile Include="..\src\ae_capture.cpp" />
+    <ClCompile Include="..\src\console_support.cpp" />
+    <ClCompile Include="..\src\catalog_customization.cpp" />
+    <ClCompile Include="..\src\text_input_dialog.cpp" />
+    <ClCompile Include="..\src\extendscript_bridge.cpp" />
+    <ClCompile Include="..\src\ui_theme.cpp" />
+    <ClCompile Include="..\src\themed_menu.cpp" />
+    <ClCompile Include="..\src\gallery_model.cpp" />
+    <ClCompile Include="..\src\thumbnail_list.cpp" />
+    <ClCompile Include="..\src\thumbnail_cache.cpp" />
+    <ClCompile Include="..\src\fxs_archive.cpp" />
+    <ClCompile Include="..\..\vendor\zlib-inflate\adler32.c" />
+    <ClCompile Include="..\..\vendor\zlib-inflate\inflate.c" />
+    <ClCompile Include="..\..\vendor\zlib-inflate\inffast.c" />
+    <ClCompile Include="..\..\vendor\zlib-inflate\inftrees.c" />
+    <ClCompile Include="..\..\vendor\zlib-inflate\zutil.c" />
+    <ClCompile Include="..\..\vendor\zlib-inflate\crc32.c" />
+    <ClCompile Include="..\..\vendor\ae-sdk\Examples\Util\AEGP_SuiteHandler.cpp" />
+    <ClCompile Include="..\..\vendor\ae-sdk\Examples\Util\MissingSuiteError.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
