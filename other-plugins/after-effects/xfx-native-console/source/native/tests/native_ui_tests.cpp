@@ -6,12 +6,12 @@
 
 static PF_App_Color simulated_host_color{7196,7196,7196};
 static PF_Err fake_background(PF_App_Color* color) { *color=simulated_host_color;return 0; }
-static SPErr fake_acquire(const char* name,int32,const void** suite) {
+static SPErr fake_acquire(const char* name,int,const void** suite) {
     static PFAppSuite6 app{};app.PF_AppGetBgColor=fake_background;
     if(std::strcmp(name,kPFAppSuite)!=0)return -1;
     *suite=&app;return 0;
 }
-static SPErr fake_release(const char*,int32) {return 0;}
+static SPErr fake_release(const char*,int) {return 0;}
 
 static unsigned long long loading_pixels(HWND window) {
     RECT rect{};GetClientRect(window,&rect);
@@ -287,8 +287,20 @@ int wmain(int argc, wchar_t** argv) {
         std::ofstream(directory / L"aliases.user.tsv") <<
             "\xEF\xBB\xBF\tGlow\t自定义辉光\t\t\t自定义\n";
         const auto aliases = load_aliases();
-        assert(aliases.by_english_name.at("Glow").chinese_name == L"自定义辉光");
-        assert(aliases.by_english_name.at("Glow").priority > aliases.by_match_name.at("ADBE Glo2").priority);
+        assert(aliases.by_english_name.at("glow").chinese_name == L"自定义辉光");
+        assert(aliases.by_english_name.at("glow").priority > aliases.by_match_name.at("adbe glo2").priority);
+        AliasEntry drop_shadow;
+        drop_shadow.english_name = "Drop Shadow";
+        assert(safe_effect_display_name(L"iy", &drop_shadow) == L"Drop Shadow");
+        assert(safe_effect_display_name(L"阴影", &drop_shadow) == L"阴影");
+        AliasEntry photoshop_drop_shadow;
+        photoshop_drop_shadow.match_name = "ADBE PSL Drop Shadow";
+        photoshop_drop_shadow.chinese_name = L"Photoshop 投影";
+        assert(alias_display_fallback(photoshop_drop_shadow) == "Photoshop Drop Shadow");
+        assert(safe_effect_display_name(L"Photoshop iy", &photoshop_drop_shadow) == L"Photoshop Drop Shadow");
+        // Valid UTF-8 runtime labels must survive on ACP/GBK hosts even when
+        // they are not CJK; this guards accented vendor names and symbols.
+        assert(runtime_text_to_wide("Caf\xC3\xA9") == L"Caf\u00E9");
     }
     g_test_catalog = {
         {L"Gaussian Blur", "gaosimohu", "gsmh", "Gaussian Blur", "ADBE Gaussian Blur 2", L"效果", "ae"},
@@ -337,6 +349,32 @@ int wmain(int argc, wchar_t** argv) {
         else return 2;
         death_hook(nullptr, reinterpret_cast<AEGP_DeathRefcon>(g_state));
         return 0;
+    }
+    {
+        // Search can change LISTBOX identity, but must never leave children
+        // redraw-disabled/hidden or briefly hide the top-level palette.
+        for (const auto* query : {L"g", L"gaussian", L"no-such-effect-987", L"", L"glow", L""}) {
+            SetWindowTextW(g_state->search, query);
+            pump();
+            wchar_t actual[128]{};
+            GetWindowTextW(g_state->search, actual, 128);
+            assert(std::wstring(actual) == query);
+            assert(IsWindowVisible(g_state->window));
+            assert(!g_state->redraw_transaction);
+            for (HWND control : {g_state->search, g_state->results, g_state->filter,
+                                 g_state->capture, g_state->slot, g_state->preferences, g_state->status}) {
+                assert(IsWindowVisible(control));
+                assert(!GetPropW(control, L"SysSetRedraw"));
+            }
+            assert(!IsWindowVisible(g_state->hotkey_edit));
+        }
+        {
+            SearchRedrawGuard redraw(g_state->window);
+            assert(IsWindowVisible(g_state->window));
+            assert(IsWindowVisible(g_state->search));
+        }
+        assert(IsWindowVisible(g_state->capture));
+        std::cout << "PASS search restores all child visibility and preserves native text/parent visibility\n";
     }
     check_search_input_geometry(regression_artifacts);
     check_console_paint_geometry();
@@ -542,7 +580,10 @@ int wmain(int argc, wchar_t** argv) {
         }
         if (!IsWindowVisible(g_state->tooltip)) {
             POINT actual{}; GetCursorPos(&actual);
-            std::cerr << "hover parent=" << g_state->window << "/" << IsWindowVisible(g_state->window) << " hit=" << WindowFromPoint(hover) << " button=" << g_state->capture << " cursor=" << actual.x << "," << actual.y << " expected=" << hover.x << "," << hover.y << " foreground=" << GetForegroundWindow() << '\n';
+            RECT parent_rect{}, capture_rect{};
+            GetWindowRect(g_state->window, &parent_rect);
+            GetWindowRect(g_state->capture, &capture_rect);
+            std::cerr << "hover parent=" << g_state->window << "/" << IsWindowVisible(g_state->window) << " hit=" << WindowFromPoint(hover) << " button=" << g_state->capture << " parent_rect=" << parent_rect.left << "," << parent_rect.top << "," << parent_rect.right << "," << parent_rect.bottom << " capture_rect=" << capture_rect.left << "," << capture_rect.top << "," << capture_rect.right << "," << capture_rect.bottom << " cursor=" << actual.x << "," << actual.y << " expected=" << hover.x << "," << hover.y << " foreground=" << GetForegroundWindow() << '\n';
         }
         assert(IsWindowVisible(g_state->tooltip));
         assert(button_background(g_state->capture) == colors().button_pressed);
@@ -963,8 +1004,14 @@ int wmain(int argc, wchar_t** argv) {
     g_test_script_reply.reset();
     assert(!g_state->window);
     g_test_initial_background_fill_count = 0;
+    const auto scans_before_reopen = g_test_catalog_scan_count;
     show_console();
     assert(IsWindow(g_state->window));
+    assert(g_test_catalog_scan_count == scans_before_reopen);
+    assert(g_state->catalog_initialized);
+    refresh_catalog();
+    assert(g_test_catalog_scan_count == scans_before_reopen + 1);
+    std::cout << "PASS reopen reuses session catalog and explicit refresh still rescans\n";
     assert(g_state->initial_background_primed && g_test_initial_background_fill_count > 0);
     // The configured shortcut is already registered by the message-only window.
     // Use a different key to confirm unrelated global registrations remain available.
@@ -977,8 +1024,13 @@ int wmain(int argc, wchar_t** argv) {
     show_console();
     assert(IsWindow(g_state->window));
     assert(g_state->settings.full_resolution_screenshots);
-    SendMessageW(g_state->window, WM_ACTIVATE, WA_INACTIVE, 0); pump();
+    HWND external_focus = CreateWindowExW(WS_EX_TOOLWINDOW, L"STATIC", L"focus-away fixture",
+        WS_POPUP | WS_VISIBLE, 10, 10, 30, 30, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
+    assert(external_focus);
+    SetForegroundWindow(external_focus);
+    SendMessageW(g_state->window, WM_ACTIVATE, WA_INACTIVE, reinterpret_cast<LPARAM>(external_focus)); pump();
     assert(!g_state->window);
+    DestroyWindow(external_focus);
     auto& bridge = xfx::script_bridge();
     if (IsWindow(g_state->gallery_window)) DestroyWindow(g_state->gallery_window);
     bridge.set_available(true); // Standalone harness substitutes for AE idle registration.

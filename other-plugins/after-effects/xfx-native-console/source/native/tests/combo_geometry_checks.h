@@ -79,6 +79,8 @@ static bool combo_visible_pixel_matches(COLORREF actual, COLORREF expected) {
         std::abs(static_cast<int>(GetBValue(actual)) - GetBValue(expected)) <= 3;
 }
 
+static void save_combo_pixel_diagnostic(HWND combo, const InputPaintSample& sample, const wchar_t* kind);
+
 static RECT combo_text_ink_bounds(HWND combo, const InputPaintSample& sample) {
     RECT client{}; GetClientRect(combo, &client);
     RECT ink{client.right, client.bottom, 0, 0};
@@ -102,6 +104,12 @@ static RECT combo_text_ink_bounds(HWND combo, const InputPaintSample& sample) {
             ink.right = (std::max)(ink.right, static_cast<LONG>(x + 1));
             ink.bottom = (std::max)(ink.bottom, static_cast<LONG>(y + 1));
         }
+    }
+    if (!(ink.right > ink.left && ink.bottom > ink.top)) {
+        std::cerr << "No combo text: id=" << GetDlgCtrlID(combo) << " size=" << client.right << "," << client.bottom
+                  << " selected=" << SendMessageW(combo, CB_GETCURSEL, 0, 0) << " visible=" << IsWindowVisible(combo)
+                  << " text-color=" << text << '\n';
+        save_combo_pixel_diagnostic(combo, sample, L"missing-text");
     }
     assert(ink.right > ink.left && ink.bottom > ink.top);
     return ink;

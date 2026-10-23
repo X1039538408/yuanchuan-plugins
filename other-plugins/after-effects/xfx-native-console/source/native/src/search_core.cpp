@@ -199,12 +199,33 @@ void append_pinyin(CatalogItem& item, const std::wstring& value) {
 }
 
 bool ascii_key_equal(std::string_view left, std::string_view right) {
-    if (left.empty() || left.size() != right.size()) return false;
-    for (size_t i = 0; i < left.size(); ++i) {
-        if (folded_latin(static_cast<unsigned char>(left[i])) !=
-            folded_latin(static_cast<unsigned char>(right[i]))) return false;
-    }
-    return true;
+    // Effect vendors occasionally return padded names or change only ASCII
+    // casing between AE releases. Compare a canonical presentation form so a
+    // translation remains available without changing the original identifier.
+    const auto canonical = [](std::string_view value) {
+        std::string result;
+        result.reserve(value.size());
+        size_t begin = 0, end = value.size();
+        const auto space = [](unsigned char ch) {
+            return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+        };
+        while (begin < end && space(static_cast<unsigned char>(value[begin]))) ++begin;
+        while (end > begin && space(static_cast<unsigned char>(value[end - 1]))) --end;
+        bool pending_space = false;
+        for (size_t i = begin; i < end; ++i) {
+            const unsigned char ch = static_cast<unsigned char>(value[i]);
+            if (space(ch)) {
+                pending_space = !result.empty();
+                continue;
+            }
+            if (pending_space) result.push_back(' ');
+            pending_space = false;
+            const char folded = static_cast<char>(folded_latin(ch));
+            result.push_back(folded);
+        }
+        return result;
+    };
+    return !left.empty() && canonical(left) == canonical(right);
 }
 
 void apply_known_translation(CatalogItem& item) {

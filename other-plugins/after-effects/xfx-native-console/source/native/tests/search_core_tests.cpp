@@ -6,6 +6,7 @@
 #include <map>
 #include <sstream>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "../src/search_core.h"
@@ -439,6 +440,43 @@ static void third_party_effects_keep_brands_and_gain_chinese_pinyin_search() {
     assert(engine.search(L"chaojifaguang").size() == 1);
 }
 
+static void sapphire_warp_effects_translate_with_padded_or_case_changed_host_names() {
+    const std::vector<std::pair<const char*, const wchar_t*>> fixtures = {
+        {"S_WarpBubble", L"Sapphire 气泡扭曲"},
+        {"S_WarpBubble2", L"Sapphire 气泡扭曲 2"},
+        {"S_WarpCornerPin", L"Sapphire 角点扭曲"},
+        {"S_WarpDrops", L"Sapphire 液滴扭曲"},
+        {"S_WarpFishEye", L"Sapphire 鱼眼扭曲"},
+        {"S_WarpMagnify", L"Sapphire 放大扭曲"},
+        {"S_WarpPerspective", L"Sapphire 透视扭曲"},
+    };
+    for (const auto& fixture : fixtures) {
+        CatalogItem item{localization_utf8(fixture.first), "", "", "  " +
+                         std::string(fixture.first) + "  ", "Vendor stable ID", L"效果", "ae"};
+        SearchEngine engine({item});
+        const auto found = engine.search(L"气泡扭曲");
+        if (std::string(fixture.first) != "S_WarpBubble" &&
+            std::string(fixture.first) != "S_WarpBubble2") {
+            // The remaining effects have distinct Chinese labels; search by
+            // the translated text to ensure the generated row is indexed.
+            const auto translated = engine.search(fixture.second);
+            localization_require(translated.size() == 1, "Sapphire Warp translation is not searchable");
+        } else {
+            localization_require(found.size() == 1, "Sapphire Bubble translation is not searchable");
+        }
+        localization_require(engine.search(L"qipao").size() ==
+                                 (std::string(fixture.first).find("Bubble") != std::string::npos ? 1u : 0u),
+                             "Sapphire Warp pinyin unexpectedly matched the wrong effect");
+        const auto all = engine.search(L"sapphire");
+        localization_require(all.size() == 1 && all.front().item.translated_name == fixture.second,
+                             "Sapphire Warp label was not applied");
+    }
+    CatalogItem padded{L"s_warpbubble2", "", "", " s_warpbubble2 ", "Vendor stable ID 2", L"效果", "ae"};
+    SearchEngine padded_engine({padded});
+    localization_require(padded_engine.search(L"气泡扭曲").size() == 1,
+                         "case/space tolerant translation lookup failed");
+}
+
 static void settings_round_trip() {
     const auto path = std::filesystem::temp_directory_path() / "xfx-native-settings-test.ini";
     xfx::Settings settings;
@@ -539,6 +577,7 @@ int main() {
     built_in_translation_is_applied_without_rewriting_identifiers();
     unknown_effect_keeps_original_name_and_custom_translation();
     third_party_effects_keep_brands_and_gain_chinese_pinyin_search();
+    sapphire_warp_effects_translate_with_padded_or_case_changed_host_names();
     settings_round_trip();
     hotkey_parser_accepts_custom_shortcuts();
     hotkey_parser_accepts_function_keys();

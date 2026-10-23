@@ -221,6 +221,13 @@ CC Hair	CC Hair	CC 毛发			头发
 	S_Grain	Sapphire 颗粒			胶片颗粒
 	S_Distort	Sapphire 扭曲			变形
 	S_WarpChroma	Sapphire 色差扭曲			色散
+	S_WarpBubble	Sapphire 气泡扭曲			气泡变形
+	S_WarpBubble2	Sapphire 气泡扭曲 2			气泡变形2
+	S_WarpCornerPin	Sapphire 角点扭曲			角点定位|四角定位
+	S_WarpDrops	Sapphire 液滴扭曲			液滴变形
+	S_WarpFishEye	Sapphire 鱼眼扭曲			鱼眼变形
+	S_WarpMagnify	Sapphire 放大扭曲			放大变形
+	S_WarpPerspective	Sapphire 透视扭曲			透视变形
 	S_EdgeRays	Sapphire 边缘光线			边缘放射
 	S_Rays	Sapphire 光线			放射光
 	S_Hotspots	Sapphire 热点			高光
