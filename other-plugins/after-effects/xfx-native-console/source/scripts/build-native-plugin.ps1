@@ -12,6 +12,15 @@ $cl = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\M
 $project = Join-Path $ProjectRoot 'native\plugin\XFXNativeConsole.vcxproj'
 $output = Join-Path $ProjectRoot 'artifacts\native-plugin'
 
+# Building a loaded AEX can fail halfway through or leave AE with a stale
+# module. Keep the same conservative process policy as the installer: never
+# terminate AE, and require the caller to close both stable and beta hosts.
+$runningAe = @(Get-Process -Name AfterFX, AfterFX.com, AfterFXa, AfterFXBeta, AfterFXBeta.com -ErrorAction SilentlyContinue)
+if ($runningAe.Count) {
+    $names = ($runningAe | ForEach-Object { "$($_.ProcessName)#$($_.Id)" }) -join ', '
+    throw "After Effects 正在运行（$names）。请先退出所有 AE 后再构建；本脚本不会关闭 AE。"
+}
+
 if (-not (Test-Path -LiteralPath $msbuild)) { throw "找不到 MSBuild：$msbuild" }
 if (-not (Test-Path -LiteralPath $cl)) { throw "找不到 C++ 编译器：$cl" }
 if (-not (Test-Path -LiteralPath $project)) { throw "找不到插件工程：$project" }

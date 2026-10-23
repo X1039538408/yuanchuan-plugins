@@ -29,6 +29,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <utility>
 
@@ -118,6 +119,7 @@ SPBasicSuite* g_basic = nullptr;
 #ifdef XFX_CONSOLE_TEST
 fs::path g_test_settings_path;
 std::vector<xfx::CatalogItem> g_test_catalog;
+unsigned int g_test_catalog_scan_count = 0;
 std::optional<xfx::ScriptReply> g_test_script_reply;
 void (*g_test_before_script)() = nullptr;
 std::optional<ULONGLONG> g_test_button_hover_time;
@@ -150,6 +152,55 @@ std::wstring utf8_to_wide(const char* value) {
     MultiByteToWideChar(CP_ACP, 0, value, -1, result.data(), local_size);
     result.resize(static_cast<size_t>(local_size - 1));
     return result;
+}
+
+bool contains_cjk(const std::wstring& value) {
+    for (const wchar_t ch : value) {
+        const auto code = static_cast<unsigned int>(ch);
+        if ((code >= 0x3400 && code <= 0x9FFF) || (code >= 0xF900 && code <= 0xFAFF)) return true;
+    }
+    return false;
+}
+
+bool contains_non_ascii(const std::wstring& value) {
+    for (const wchar_t ch : value) {
+        if (static_cast<unsigned int>(ch) > 0x7F) return true;
+    }
+    return false;
+}
+
+std::wstring strict_utf8_to_wide(const char* value) {
+    if (!value || !*value) return {};
+    const int size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value, -1, nullptr, 0);
+    if (size <= 0) return {};
+    std::wstring result(static_cast<size_t>(size), L'\0');
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value, -1, result.data(), size);
+    result.resize(static_cast<size_t>(size - 1));
+    return result;
+}
+
+// AEGP_GetEffectName/GetEffectCategory return A_char text in AE's current
+// application runtime encoding. Keep this separate from the UTF-8 decoder
+// used for our TSV files: the host may be using the Windows ACP (for example
+// GBK) even when the plug-in's own data files are UTF-8. Modern AE builds can
+// also expose UTF-8 labels, so accept a valid non-ASCII UTF-8 candidate first.
+std::wstring runtime_text_to_wide(const char* value) {
+    if (!value || !*value) return {};
+    const auto utf8 = strict_utf8_to_wide(value);
+    // Do not restrict UTF-8 detection to CJK: third-party labels can contain
+    // accented Latin, Cyrillic, symbols, or emoji. A valid UTF-8 string with
+    // any non-ASCII code point is already a stronger signal than decoding the
+    // same bytes through the machine ACP (which turns UTF-8 into mojibake on
+    // GBK/Windows-1252 hosts).
+    if (!utf8.empty() && contains_non_ascii(utf8)) return utf8;
+    const int size = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, value, -1, nullptr, 0);
+    if (size > 0) {
+        std::wstring result(static_cast<size_t>(size), L'\0');
+        MultiByteToWideChar(CP_ACP, 0, value, -1, result.data(), size);
+        result.resize(static_cast<size_t>(size - 1));
+        return result;
+    }
+    return utf8;
 }
 
 std::string wide_to_utf8(const std::wstring& value) {
@@ -213,6 +264,8 @@ std::wstring after_effects_root() {
 
 struct AliasEntry {
     int priority = 0;
+    std::string match_name;
+    std::string english_name;
     std::wstring chinese_name;
     std::string pinyin_full;
     std::string pinyin_initials;
@@ -231,6 +284,72 @@ std::vector<std::string> split_tsv(const std::string& line) {
     while (std::getline(input, field, '\t')) fields.push_back(field);
     while (fields.size() < 6) fields.emplace_back();
     return fields;
+}
+
+// AE effect names are supplied by third-party plug-ins. A few vendors include
+// harmless leading/trailing spaces or change ASCII casing between releases;
+// normalize only those presentation differences for dictionary lookup while
+// retaining the original bytes in CatalogItem::match_name for application.
+std::string canonical_alias_key(std::string value) {
+    const auto is_space = [](unsigned char ch) {
+        return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+    };
+    size_t begin = 0;
+    while (begin < value.size() && is_space(static_cast<unsigned char>(value[begin]))) ++begin;
+    size_t end = value.size();
+    while (end > begin && is_space(static_cast<unsigned char>(value[end - 1]))) --end;
+    std::string result;
+    result.reserve(end - begin);
+    bool pending_space = false;
+    for (size_t index = begin; index < end; ++index) {
+        const unsigned char ch = static_cast<unsigned char>(value[index]);
+        if (is_space(ch)) {
+            pending_space = !result.empty();
+            continue;
+        }
+        if (pending_space) result.push_back(' ');
+        pending_space = false;
+        result.push_back(ch >= 'A' && ch <= 'Z' ? static_cast<char>(ch + ('a' - 'A')) : static_cast<char>(ch));
+    }
+    return result;
+}
+
+std::string alias_display_fallback(const AliasEntry& alias) {
+    if (!alias.english_name.empty()) return alias.english_name;
+    if (alias.match_name.empty()) return {};
+
+    // Adobe's Photoshop effects use an internal ADBE PSL matchName but their
+    // user-facing English label is stable and readable after removing that
+    // implementation prefix. Other ADBE matchNames follow the same pattern;
+    // third-party matchNames are retained verbatim as a safe last resort.
+    constexpr std::string_view photoshop_prefix = "ADBE PSL ";
+    constexpr std::string_view adobe_prefix = "ADBE ";
+    if (alias.match_name.rfind(photoshop_prefix, 0) == 0)
+        return "Photoshop " + alias.match_name.substr(photoshop_prefix.size());
+    if (alias.match_name.rfind(adobe_prefix, 0) == 0)
+        return alias.match_name.substr(adobe_prefix.size());
+    return alias.match_name;
+}
+
+std::wstring safe_effect_display_name(const std::wstring& decoded, const AliasEntry* alias) {
+    if (!alias) return decoded;
+    const std::string fallback_utf8 = alias_display_fallback(*alias);
+    if (fallback_utf8.empty()) return decoded;
+    const auto fallback = runtime_text_to_wide(fallback_utf8.c_str());
+    const std::string decoded_key = canonical_alias_key(wide_to_utf8(decoded));
+    const std::string fallback_key = canonical_alias_key(fallback_utf8);
+    // A short non-CJK token or replacement character is a strong sign that
+    // AE returned a localized A_char buffer in a different code page. For
+    // matchName-only aliases also repair longer mixed labels such as
+    // "Photoshop iy" by comparing with the derived stable fallback.
+    const bool mojibake_token = decoded_key == "iy" ||
+        (decoded_key.size() > 3 && decoded_key.rfind(" iy") == decoded_key.size() - 3);
+    const bool suspicious = !decoded.empty() &&
+        (decoded.find(0xFFFD) != std::wstring::npos ||
+         (!contains_cjk(decoded) && decoded_key != fallback_key &&
+          (decoded.size() <= 3 || mojibake_token)));
+    if (suspicious || decoded.empty()) return fallback;
+    return decoded;
 }
 
 std::vector<std::wstring> split_aliases(const std::string& value) {
@@ -274,12 +393,14 @@ AliasCatalog load_aliases() {
         const auto fields = split_tsv(line);
         AliasEntry entry;
         entry.priority = ++priority;
+        entry.match_name = fields[0];
+        entry.english_name = fields[1];
         entry.chinese_name = utf8_to_wide(fields[2].c_str());
         entry.pinyin_full = fields[3];
         entry.pinyin_initials = fields[4];
         entry.aliases = split_aliases(fields[5]);
-        if (!fields[0].empty()) catalog.by_match_name[fields[0]] = entry;
-        if (!fields[1].empty()) catalog.by_english_name[fields[1]] = entry;
+        if (!fields[0].empty()) catalog.by_match_name[canonical_alias_key(fields[0])] = entry;
+        if (!fields[1].empty()) catalog.by_english_name[canonical_alias_key(fields[1])] = entry;
     }
     }
     return catalog;
@@ -297,27 +418,51 @@ void append_effects(std::vector<xfx::CatalogItem>& items) {
         AEGP_InstalledEffectKey key = AEGP_InstalledEffectKey_NONE;
         for (A_long index = 0; index < count; ++index) {
             if (suites.EffectSuite2()->AEGP_GetNextInstalledEffect(key, &key)) break;
-            char name[AEGP_MAX_EFFECT_NAME_SIZE] = {};
-            char match_name[AEGP_MAX_EFFECT_MATCH_NAME_SIZE] = {};
-            char category[AEGP_MAX_EFFECT_CATEGORY_NAME_SIZE] = {};
+            // The SDK size constants describe the maximum text length. The
+            // suite writes a terminating NUL as well, so every destination
+            // needs one extra byte. Without it, names near the limit can be
+            // truncated or leave an unterminated string, which then feeds the
+            // encoding conversion and produces short garbage labels such as
+            // the previously observed "iy" for "投影".
+            char name[AEGP_MAX_EFFECT_NAME_SIZE + 1] = {};
+            char match_name[AEGP_MAX_EFFECT_MATCH_NAME_SIZE + 1] = {};
+            char category[AEGP_MAX_EFFECT_CATEGORY_NAME_SIZE + 1] = {};
             if (suites.EffectSuite2()->AEGP_GetEffectName(key, name)) continue;
             if (suites.EffectSuite2()->AEGP_GetEffectMatchName(key, match_name)) continue;
             suites.EffectSuite2()->AEGP_GetEffectCategory(key, category);
             if (!seen.insert(match_name).second) continue;
 
-            const auto alias_match = aliases.by_match_name.find(match_name);
-            const auto alias_english = aliases.by_english_name.find(name);
-            const AliasEntry* alias = alias_match != aliases.by_match_name.end() ? &alias_match->second : nullptr;
-            if (alias_english != aliases.by_english_name.end() && (!alias || alias_english->second.priority > alias->priority)) {
-                alias = &alias_english->second;
-            }
+            const auto find_alias = [](const auto& values, const char* raw) -> const AliasEntry* {
+                auto found = values.find(canonical_alias_key(raw ? raw : ""));
+                if (found != values.end()) return &found->second;
+                // A few legacy effects expose their label in the Windows ACP
+                // while the bundled dictionary is UTF-8. Decode once and try
+                // the canonical UTF-8 form before giving up.
+                const auto wide = runtime_text_to_wide(raw);
+                if (wide.empty()) return nullptr;
+                const auto normalized = canonical_alias_key(wide_to_utf8(wide));
+                found = values.find(normalized);
+                return found == values.end() ? nullptr : &found->second;
+            };
+            const AliasEntry* alias = find_alias(aliases.by_match_name, match_name);
+            const AliasEntry* alias_english = find_alias(aliases.by_english_name, name);
+            if (alias_english && (!alias || alias_english->priority > alias->priority)) alias = alias_english;
             xfx::CatalogItem item;
-            item.display_name = utf8_to_wide(name);
+            item.display_name = runtime_text_to_wide(name);
+            // A localized host label can be returned in an encoding different
+            // from the process ACP. If the decoded value is a short mojibake
+            // token (for example "iy") but the stable dictionary identifies
+            // the effect, use the dictionary's English label as a readable
+            // fallback. The matchName remains untouched for application.
+            item.display_name = safe_effect_display_name(item.display_name, alias);
             item.pinyin_full = alias && !alias->pinyin_full.empty()
                 ? alias->pinyin_full : "";
             item.pinyin_initials = alias && !alias->pinyin_initials.empty()
                 ? alias->pinyin_initials : "";
-            item.english_name = name;
+            // Keep the host identifier byte-for-byte in match_name for
+            // ExtendScript, while storing the visible label as UTF-8 here so
+            // search normalization never feeds ACP/GBK bytes to the decoder.
+            item.english_name = item.display_name.empty() ? std::string(name) : wide_to_utf8(item.display_name);
             item.match_name = match_name;
             if (item.display_name.empty()) item.display_name = xfx::catalog_display_name(item);
             item.translated_name = alias && !alias->chinese_name.empty()
@@ -364,6 +509,7 @@ void append_presets_from(const fs::path& root, std::vector<xfx::CatalogItem>& it
 
 std::vector<xfx::CatalogItem> scan_catalog() {
 #ifdef XFX_CONSOLE_TEST
+    ++g_test_catalog_scan_count;
     return g_test_catalog;
 #endif
     std::vector<xfx::CatalogItem> items;
@@ -442,6 +588,7 @@ struct PluginState {
     xfx::GlobalHotkey hotkey;
     std::vector<xfx::CatalogItem> catalog;
     std::vector<xfx::CatalogItem> base_catalog;
+    bool catalog_initialized = false; // survives palette close; reset with PluginState
     std::vector<int> visible_slot_numbers;
     HWND capture = nullptr;
     HWND gallery = nullptr;
@@ -997,7 +1144,7 @@ std::wstring slot_display_label(int slot);
 std::wstring item_key(const xfx::CatalogItem& item);
 void assign_slot(int slot);
 xfx::ScriptReply execute_slot(int slot);
-void populate_results();
+void populate_results(bool resize_window = true, bool update_status = true);
 void rebuild_customized_catalog();
 void show_shortcut_menu();
 void adjust_console_height();
@@ -1049,17 +1196,24 @@ ToolbarLayout toolbar_layout(HWND hwnd) {
     const int button_gap = kToolbarGap;
     const int right_margin = 8;
     const int tools_left = width - (button_size * 3 + button_gap * 2 + right_margin);
-    const int filter_left = tools_left - 68;
+    // Keep the toolbar rectangles ordered even if the host restores a window
+    // below the normal minimum during a DPI switch or a saved-position replay.
+    // An inverted search rect makes the EDIT child collapse and leaves only a
+    // thin, apparently missing search bar.
+    const int filter_left = (std::max)(40, tools_left - 68);
     const int center_y = kToolbarCenterY;
     const auto px = [dpi](int value) { return MulDiv(value, static_cast<int>(dpi), 96); };
     const auto rect = [&](int left, int top, int right, int bottom) {
         return RECT{px(left), px(top), px(right), px(bottom)};
     };
     ToolbarLayout result;
-    result.search_surface = rect(8, center_y - 18, filter_left - 4, center_y + 18);
+    const int search_surface_right = (std::max)(34 + 8, filter_left - 4);
+    result.search_surface = rect(8, center_y - 18, search_surface_right, center_y + 18);
     const int line_height = search_line_height(hwnd);
-    const int line_top = px(center_y) - line_height / 2;
-    result.search_edit = {px(34), line_top, px(filter_left - 8), line_top + line_height};
+    const int bounded_line_height = (std::max)(1, (std::min)(line_height, px(32)));
+    const int line_top = px(center_y) - bounded_line_height / 2;
+    const int edit_right = (std::max)(px(35), px(search_surface_right - 4));
+    result.search_edit = {px(34), line_top, edit_right, line_top + bounded_line_height};
     result.filter = rect(filter_left, center_y - 18, filter_left + 64, center_y + 18);
     for (int index = 0; index < 3; ++index) {
         const int left = tools_left + index * (button_size + button_gap);
@@ -1475,6 +1629,71 @@ void clear_result_data() {
     }
 }
 
+struct ListRedrawGuard {
+    HWND window = nullptr;
+    bool outer_transaction = false;
+    explicit ListRedrawGuard(HWND target) : window(target) {
+        outer_transaction = g_state && g_state->redraw_transaction;
+        if (IsWindow(window)) SendMessageW(window, WM_SETREDRAW, FALSE, 0);
+    }
+    ~ListRedrawGuard() {
+        if (!IsWindow(window)) return;
+        if (outer_transaction) {
+            // SearchRedrawGuard owns the whole subtree's redraw state. Do not
+            // briefly re-enable this child while rows are being rebuilt.
+            InvalidateRect(window, nullptr, FALSE);
+            return;
+        }
+        SendMessageW(window, WM_SETREDRAW, TRUE, 0);
+        RedrawWindow(window, nullptr, nullptr, RDW_INVALIDATE | RDW_NOERASE | RDW_UPDATENOW);
+    }
+};
+
+// Batch child updates without hiding the top-level palette from the Windows
+// compositor. DefWindowProc removes WS_VISIBLE on WM_SETREDRAW(FALSE); testing
+// that bit at release time therefore misses precisely the controls we froze.
+// Keep the original handles instead, and leave the EDIT live so native typing
+// and caret updates never disappear while the search engine is running.
+struct SearchRedrawGuard {
+    HWND parent = nullptr;
+    HWND original_results = nullptr;
+    std::vector<HWND> children;
+    bool active = false;
+
+    explicit SearchRedrawGuard(HWND target) : parent(target) {
+        if (!g_state || !IsWindow(parent) || g_state->redraw_transaction) return;
+        original_results = g_state->results;
+        EnumChildWindows(parent, [](HWND child, LPARAM data) -> BOOL {
+            auto* self = reinterpret_cast<SearchRedrawGuard*>(data);
+            if (child != g_state->search && (GetWindowLongPtrW(child, GWL_STYLE) & WS_VISIBLE))
+                self->children.push_back(child);
+            return TRUE;
+        }, reinterpret_cast<LPARAM>(this));
+        g_state->redraw_transaction = true;
+        active = true;
+        for (HWND child : children) SendMessageW(child, WM_SETREDRAW, FALSE, 0);
+    }
+
+    void finish() {
+        if (!active) return;
+        active = false;
+        for (HWND child : children)
+            if (IsWindow(child) && IsChild(parent, child)) SendMessageW(child, WM_SETREDRAW, TRUE, 0);
+        // Switching between the shortcut strip and results creates a new
+        // LISTBOX, which was not present in the entry snapshot.
+        if (g_state && g_state->results != original_results && IsWindow(g_state->results))
+            SendMessageW(g_state->results, WM_SETREDRAW, TRUE, 0);
+        if (g_state) g_state->redraw_transaction = false;
+        if (IsWindow(parent))
+            RedrawWindow(parent, nullptr, nullptr,
+                RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
+    }
+
+    SearchRedrawGuard(const SearchRedrawGuard&) = delete;
+    SearchRedrawGuard& operator=(const SearchRedrawGuard&) = delete;
+    ~SearchRedrawGuard() { finish(); }
+};
+
 std::wstring filter_name() {
     const LRESULT selected = SendMessageW(g_state->filter, CB_GETCURSEL, 0, 0);
     if (selected == 1) return L"效果";
@@ -1573,6 +1792,8 @@ void update_results_list_style(bool shortcut_mode) {
             bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top,
             parent_window, reinterpret_cast<HMENU>(static_cast<INT_PTR>(kResultsId)), nullptr, nullptr);
         if (!g_state->results) throw std::runtime_error("Unable to create result list");
+        if (g_state->redraw_transaction)
+            SendMessageW(g_state->results, WM_SETREDRAW, FALSE, 0);
         set_font(g_state->results);
         SendMessageW(g_state->results, LB_SETITEMHEIGHT, 0, shortcut_mode ? kShortcutHeight : kResultHeight);
         g_results_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(g_state->results,
@@ -1613,14 +1834,18 @@ void remember_recent(const xfx::CatalogItem& item) {
     if (recent.size() > 20) recent.resize(20);
 }
 
-void populate_results() {
+void populate_results(bool resize_window, bool update_status) {
     // Applying a menu command can synchronously close the palette before the
     // popup handler returns and requests a refresh. Its old HWNDs own no rows.
     if (!g_state || !IsWindow(g_state->search) || !IsWindow(g_state->results)) return;
     wchar_t query[512] = {};
     GetWindowTextW(g_state->search, query, 512);
     const std::wstring filter = filter_name();
-    update_results_list_style(shortcut_list_mode());
+    const bool desired_shortcut_mode = shortcut_list_mode();
+    const bool was_shortcut_mode = (GetWindowLongW(g_state->results, GWL_STYLE) & LBS_MULTICOLUMN) != 0;
+    update_results_list_style(desired_shortcut_mode);
+    const bool list_style_changed = was_shortcut_mode != desired_shortcut_mode;
+    ListRedrawGuard redraw(g_state->results);
     auto matches = g_state->engine.search(query);
     std::stable_sort(matches.begin(), matches.end(), [](const xfx::SearchResult& left,
                                                         const xfx::SearchResult& right) {
@@ -1687,8 +1912,9 @@ void populate_results() {
     }
     const LRESULT result_count = SendMessageW(g_state->results, LB_GETCOUNT, 0, 0);
     if (result_count > 0) SendMessageW(g_state->results, LB_SETCURSEL, 0, 0);
-    adjust_console_height();
-    set_status(result_count == 0 ? L"没有找到匹配项目" : L"Enter 应用 · Tab 切换效果/预设 · 右键编辑");
+    if (resize_window || list_style_changed) adjust_console_height();
+    if (update_status)
+        set_status(result_count == 0 ? L"没有找到匹配项目" : L"Enter 应用 · Tab 切换效果/预设 · 右键编辑");
 }
 
 void rebuild_customized_catalog() {
@@ -1696,6 +1922,19 @@ void rebuild_customized_catalog() {
     xfx::apply_catalog_customizations(g_state->catalog, g_state->settings);
     for (auto& item : g_state->catalog) xfx::enrich_catalog_item(item);
     g_state->engine = xfx::SearchEngine(g_state->catalog);
+}
+
+void update_catalog_view() {
+    size_t effects = 0;
+    size_t presets = 0;
+    for (const auto& item : g_state->catalog) {
+        if (item.item_type == L"effect") ++effects;
+        if (item.item_type == L"preset") ++presets;
+    }
+    wchar_t count_text[128] = {};
+    swprintf_s(count_text, L"%zu 个效果  ·  %zu 个预设", effects, presets);
+    SetWindowTextW(g_state->count, count_text);
+    populate_results();
 }
 
 void refresh_catalog() {
@@ -1714,16 +1953,8 @@ void refresh_catalog() {
             report << wide_to_utf8(query) << "=" << (matches.empty() ? "" : matches.front().item.match_name) << "\n";
         }
     }
-    size_t effects = 0;
-    size_t presets = 0;
-    for (const auto& item : g_state->catalog) {
-        if (item.item_type == L"effect") ++effects;
-        if (item.item_type == L"preset") ++presets;
-    }
-    wchar_t count_text[128] = {};
-    swprintf_s(count_text, L"%zu 个效果  ·  %zu 个预设", effects, presets);
-    SetWindowTextW(g_state->count, count_text);
-    populate_results();
+    g_state->catalog_initialized = true;
+    update_catalog_view();
     set_status(L"扫描完成",true);
 }
 
@@ -3068,8 +3299,21 @@ void layout_controls(HWND hwnd) {
         if (!g_state->redraw_transaction) InvalidateRect(child, nullptr, FALSE);
     };
     place(g_state->search, toolbar_bounds.search_edit);
+    // Keep the native EDIT above the parent-painted rounded surface. AE can
+    // restore child z-order during a timeline-panel resize, which otherwise
+    // leaves only the surface and makes the top search field look clipped.
+    if (IsWindow(g_state->search))
+        SetWindowPos(g_state->search, HWND_TOP, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
     place(g_state->filter, toolbar_bounds.filter);
     fit_combo_face_height(g_state->filter, toolbar_bounds.filter.bottom - toolbar_bounds.filter.top);
+    // The rounded search surface belongs to the parent, while the EDIT child
+    // owns the text. Repaint both after a layout move so the old child bounds
+    // cannot leave a stale background over the surface.
+    if (IsWindow(g_state->search)) {
+        InvalidateRect(hwnd, &toolbar_bounds.search_surface, FALSE);
+        InvalidateRect(g_state->search, nullptr, FALSE);
+    }
     place(g_state->capture, toolbar_bounds.buttons[0]);
     place(g_state->slot, toolbar_bounds.buttons[1]);
     place(g_state->preferences, toolbar_bounds.buttons[2]);
@@ -3515,7 +3759,12 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
             add_tooltip_for_control(hwnd, g_state->tooltip, g_state->results, kResultTooltipId,
                 g_state->result_tooltip.c_str());
         }
-        refresh_catalog();
+        if (g_state->catalog_initialized) {
+            update_catalog_view();
+            set_status(L"就绪");
+        } else {
+            refresh_catalog();
+        }
         return 0;
     }
     case WM_SIZE:
@@ -3800,6 +4049,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
                         // reapply the responsive visibility before presentation.
                         layout_controls(parent);
                         if (parent_visible) SendMessageW(parent, WM_SETREDRAW, TRUE, 0);
+                        if (g_state) g_state->redraw_transaction = false;
                         RedrawWindow(parent, nullptr, nullptr,
                             RDW_INVALIDATE | RDW_NOERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
                     }
@@ -3818,7 +4068,11 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
             return 0;
         }
         if (LOWORD(wparam) == kSearchId && HIWORD(wparam) == EN_CHANGE) {
-            populate_results();
+            // Keep the palette height and status line stable while typing.
+            // Rebuilding an owner-drawn list and resizing the topmost window
+            // for every character is the source of the visible AE flicker.
+            SearchRedrawGuard redraw(hwnd);
+            populate_results(false, false);
             return 0;
         }
         if (LOWORD(wparam) == kFilterId && HIWORD(wparam) == CBN_SELCHANGE) {
@@ -3864,11 +4118,27 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
         break;
     case WM_ACTIVATE:
         if (LOWORD(wparam) == WA_INACTIVE && g_state && xfx::should_close_console(
-            true, false, g_state->modal_depth)) {
-            PostMessageW(hwnd, WM_CLOSE, 0, 0);
+            g_state->settings.auto_close, g_state->settings.fixed_window, g_state->modal_depth)) {
+            const HWND next = reinterpret_cast<HWND>(lparam);
+            if (next && (next == hwnd || IsChild(hwnd, next) || GetAncestor(next, GA_ROOTOWNER) == hwnd))
+                return 0;
+            // Hiding/re-showing or opening a native popup can transiently
+            // deactivate the palette. Recheck at dispatch rather than enqueue
+            // an unconditional close that destroys the newly focused palette.
+            PostMessageW(hwnd, WM_APP + 4, 0, 0);
             return 0;
         }
         break;
+    case WM_APP + 4: {
+        const HWND foreground = GetForegroundWindow();
+        const bool owns_focus = foreground && (foreground == hwnd || IsChild(hwnd, foreground) ||
+            GetAncestor(foreground, GA_ROOTOWNER) == hwnd);
+        if (!owns_focus && g_state && xfx::should_close_console(
+            g_state->settings.auto_close, g_state->settings.fixed_window, g_state->modal_depth)) {
+            SendMessageW(hwnd, WM_CLOSE, 0, 0);
+        }
+        return 0;
+    }
     case WM_CLOSE:
         save_and_restore();
         DestroyWindow(hwnd);
@@ -3968,6 +4238,8 @@ void show_console(bool visible = true) {
         if (!g_state->ime_session_active)
             g_state->ime_session_active = g_state->ime.capture_original(g_state->search, g_state->ime_source_window);
         ShowWindow(g_state->window, SW_SHOWNORMAL);
+        SetWindowPos(g_state->window, HWND_TOPMOST, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
         SetForegroundWindow(g_state->window);
         SetFocus(g_state->search);
         ensure_search_english_mode();
@@ -3976,7 +4248,16 @@ void show_console(bool visible = true) {
         return;
     }
 
-    g_state->settings = xfx::SettingsStore::load(settings_path());
+    auto loaded_settings = xfx::SettingsStore::load(settings_path());
+    const bool aliases_changed = loaded_settings.custom_aliases != g_state->settings.custom_aliases;
+    g_state->settings = std::move(loaded_settings);
+    if (g_state->catalog_initialized && aliases_changed) {
+        // If rebuilding fails, leave the cache invalid so the next open can
+        // recover instead of reusing an engine with stale alias data.
+        g_state->catalog_initialized = false;
+        rebuild_customized_catalog();
+        g_state->catalog_initialized = true;
+    }
     g_state->settings_visible = false;
     g_state->settings_extent = 0;
     INITCOMMONCONTROLSEX controls{sizeof(controls), ICC_WIN95_CLASSES};
@@ -4047,6 +4328,8 @@ void show_console(bool visible = true) {
     }
     if (visible) {
         ShowWindow(g_state->window, SW_SHOWNORMAL);
+        SetWindowPos(g_state->window, HWND_TOPMOST, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
         SetForegroundWindow(g_state->window);
         SetFocus(g_state->search);
         ensure_search_english_mode();

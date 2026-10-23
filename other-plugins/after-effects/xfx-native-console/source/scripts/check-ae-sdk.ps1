@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 
 $sdk = if ($env:XFX_AE_SDK_DIR) { $env:XFX_AE_SDK_DIR } else { Join-Path (Split-Path -Parent $PSScriptRoot) 'vendor\ae-sdk' }
 $required = @(

@@ -349,10 +349,9 @@ int main() {
     assert(!xfx::parse_script_reply("OK\tabc").succeeded);
     assert(!xfx::parse_script_reply("").succeeded);
     assert(!xfx::should_close_console(false, false, 1));
-    // Focus loss is unconditional now: the legacy auto-close/fixed-window
-    // switches no longer change the product behavior.
-    assert(xfx::should_close_console(false, false, 0));
-    assert(xfx::should_close_console(true, true, 0));
+    assert(!xfx::should_close_console(false, false, 0));
+    assert(!xfx::should_close_console(true, true, 0));
+    assert(xfx::should_close_console(true, false, 0));
     ULONG_PTR token = 0;
     Gdiplus::GdiplusStartupInput startup;
     assert(Gdiplus::GdiplusStartup(&token, &startup, nullptr) == Gdiplus::Ok);

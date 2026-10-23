@@ -30,21 +30,30 @@ static InputPaintSample sample_input_paint(HWND control, COLORREF background, bo
         FillRect(memory, &client, static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
         SendMessageW(control, WM_PRINTCLIENT, reinterpret_cast<WPARAM>(memory), PRF_CLIENT);
     } else {
-        BitBlt(memory, 0, 0, client.right, client.bottom, source, 0, 0, SRCCOPY);
+        // Keep this independent of WM_PRINTCLIENT: a hidden/redraw-disabled
+        // native EDIT can still print correctly while its actual surface is
+        // blank. The test palette must be visible and unobscured for this
+        // real-paint assertion; do not turn it into a second print assertion.
+        assert(IsWindowVisible(control));
+        assert(BitBlt(memory, 0, 0, client.right, client.bottom, source, 0, 0, SRCCOPY));
     }
-    InputPaintSample sample;
-    sample.ink = {client.right, client.bottom, 0, 0};
-    for (int y = 0; y < client.bottom; ++y) {
-        for (int x = 0; x < client.right; ++x) {
-            const auto pixel = GetPixel(memory, x, y);
-            sample.pixels.push_back(pixel);
-            if (pixel == background) continue;
-            sample.ink.left = (std::min)(sample.ink.left, static_cast<LONG>(x));
-            sample.ink.top = (std::min)(sample.ink.top, static_cast<LONG>(y));
-            sample.ink.right = (std::max)(sample.ink.right, static_cast<LONG>(x + 1));
-            sample.ink.bottom = (std::max)(sample.ink.bottom, static_cast<LONG>(y + 1));
+    const auto scan = [&]() {
+        InputPaintSample result;
+        result.ink = {client.right, client.bottom, 0, 0};
+        for (int y = 0; y < client.bottom; ++y) {
+            for (int x = 0; x < client.right; ++x) {
+                const auto pixel = GetPixel(memory, x, y);
+                result.pixels.push_back(pixel);
+                if (pixel == background) continue;
+                result.ink.left = (std::min)(result.ink.left, static_cast<LONG>(x));
+                result.ink.top = (std::min)(result.ink.top, static_cast<LONG>(y));
+                result.ink.right = (std::max)(result.ink.right, static_cast<LONG>(x + 1));
+                result.ink.bottom = (std::max)(result.ink.bottom, static_cast<LONG>(y + 1));
+            }
         }
-    }
+        return result;
+    };
+    const auto sample = scan();
     SelectObject(memory, previous);
     DeleteObject(bitmap); DeleteDC(memory); ReleaseDC(control, source);
     return sample;

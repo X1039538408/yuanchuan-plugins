@@ -40,6 +40,17 @@ std::filesystem::path comparable_windows_path(const std::filesystem::path& path)
     auto text = path.wstring();
     if (text.rfind(L"\\\\?\\UNC\\", 0) == 0) text = L"\\\\" + text.substr(8);
     else if (text.rfind(L"\\\\?\\", 0) == 0) text.erase(0, 4);
+    // GetFinalPathNameByHandleW returns long names while user selections and
+    // AE's temp paths can contain 8.3 aliases (for example ADMINI~1). Expand
+    // both forms before comparing, otherwise a valid directory is rejected
+    // as outside itself on machines with short-name generation enabled.
+    std::wstring long_path(32768, L'\0');
+    const DWORD length = GetLongPathNameW(text.c_str(), long_path.data(),
+        static_cast<DWORD>(long_path.size()));
+    if (length > 0 && length < long_path.size()) {
+        long_path.resize(length);
+        text = std::move(long_path);
+    }
     return normalized_path(std::filesystem::path(text));
 }
 
@@ -144,9 +155,11 @@ std::vector<CaptureDeleteResult> delete_captures(const std::filesystem::path& di
     if (directory.empty() || path_error) { fail_batch(ERROR_INVALID_NAME); return result; }
     const DWORD reparse_error = directory_reparse_error(root);
     if (reparse_error) { fail_batch(reparse_error); return result; }
-    // Omitting FILE_SHARE_DELETE pins the directory while files are validated.
+    // Allow child handles to request DELETE access. The directory and each
+    // child are still opened with OPEN_REPARSE_POINT, and final_handle_path
+    // verifies their resolved parents before any disposition is applied.
     HANDLE raw_directory = CreateFileW(root.c_str(), FILE_READ_ATTRIBUTES,
-        FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, nullptr);
     if (raw_directory == INVALID_HANDLE_VALUE) { fail_batch(GetLastError()); return result; }
     FileHandle directory_handle(raw_directory);
@@ -228,6 +241,10 @@ std::vector<CaptureDeleteResult> delete_captures(const std::filesystem::path& di
         validated_paths.push_back(path);
     }
     if (invalid) { fail_batch(ERROR_OPERATION_ABORTED); return result; }
+    // Release the validation handle before applying dispositions. The file
+    // handles remain pinned to the verified final objects, while this avoids
+    // filesystem-specific directory sharing rules during the delete call.
+    directory_handle.reset();
     for (std::size_t i = 0; i < handles.size(); ++i) {
         if (result[i].error != ERROR_SUCCESS) { handles[i].reset(); continue; }
         FILE_DISPOSITION_INFO disposition{TRUE};
@@ -336,9 +353,7 @@ ScriptReply parse_script_reply(const std::string& text) {
 }
 
 bool should_close_console(bool auto_close, bool fixed, unsigned int modal_depth) {
-    (void)auto_close;
-    (void)fixed;
-    return modal_depth == 0;
+    return auto_close && !fixed && modal_depth == 0;
 }
 
 std::vector<std::filesystem::path> scan_captures(const std::filesystem::path& directory) {
