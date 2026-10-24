@@ -5,6 +5,7 @@
 #include <iterator>
 #include <limits>
 #include <string_view>
+#include <utility>
 
 #include "data/pinyin_data.h"
 #include "data/effect_translations.h"
@@ -262,17 +263,50 @@ int field_score(const std::wstring& value, const std::wstring& query, int exact,
     return std::numeric_limits<int>::max();
 }
 
-int score_item(const CatalogItem& item, const std::wstring& query) {
+SearchEngine::IndexedField indexed_wide_field(const std::wstring& value,
+                                                int exact, int prefix, int contains) {
+    return {normalize_wide(value), exact, prefix, contains};
+}
+
+SearchEngine::IndexedField indexed_utf8_field(const std::string& value,
+                                               int exact, int prefix, int contains) {
+    return {normalize_utf8(value), exact, prefix, contains};
+}
+
+void append_indexed_field(std::vector<SearchEngine::IndexedField>& fields,
+                          SearchEngine::IndexedField field) {
+    fields.push_back(std::move(field));
+}
+
+SearchEngine::IndexedItem index_item(CatalogItem item) {
+    enrich_catalog_item(item);
+    SearchEngine::IndexedItem indexed;
+    indexed.item = std::move(item);
+    const auto add_wide = [&](const std::wstring& value, int exact, int prefix, int contains) {
+        append_indexed_field(indexed.fields, indexed_wide_field(value, exact, prefix, contains));
+    };
+    const auto add_utf8 = [&](const std::string& value, int exact, int prefix, int contains) {
+        append_indexed_field(indexed.fields, indexed_utf8_field(value, exact, prefix, contains));
+    };
+    add_wide(indexed.item.display_name, 0, 10, 20);
+    add_wide(indexed.item.translated_name, 5, 15, 25);
+    for (const auto& alias : indexed.item.aliases) add_wide(alias, 25, 28, 29);
+    add_utf8(indexed.item.pinyin_full, 30, 35, 40);
+    for (const auto& pinyin : indexed.item.pinyin_full_variants) add_utf8(pinyin, 30, 35, 40);
+    add_utf8(indexed.item.pinyin_initials, 50, 55, 60);
+    for (const auto& initials : indexed.item.pinyin_initial_variants) add_utf8(initials, 50, 55, 60);
+    add_utf8(indexed.item.english_name, 70, 75, 80);
+    add_utf8(indexed.item.match_name, 90, 95, 95);
+    return indexed;
+}
+
+int score_item(const SearchEngine::IndexedItem& item, const std::wstring& query) {
     if (query.empty()) return 1000;
-    int best = field_score(normalize_wide(item.display_name), query, 0, 10, 20);
-    best = std::min(best, field_score(normalize_wide(item.translated_name), query, 5, 15, 25));
-    for (const auto& alias : item.aliases) best = std::min(best, field_score(normalize_wide(alias), query, 25, 28, 29));
-    best = std::min(best, field_score(normalize_utf8(item.pinyin_full), query, 30, 35, 40));
-    for (const auto& pinyin : item.pinyin_full_variants) best = std::min(best, field_score(normalize_utf8(pinyin), query, 30, 35, 40));
-    best = std::min(best, field_score(normalize_utf8(item.pinyin_initials), query, 50, 55, 60));
-    for (const auto& initials : item.pinyin_initial_variants) best = std::min(best, field_score(normalize_utf8(initials), query, 50, 55, 60));
-    best = std::min(best, field_score(normalize_utf8(item.english_name), query, 70, 75, 80));
-    best = std::min(best, field_score(normalize_utf8(item.match_name), query, 90, 95, 95));
+    int best = std::numeric_limits<int>::max();
+    for (const auto& field : item.fields) {
+        best = std::min(best, field_score(field.value, query,
+                                          field.exact, field.prefix, field.contains));
+    }
     return best;
 }
 
@@ -290,8 +324,9 @@ void enrich_catalog_item(CatalogItem& item) {
     if (item.pinyin_initials.empty() && !item.pinyin_initial_variants.empty()) item.pinyin_initials = item.pinyin_initial_variants.front();
 }
 
-SearchEngine::SearchEngine(std::vector<CatalogItem> items) : items_(std::move(items)) {
-    for (auto& item : items_) enrich_catalog_item(item);
+SearchEngine::SearchEngine(std::vector<CatalogItem> items) {
+    items_.reserve(items.size());
+    for (auto& item : items) items_.push_back(index_item(std::move(item)));
 }
 
 std::wstring catalog_display_name(const CatalogItem& item) {
@@ -310,9 +345,9 @@ std::wstring bilingual_effect_label(const std::wstring& english_name, const std:
 std::vector<SearchResult> SearchEngine::search(const std::wstring& query) const {
     const auto normalized_query = normalize_wide(query);
     std::vector<SearchResult> results;
-    for (const auto& item : items_) {
-        const int score = score_item(item, normalized_query);
-        if (score != std::numeric_limits<int>::max()) results.push_back({item, score});
+    for (const auto& indexed : items_) {
+        const int score = score_item(indexed, normalized_query);
+        if (score != std::numeric_limits<int>::max()) results.push_back({indexed.item, score});
     }
     std::sort(results.begin(), results.end(), [](const SearchResult& left, const SearchResult& right) {
         if (left.score != right.score) return left.score < right.score;

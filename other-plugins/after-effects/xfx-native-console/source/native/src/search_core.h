@@ -32,8 +32,19 @@ public:
     explicit SearchEngine(std::vector<CatalogItem> items);
     std::vector<SearchResult> search(const std::wstring& query) const;
 
+    struct IndexedField {
+        std::wstring value;
+        int exact = 0;
+        int prefix = 0;
+        int contains = 0;
+    };
+    struct IndexedItem {
+        CatalogItem item;
+        std::vector<IndexedField> fields;
+    };
+
 private:
-    std::vector<CatalogItem> items_;
+    std::vector<IndexedItem> items_;
 };
 
 std::wstring catalog_display_name(const CatalogItem& item);
