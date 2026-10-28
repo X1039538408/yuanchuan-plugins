@@ -22,17 +22,19 @@ import uuid
 from PIL import Image
 import core
 import framefit_workflow as workflow
+import naming
 
 ID = re.compile(r"^[a-zA-Z0-9_-]{1,100}$")
 DEFAULTS = dict(direction="landscape", templateId="landscape", detection="auto", rect=None,
                 fit="cover", zoom=100, resolution="1080p", quality="high", backend="auto",
                 language="auto", otherLanguage="", nameMode="compact", outputGroup="folder",
-                borderPolicy="ask", templateConfirmed=False, outputSize=None)
+                borderPolicy="ask", templateConfirmed=False, outputSize=None,
+                namePattern=naming.DEFAULT_PATTERN,nameDate='',nameProject='',nameGame='')
 CHOICES = dict(direction=("landscape", "portrait", "custom"), detection=("auto", "black", "white", "transparent"),
                fit=("cover", "contain", "stretch", "zoom"), resolution=("720p", "1080p", "4k", "original"),
                quality=("high", "standard"), backend=("auto", "nvenc", "cpu"),
-               language=("auto", "简中", "英", "日", "韩", "other", "none"),
-               nameMode=("compact", "full"), outputGroup=("folder", "project", "template"),
+               language=("auto", "简中", "繁中", "英", "日", "韩", "other", "none"),
+               nameMode=("compact", "full", "custom"), outputGroup=("folder", "project", "template"),
                borderPolicy=("ask", "keep", "remove"))
 FIT_LABELS = {"等比填满（推荐）": "cover", "完整显示": "contain", "完整显示（可能留黑边）": "contain",
               "拉伸铺满": "stretch", "自由缩放": "zoom"}
@@ -221,6 +223,14 @@ class Engine:
             if cfg[key] not in choices:
                 raise ValueError(f"{key} 参数无效。")
         cfg["zoom"] = core.validate_zoom(cfg["zoom"])
+        if cfg['nameMode']=='custom':
+            naming.validate_pattern(cfg['namePattern'])
+        from datetime import date
+        cfg['nameDate']=cfg.get('nameDate') or date.today().isoformat()
+        try:
+            date.fromisoformat(cfg['nameDate'])
+        except (ValueError,TypeError):
+            raise ValueError('命名日期需要 YYYY-MM-DD 格式。') from None
         requested_size = cfg.get('outputSize')
         if requested_size is not None and (not isinstance(requested_size, list) or len(requested_size)!=2 or
                 any(isinstance(value,bool) or not isinstance(value,int) or value<2 or value>16384 or value%2 for value in requested_size)):
@@ -267,6 +277,7 @@ class Engine:
         with file_lock(self.state / "sessions.lock"):
             previous = self.load_session(sessionId) if sessionId else None
             incoming = dict(config or {})
+            desktop_variants=None
             preset_config = {}
             if "preset" in incoming:
                 name = incoming.pop("preset")
@@ -275,14 +286,16 @@ class Engine:
                     desktop_recipe = self.desktop_settings().get("recipes", {}).get(name)
                     if isinstance(desktop_recipe, dict):
                         preset = {"config": desktop_recipe.get("engineConfig") or desktop_recipe.get("config")}
-                        if outputTemplates is None and desktop_recipe.get('outputTemplates'):
+                        if outputTemplates is None and desktop_recipe.get('outputTemplates') and desktop_recipe.get('exportMode','auto') in ('multi','auto'):
                             outputTemplates = desktop_recipe['outputTemplates']
                 if preset is None:
                     raise ValueError("未找到该预设。")
                 preset_config = preset["config"]
                 preset_config = {k: v for k, v in preset_config.items() if k not in ('templateConfirmed', 'borderPolicy')}
             if outputTemplates is None and itemConfigs is None and previous is None and not incoming.get('template'):
-                outputTemplates = self.desktop_settings().get('outputTemplates') or None
+                settings = self.desktop_settings()
+                if settings.get('exportMode', 'multi' if settings.get('outputTemplates') else 'single') in ('multi','auto'):
+                    desktop_variants = settings.get('outputTemplates') or None
             direction = incoming.get("direction", preset_config.get("direction", previous["config"]["direction"] if previous else "landscape"))
             if not previous or direction != previous["config"]["direction"]:
                 saved_profiles = read_json(self.state / "profiles.json", {})
@@ -354,8 +367,39 @@ class Engine:
             if itemConfigs is not None and len(itemConfigs)==len(expanded):
                 itemConfigs = retained_overrides
             desktop_workflow = bool(self.desktop_settings().get('machine'))
+            if previous is None and itemConfigs is None:
+                prepared=[]
+                prepared_overrides=[]
+                for item in items:
+                    match=None
+                    variants=desktop_variants
+                    if desktop_workflow and self.desktop_settings().get('machine',{}).get('matchPaths',True) and not cfg.get('templateConfirmed') and not item.get('error'):
+                        requested=cfg.get('outputSize') or (size if cfg['resolution']!='original' and cfg['direction']!='custom' else None)
+                        match=self.match_project_templates(item['name'],direction=cfg['direction'],outputSize=requested)
+                        if match['status']=='matched':
+                            variants=[{'template':candidate['path'],
+                                       'rect':cfg['rect'] if incoming.get('rect') is not None else None,
+                                       'direction':cfg['direction'],'resolution':cfg['resolution'],
+                                       'outputSize':requested or [candidate['width']//2*2,candidate['height']//2*2]}
+                                      for candidate in match['candidates']]
+                    for number,variant in enumerate(variants or [{}]):
+                        clone=dict(item)
+                        override=dict(variant)
+                        if variants:
+                            clone['outputKey']=str(number)
+                            override.update(outputKey=str(number),templateConfirmed=True)
+                        if match is not None:
+                            clone['match']=match
+                            clone['requiresTemplateReview']=match['status']!='matched'
+                            override.update(nameProject=match.get('projectFolder',''),nameGame=match.get('game',''))
+                        prepared.append(clone)
+                        prepared_overrides.append(override)
+                if any(prepared_overrides):
+                    items=prepared
+                    itemConfigs=prepared_overrides
             previous_items = {(item['path'],item.get('outputKey','')): item for item in previous.get('videos', [])} if previous else {}
             for index, item in enumerate(items):
+                item['sequence']=index+1
                 overrides = dict(itemConfigs[index]) if itemConfigs is not None else (
                     dict(previous_items.get((item['path'],item.get('outputKey','')), {}).get('overrides', {})))
                 item['overrides'] = dict(overrides)
@@ -372,7 +416,7 @@ class Engine:
                 item_cfg.update(overrides)
                 if 'rect' in overrides:
                     item_rect_source = 'auto' if overrides['rect'] is None else 'manual'
-                if desktop_workflow and not (item_cfg.get('templateConfirmed') or 'template' in overrides):
+                if desktop_workflow and 'match' not in item and self.desktop_settings().get('machine',{}).get('matchPaths',True) and not (item_cfg.get('templateConfirmed') or 'template' in overrides):
                     query_size = None
                     if item_cfg['resolution'] != 'original' and item_cfg['direction'] != 'custom':
                         query_size = list({'720p':(1280,720), '1080p':(1920,1080), '4k':(3840,2160)}[item_cfg['resolution']])
@@ -430,9 +474,13 @@ class Engine:
     def planned_output(self, item):
         cfg, size = item['config'], item['outputSize']
         parsed = workflow.parse_video_name(item['name'])
-        language = parsed['language'] if cfg['language'] == 'auto' else cfg['otherLanguage'] if cfg['language'] == 'other' else '' if cfg['language'] == 'none' else cfg['language']
+        language = workflow.output_language(item['name'], cfg.get('template', '')) if cfg['language'] == 'auto' else cfg['otherLanguage'] if cfg['language'] == 'other' else '' if cfg['language'] == 'none' else cfg['language']
         name = item.get('outputName') or workflow.output_filename(item['name'], size, language)
-        project = item.get('match', {}).get('projectFolder') or parsed['projectFolder']
+        project = item.get('match', {}).get('projectFolder') or cfg.get('nameProject') or parsed['projectFolder']
+        if cfg['nameMode']=='custom' and not item.get('outputName'):
+            name=naming.render_name(cfg['namePattern'],item['name'],size,language=language,
+                template=cfg.get('template',''),project=project,game=item.get('match',{}).get('game') or cfg.get('nameGame',''),
+                date=cfg.get('nameDate',''),index=item.get('sequence',1))
         if cfg['nameMode'] == 'full' and not item.get('outputName'):
             ratio = math.gcd(*size)
             name = f"{parsed['baseName']}_{project}_{language or '无语言'}_{size[0]//ratio}-{size[1]//ratio}.mp4"
@@ -493,7 +541,7 @@ class Engine:
     def source_borders(self, video, on_progress=None):
         path = Path(video)
         stat = path.stat()
-        key = hashlib.sha256(f"{path.resolve()}\0{stat.st_size}\0{stat.st_mtime_ns}".encode()).hexdigest()
+        key = hashlib.sha256(f"edges-v3\0{path.resolve()}\0{stat.st_size}\0{stat.st_mtime_ns}".encode()).hexdigest()
         cache = self.state / "analysis" / (key + ".json")
         with file_lock(cache.with_suffix('.lock')):
             source = read_json(cache)
@@ -531,11 +579,9 @@ class Engine:
         legacy = Path(os.getenv("LOCALAPPDATA", str(Path.home()))) / "FrameFit" / "settings.json"
         config = read_json(legacy, {}) or {}
         machine = config.get("machine", {})
-        schedule = machine.get("scheduleRoot", r"\\192.168.122.30\团队文件-圆串网络\任务排期\2026")
-        template = machine.get("templateRoot", r"D:\Wu liao")
+        schedule = machine.get("scheduleRoot", "")
+        template = machine.get("templateRoot", "")
         mapping = dict(machine, projects=machine.get("projects", {}))
-        if not mapping.get("gameKeywords"):
-            mapping["gameKeywords"] = ["超凡", "无尽迷途"]
         return workflow.find_project_candidates(filename, schedule, template, mapping, output_size=outputSize, direction=direction)
 
     def manage_recipes(self, action, name=None, sessionId=None):
@@ -562,6 +608,8 @@ class Engine:
                               backend={"auto": "自动（优先 GPU）", "nvenc": "NVIDIA GPU · NVENC", "cpu": "CPU · 兼容模式"}[session["config"]["backend"]],
                               output=session["config"]["outputDir"], language=settings.get("language", "自动识别"),
                               otherLanguage=settings.get("otherLanguage", ""), nameMode=settings.get("nameMode", "精简命名"),
+                              namePattern=session['config'].get('namePattern',naming.DEFAULT_PATTERN),
+                              exportMode='auto',outputTemplates=list({item.get('outputKey',''):item['config'] for item in session['videos'] if item.get('outputKey') and item.get('config')}.values()),
                               outputGroup=settings.get("outputGroup", "统一文件夹"))
                 recipes[name.strip()] = recipe
             else:
@@ -661,18 +709,25 @@ class Engine:
             return dict(task, cancelRequested=True)
         return task
 
-    def resume_task(self, taskId):
+    def resume_task(self, taskId, excludeIndices=None):
         with file_lock(self.state / "submit.lock"):
             task = self.get_task(taskId)
             if task["status"] in ("running", "queued", "completed"):
                 return task
+            if excludeIndices:
+                if not isinstance(excludeIndices,list) or any(type(i) is not int or not 0 <= i < len(task['items']) for i in excludeIndices):
+                    raise ValueError('移除项目的编号无效。')
+                remaining=[dict(item) for index,item in enumerate(task['items']) if index not in excludeIndices]
+                if not remaining or all(item['status']=='completed' for item in remaining):
+                    raise ValueError('没有可继续的未完成项目。')
+                task=dict(task,taskId=uuid.uuid4().hex,resumedFrom=taskId,items=remaining)
             pinned_root = Path(task["runtimeRoot"]).resolve()
             if pinned_root != self.root:
                 if not (pinned_root / "runtime.json").is_file():
                     raise ValueError("原任务版本已不可用，无法继续该任务。")
                 original_root = core.ROOT
                 pinned = Engine(pinned_root, self.state)
-                self.task_path(taskId).with_suffix(".cancel").unlink(missing_ok=True)
+                self.task_path(task['taskId']).with_suffix(".cancel").unlink(missing_ok=True)
                 for item in task["items"]:
                     if item["status"] != "completed":
                         item.update(status="queued", progress=0)
@@ -683,7 +738,7 @@ class Engine:
                     return pinned._start(task)
                 finally:
                     core.ROOT = original_root
-            self.task_path(taskId).with_suffix(".cancel").unlink(missing_ok=True)
+            self.task_path(task['taskId']).with_suffix(".cancel").unlink(missing_ok=True)
             for item in task["items"]:
                 if item["status"] != "completed":
                     item.update(status="queued", progress=0)

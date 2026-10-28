@@ -20,7 +20,10 @@ def main():
             raise RuntimeError("FrameFit 当前版本目录无效，请运行修复安装。")
     else:
         selected = root / "versions" / "1.1.0"
-    app = selected / "FrameFitApp" / "FrameFitApp.exe"
+    app = selected / "FrameFitApp" / "FrameFitStudio.exe"
+    # Keep older local installations launchable while the user upgrades.
+    if not app.is_file():
+        app = selected / "FrameFitApp" / "FrameFitApp.exe"
     if not app.is_file():
         raise RuntimeError(f"FrameFit 程序文件缺失：{app}")
     environment = dict(os.environ, FRAMEFIT_INSTALL_ROOT=str(root), FRAMEFIT_BIN_DIR=str(selected / "bin"),

@@ -248,15 +248,35 @@ def thumbnail(video, seconds=0, maximum=(144, 88)):
     return Image.open(io.BytesIO(result.stdout)).convert('RGB')
 
 
-def analyze_borders(video, interval=1.0, on_progress=None):
+def border_frame(video, seconds=0):
+    """Lossless source frame for precise checks; never average thin edges away."""
+    info = probe(video)
+    seconds = min(max(0, seconds), max(0, (math.ceil(info['duration'] * info['fps']) - 1) / info['fps']))
+    result = run([binary('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-ss', str(seconds),
+                  '-i', str(video), '-frames:v', '1', '-f', 'image2pipe', '-c:v', 'png', 'pipe:1'], timeout=30)
+    return Image.open(io.BytesIO(result.stdout)).convert('RGB')
+
+
+def analyze_borders(video, interval=.5, on_progress=None):
     info = probe(video)
     samples = []
+    width, height = info['width'], info['height']
+    thumb_height = max(2, round(640 * height / width / 2) * 2)
+    # Keep every source row and column while compressing only the other axis.
+    # The compact profiles preserve 1px borders without writing full 4K frames.
+    filters = (
+        f'[0:v]fps=1/{interval}:start_time=0,split=3[t][h][v];'
+        f'[t]scale=640:{thumb_height}:flags=area[thumb];'
+        f'[h]scale=64:{height}:flags=area,pad=640:{height}:0:0:black[rows];'
+        f'[v]scale={width}:64:flags=area,transpose=1,pad=640:{width}:0:0:black[cols];'
+        '[thumb][rows][cols]vstack=inputs=3[out]')
     with tempfile.TemporaryDirectory(prefix='framefit-borders-') as temporary:
-        pattern = str(Path(temporary) / 'frame-%08d.jpg')
+        pattern = str(Path(temporary) / 'frame-%08d.png')
         args = [binary('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-nostdin',
                 '-threads', '2', '-i', str(video), '-an', '-filter_threads', '1',
-                '-vf', f'fps=1/{interval}:start_time=0,scale=640:-2:flags=area', '-fps_mode', 'passthrough',
-                '-q:v', '4', '-progress', 'pipe:1', '-nostats', pattern]
+                '-filter_complex_threads', '1', '-filter_complex', filters, '-map', '[out]',
+                '-fps_mode', 'passthrough', '-c:v', 'png', '-compression_level', '1',
+                '-progress', 'pipe:1', '-nostats', pattern]
         with tempfile.TemporaryFile() as errors:
             process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=errors, creationflags=CREATE_FLAGS)
             expired = threading.Event()
@@ -304,33 +324,46 @@ def analyze_borders(video, interval=1.0, on_progress=None):
                     process.kill()
                 process.wait()
                 process.stdout.close()
-        frames = sorted(Path(temporary).glob('frame-*.jpg'))
+        frames = sorted(Path(temporary).glob('frame-*.png'))
         for index, path in enumerate(frames):
+            if cancel is not None and cancel.is_set():
+                raise Cancelled('已取消边缘扫描')
             with Image.open(path) as frame:
-                samples.extend(dict(border, seconds=min(info['duration'], index * interval))
-                               for border in detect_borders(frame))
+                rows = detect_borders(frame.crop((0, thumb_height, 64, thumb_height + height)), include_internal=False)
+                cols = detect_borders(frame.crop((0, thumb_height + height, 64, thumb_height + height + width)), include_internal=False)
+                for color in ('black', 'white'):
+                    horizontal = next((edge for edge in rows if edge['color'] == color), {})
+                    vertical = next((edge for edge in cols if edge['color'] == color), {})
+                    border = dict(color=color, top=horizontal.get('top', 0), bottom=horizontal.get('bottom', 0),
+                                  left=vertical.get('top', 0), right=vertical.get('bottom', 0), width=width, height=height)
+                    if any(border[side] for side in ('top', 'bottom', 'left', 'right')):
+                        samples.append(dict(border, seconds=min(info['duration'], index * interval)))
+                from framefit_workflow import dark_seams
+                seam = dark_seams(frame.crop((0, 0, 640, thumb_height)))
+                if seam:
+                    samples.append(dict(seam, seconds=min(info['duration'], index * interval)))
             if on_progress:
                 on_progress(.8 + .2 * (index + 1) / max(1, len(frames)))
     if on_progress:
         on_progress(1.0)
     return {'duration': info['duration'], 'sampleInterval': interval,
-            'checkedFrames': len(frames), 'segments': group_border_samples(samples)}
+            'checkedFrames': len(frames), 'segments': group_border_samples(samples,gap_seconds=interval*1.1)}
 
 
-def analyze_composite_borders(video, template, rect, output_size, mode, zoom=100, source_segments=None, on_progress=None):
+def analyze_composite_borders(video, template, rect, output_size, mode, zoom=100, source_segments=None, on_progress=None, sample_points=None):
     import copy
     def identity(path):
         path = Path(path).resolve()
         stat = path.stat()
         return str(path), stat.st_size, stat.st_mtime_ns
-    key = (identity(video), identity(template), tuple(rect), tuple(output_size), mode, zoom)
+    key = (identity(video), identity(template), tuple(rect), tuple(output_size), mode, zoom,tuple(sample_points) if sample_points else None)
     cache = getattr(analyze_composite_borders, '_cache', {})
     if key in cache:
         if on_progress:
             on_progress(1.0)
         return copy.deepcopy(cache[key])
     info = probe(video)
-    points = sorted(set((0.0, max(0.0, info['duration'] / 2), max(0.0, info['duration'] - .15))))
+    points = sorted(set(sample_points or (0.0, max(0.0, info['duration'] / 2), max(0.0, info['duration'] - .15))))
     source_segments = source_segments or []
     results = []
     factor = min(1.0, 960 / max(output_size))
@@ -345,8 +378,27 @@ def analyze_composite_borders(video, template, rect, output_size, mode, zoom=100
             raise Cancelled('已取消边缘检查')
         image = preview(video, template, rect, check_size, mode, seconds, zoom)
         # Bars can sit inside the template's video opening, away from canvas edges.
-        original = detect_borders(thumbnail(video, seconds, (640, 640)))
-        for border in detect_borders(image.crop(window)):
+        original = detect_borders(border_frame(video, seconds))
+        borders=detect_borders(image.crop(window),include_internal=False)
+        # A gap may lie just outside a detected opening. Inspect a small surrounding
+        # strip too, without mistaking decorative borders elsewhere on the canvas.
+        from framefit_workflow import dark_seams
+        pad=max(2,round(max(check_size)*.006))
+        expanded=(max(0,window[0]-pad),max(0,window[1]-pad),min(image.width,window[2]+pad),min(image.height,window[3]+pad))
+        seam=dark_seams(image.crop(expanded))
+        if seam:
+            relevant=[]
+            for band in seam['bands']:
+                dimension=seam['height'] if band['axis']=='horizontal' else seam['width']
+                center=(band['start']+band['end'])/2
+                if center<=pad*2 or dimension-center<=pad*2:
+                    relevant.append(band)
+                    side=('top' if center<dimension/2 else 'bottom') if band['axis']=='horizontal' else ('left' if center<dimension/2 else 'right')
+                    seam[side]=max(seam[side],band['end'] if center<dimension/2 else dimension-band['start'])
+            if relevant:
+                seam['bands']=relevant
+                borders.append(seam)
+        for border in borders:
             def source_covers(source):
                 if source['color'] != border['color']:
                     return False

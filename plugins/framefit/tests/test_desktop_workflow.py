@@ -8,6 +8,27 @@ from plugins.framefit.server.framefit_workflow import (
     detect_borders, find_project_candidates, group_border_samples,
     output_filename, parse_video_name,
 )
+from plugins.framefit.server.framefit_workflow import template_language, output_language
+
+
+def test_automatic_language_uses_each_template_then_the_source():
+    assert template_language('1-45EN.png') == '英'
+    assert template_language('916_JP.png') == '日'
+    assert template_language('1-916-繁中.png') == '繁中'
+    assert template_language('green.png') is None
+    assert output_language('video 简中.mp4', '1-45EN.png') == '英'
+    assert output_language('video 日.mp4', 'plain.png') == '日'
+    assert output_language('video.mp4', 'plain.png') == ''
+
+
+def test_dark_seam_ranges_keep_their_type_separate_from_black_edges():
+    groups = group_border_samples([
+        {'color': 'black', 'seconds': 1, 'top': 2},
+        {'color': 'black', 'kind': 'dark_seam', 'seconds': 1,
+         'bands': [{'axis': 'horizontal', 'position': .5}]},
+    ])
+    assert len(groups) == 2
+    assert any(item.get('kind') == 'dark_seam' for item in groups)
 
 
 def test_parse_filename_dimensions_version_and_language():
@@ -32,6 +53,41 @@ def test_border_detection_finds_black_and_white_letterbox_bands():
     draw.rectangle((0, 167, 319, 179), fill="white")
     white = next(item for item in detect_borders(white_image) if item["color"] == "white")
     assert white["top"] > 5 and white["bottom"] > 5
+
+
+def test_border_detection_keeps_single_pixel_edges_at_1080p_and_4k():
+    for size in ((1920, 1080), (3840, 2160)):
+        for side in ('top', 'bottom', 'left', 'right'):
+            image = Image.new('RGB', size, '#83aac5')
+            draw = ImageDraw.Draw(image)
+            bounds = {
+                'top': (0, 0, size[0] - 1, 0),
+                'bottom': (0, size[1] - 1, size[0] - 1, size[1] - 1),
+                'left': (0, 0, 0, size[1] - 1),
+                'right': (size[0] - 1, 0, size[0] - 1, size[1] - 1),
+            }
+            draw.rectangle(bounds[side], fill='black')
+            edge = next(item for item in detect_borders(image) if item['color'] == 'black')
+            assert edge[side] == 1, (size, side, edge)
+
+
+def test_thin_single_sided_edges_and_internal_dark_seams():
+    for side in ('top','bottom','left','right'):
+        for color in ('black','white'):
+            image=Image.new('RGB',(320,180),'#83aac5')
+            draw=ImageDraw.Draw(image)
+            bounds={'top':(0,0,319,0),'bottom':(0,179,319,179),'left':(0,0,0,179),'right':(319,0,319,179)}
+            draw.rectangle(bounds[side],fill=color)
+            edge=next(item for item in detect_borders(image) if item['color']==color)
+            assert edge[side]==1,(side,color,edge)
+    image=Image.new('RGB',(320,480),'#83aac5')
+    draw=ImageDraw.Draw(image)
+    draw.rectangle((0,120,319,120),fill=(55,65,65))
+    draw.rectangle((0,340,319,340),fill=(60,70,65))
+    seams=next(item for item in detect_borders(image) if item.get('kind')=='dark_seam')
+    assert len(seams['bands'])==2
+    assert seams['confidence']=='possible'
+    assert detect_borders(Image.new('RGB',(320,180),'black'))==[]
 
 
 def test_border_samples_group_contiguous_segments():

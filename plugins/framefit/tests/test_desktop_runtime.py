@@ -102,9 +102,19 @@ else:
                 app.after(100, finish)
                 return
             result['desktopExport'] = True
-            job['output'] = None
+            assert job['output'], 'First result should stay completed before an explicit repeat export'
             print('desktop-start:' + str((app.busy, app.importing, bool(job.get('info')), job.get('requiresTemplateReview'))), flush=True)
-            app.confirm_batch = lambda _pending: True
+            def accept_real_dialog():
+                def walk(widget):
+                    for child in widget.winfo_children():
+                        yield child
+                        yield from walk(child)
+                for widget in walk(app):
+                    if isinstance(widget,(gui.tk.Button,gui.Button)) and widget.cget('text')=='确认并导出':
+                        widget.invoke()
+                        return
+                app.after(50,accept_real_dialog)
+            app.after(50,accept_real_dialog)
             app.skip_border_preflight = True
             app.start_export()
             app.after(100, finish)
@@ -177,6 +187,45 @@ app.update()
 errors=[]
 app.report_callback_exception=lambda *args:errors.append(str(args))
 try:
+    assert app.theme_mode=='system'
+    assert not app.bind('<F11>')
+    assert app.focus_button.master is app.canvas
+    app.apply_theme('light')
+    assert app.palette['panel']=='#ffffff'
+    app.apply_theme('dark')
+    assert app.palette['panel']=='#1d202a'
+    app.apply_theme('system')
+    for page in ('templates','settings','workbench'):
+        app.show_page(page)
+        app.update()
+        assert app.pages[page].winfo_ismapped(),(page,app.pages[page].grid_info(),app.state(),app.pages[page].winfo_width(),app.pages[page].winfo_height())
+    app.focus_button.tooltip.show()
+    assert app.focus_button.tooltip.popup.winfo_exists()
+    app.focus_button.tooltip.hide()
+    assert app.tree.winfo_height()>=55, 'Queue must show its heading and at least one complete row'
+    assert app.tree.master.master.winfo_height()>=app.tree.winfo_height(), 'List rows extend outside their visible card'
+    app.mode_combo.show_choices()
+    app.update()
+    popup=app.mode_combo.popup
+    assert popup and popup.winfo_ismapped()
+    choices=next(child for child in popup.winfo_children()[0].winfo_children() if isinstance(child,gui.tk.Listbox))
+    choices.selection_clear(0,'end')
+    choices.selection_set(1)
+    choices.event_generate('<Return>')
+    app.update()
+    assert app.mode_var.get()==list(gui.MODES)[1]
+    assert app.mode_combo.popup is None
+    app.mode_var.set(list(gui.MODES)[0])
+    # A themed prompt must return to its caller and preserve the same Tk loop.
+    def dismiss_prompt():
+        def walk(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from walk(child)
+        button=next(widget for widget in walk(app) if isinstance(widget,gui.Button) and widget.cget('text')=='确定')
+        button.invoke()
+    app.after(50,dismiss_prompt)
+    assert gui.messagebox.showinfo('控件检查','圆角提示框验证',parent=app)=='ok'
     original=app.mode_var.get()
     app.mode_combo.event_generate('<MouseWheel>',delta=-120)
     app.update()
@@ -201,10 +250,11 @@ try:
     assert app.template==matched_template,'Preview retained old template after successful background matching'
     assert not app.direction_buttons and not hasattr(app,'storyboard')
     assert app.canvas.winfo_height()>350,app.canvas.winfo_height()
+    assert app.seek_slider.master.winfo_rooty()+app.seek_slider.master.winfo_height()<=app.canvas.master.winfo_rooty()+app.canvas.master.winfo_height(), 'Timeline extends outside the preview card'
     height=app.canvas.winfo_height()
     app.toggle_preview_focus()
     app.update()
-    assert app.canvas.winfo_height()>height
+    assert app.canvas.winfo_height()>height,(height,app.canvas.winfo_height(),app.canvas.master.winfo_height(),[(w.winfo_height(),w.winfo_manager()) for w in app.queue_sections],app.canvas.master.master.master.master.grid_info(),app.canvas.master.master.master.master.winfo_height(),app.canvas.master.master.master.master.grid_bbox())
     app.toggle_preview_focus()
     app.ratio_var.set('1:1 · 1080×1080')
     app.change_ratio()

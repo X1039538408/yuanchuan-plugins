@@ -52,6 +52,9 @@ def build(version, media_dir, output):
                        "--specpath", str(temp / "spec")]
             command.append("--onefile" if onefile else "--onedir")
             command.append("--windowed" if windowed else "--console")
+            icon = PLUGIN / "assets" / "icon.ico"
+            if icon.is_file():
+                command += ["--icon", str(icon)]
             for path in paths:
                 command += ["--paths", str(path)]
             for source, target in add_data:
@@ -60,18 +63,22 @@ def build(version, media_dir, output):
                 command += ["--copy-metadata", item]
             command.append(str(entry))
             subprocess.run(command, check=True)
-        pyinstaller("FrameFitApp", SOURCE / "app.py", True,
+        # Use a new executable basename so Windows does not reuse the cached
+        # Tk feather icon associated with earlier FrameFitApp.exe builds.
+        pyinstaller("FrameFitStudio", SOURCE / "app.py", True,
                     paths=(SOURCE, PLUGIN / "server"),
                     add_data=((version_file, "."),))
         pyinstaller("FrameFitWorker", PLUGIN / "server" / "engine.py", False,
                     paths=(PLUGIN / "server",))
         pyinstaller("FrameFitHost", PLUGIN / "server" / "host.py", False,
                     paths=(PLUGIN / "server",), metadata=("mcp", "mcp-types"))
-        pyinstaller("FrameFit", SOURCE / "launcher.py", True, onefile=True)
+        # A new launcher basename avoids Windows Explorer/taskbar reusing the
+        # feather icon cached for the legacy FrameFit.exe path.
+        pyinstaller("FrameFitLauncher", SOURCE / "launcher.py", True, onefile=True)
         package = temp / "package"
         version_root = package / "versions" / version
         version_root.mkdir(parents=True)
-        shutil.copytree(dist / "FrameFitApp", version_root / "FrameFitApp")
+        shutil.copytree(dist / "FrameFitStudio", version_root / "FrameFitApp")
         shutil.copytree(dist / "FrameFitWorker", version_root / "worker")
         shutil.copytree(dist / "FrameFitHost", version_root / "host")
         shutil.copytree(PLUGIN / "server", version_root / "server",
@@ -114,10 +121,13 @@ def build(version, media_dir, output):
         update_zip = output / f"framefit-desktop-{version}-windows-x64.zip"
         zip_tree(version_root, update_zip)
         launcher_root = package
-        launcher_exe = dist / "FrameFit.exe"
+        launcher_exe = dist / "FrameFitLauncher.exe"
+        shutil.copy2(launcher_exe, launcher_root / "FrameFitLauncher.exe")
+        # Compatibility alias for existing scripts; new installs should open
+        # FrameFitLauncher.exe so Windows gets a fresh icon identity.
         shutil.copy2(launcher_exe, launcher_root / "FrameFit.exe")
         (launcher_root / 'INSTALL.txt').write_text(
-            'FrameFit Windows x64\n\n将本压缩包完整解压到 %LOCALAPPDATA%\\FrameFit，运行 FrameFit.exe。\n'
+            'FrameFit Windows x64\n\n将本压缩包完整解压到 %LOCALAPPDATA%\\FrameFit，运行 FrameFitLauncher.exe。\n'
             '保持软件打开后使用 Codex 视频套版插件。个人设置仅保存在本机。\n'
             '启动只检查更新；点击更新按钮后才下载、校验并重启。\n'
             '图文教程：https://github.com/X1039538408/yuanchuan-plugins/blob/main/docs/framefit.md\n', encoding='utf-8-sig')

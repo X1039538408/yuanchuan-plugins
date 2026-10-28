@@ -10,9 +10,9 @@ from plugins.framefit.desktop.source import updater
 
 def package(version="1.2.0", entries=None):
     entries = entries if entries is not None else {name: b'verified placeholder' for name in (
-        'FrameFitApp/FrameFitApp.exe', 'worker/FrameFitWorker.exe', 'host/FrameFitHost.exe',
+        'FrameFitApp/FrameFitStudio.exe', 'worker/FrameFitWorker.exe', 'host/FrameFitHost.exe',
         'bin/ffmpeg.exe', 'bin/ffprobe.exe', 'assets/default.png', 'assets/default_portrait.png', 'shared-presets.json')}
-    if entries and 'FrameFitApp/FrameFitApp.exe' in entries:
+    if entries and 'FrameFitApp/FrameFitStudio.exe' in entries:
         entries['runtime.json'] = json.dumps({'version':version,'apiVersion':1}).encode()
     files = {name: hashlib.sha256(value).hexdigest() for name, value in entries.items()}
     metadata = json.dumps({"version": version, "apiVersion": 1, "files": files}).encode()
@@ -29,7 +29,7 @@ def test_stage_verifies_archive_and_inventory_before_returning_version(monkeypat
     monkeypatch.setattr(updater, "_read_url", lambda *_args, **_kwargs: payload)
     target = updater.stage_update({"version": "1.2.0", "url": "https://github.com/X1039538408/yuanchuan-plugins/releases/download/framefit-desktop-v1.2.0/pkg.zip",
                                    "sha256": hashlib.sha256(payload).hexdigest()}, tmp_path)
-    assert (target / 'FrameFitApp/FrameFitApp.exe').read_bytes() == b'verified placeholder'
+    assert (target / 'FrameFitApp/FrameFitStudio.exe').read_bytes() == b'verified placeholder'
     assert not (tmp_path / "current.json").exists()
 
 
@@ -68,7 +68,7 @@ def test_incompatible_api_and_modified_cached_files_never_replace_current(monkey
     monkeypatch.setattr(updater, '_read_url', lambda *_args, **_kwargs: payload)
     manifest.update(apiVersion=1, url='https://github.com/X1039538408/yuanchuan-plugins/releases/download/v/pkg.zip', sha256=hashlib.sha256(payload).hexdigest())
     target = updater.stage_update(manifest, tmp_path)
-    (target / 'FrameFitApp/FrameFitApp.exe').write_bytes(b'changed')
+    (target / 'FrameFitApp/FrameFitStudio.exe').write_bytes(b'changed')
     with pytest.raises(ValueError, match='校验失败'):
         updater.stage_update(manifest, tmp_path)
     assert not (tmp_path / 'current.json').exists()

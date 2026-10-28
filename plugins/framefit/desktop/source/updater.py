@@ -61,7 +61,7 @@ def verify_inventory(payload, version):
     actual = {p.relative_to(payload).as_posix() for p in payload.rglob('*') if p.is_file()}
     if actual != set(release['files']) | {'desktop-release.json'}:
         raise ValueError('更新包文件清单与实际文件不一致。')
-    required = {'FrameFitApp/FrameFitApp.exe', 'worker/FrameFitWorker.exe', 'host/FrameFitHost.exe',
+    required = {'FrameFitApp/FrameFitStudio.exe', 'worker/FrameFitWorker.exe', 'host/FrameFitHost.exe',
                 'bin/ffmpeg.exe', 'bin/ffprobe.exe', 'runtime.json',
                 'assets/default.png', 'assets/default_portrait.png', 'shared-presets.json'}
     if not required.issubset(actual):
@@ -179,7 +179,7 @@ def activate_update(version_dir, install_root, launcher=None):
         os.replace(temporary, current)
         if launcher:
             # Own the new GUI process so failed startup can be terminated without touching the old app.
-            process = subprocess.Popen([str(selected / 'FrameFitApp' / 'FrameFitApp.exe')], cwd=str(selected), close_fds=True,
+            process = subprocess.Popen([str(selected / 'FrameFitApp' / 'FrameFitStudio.exe')], cwd=str(selected), close_fds=True,
                 env=dict(os.environ, PYINSTALLER_RESET_ENVIRONMENT='1', FRAMEFIT_INSTALL_ROOT=str(root), FRAMEFIT_BIN_DIR=str(selected / 'bin')))
             _wait_ready(selected, process, bridge)
     except Exception:
