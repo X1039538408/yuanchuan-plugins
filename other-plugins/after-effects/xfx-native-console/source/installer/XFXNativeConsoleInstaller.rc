@@ -1,0 +1,45 @@
+#pragma code_page(65001)
+#include <windows.h>
+
+#define IDR_XFX_PLUGIN 101
+#define IDR_XFX_ALIASES 102
+#define IDR_XFX_NOTICES 103
+#define IDR_XFX_PANEL 104
+
+#ifdef XFX_FIXTURE_TEST
+1 RT_MANIFEST "FixtureTest.manifest"
+#else
+1 RT_MANIFEST "XFXNativeConsoleInstaller.manifest"
+#endif
+#ifndef XFX_UNINSTALLER
+IDR_XFX_PLUGIN RCDATA "XFXNativeConsole.aex"
+IDR_XFX_ALIASES RCDATA "XFXNativeConsole.aliases.tsv"
+IDR_XFX_NOTICES RCDATA "XFXNativeConsole.THIRD-PARTY-NOTICES.txt"
+IDR_XFX_PANEL RCDATA "XFX 中文控制台.jsx"
+#endif
+
+1 VERSIONINFO
+FILEVERSION 1,0,18,0
+PRODUCTVERSION 1,0,18,0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080404B0"
+    BEGIN
+      VALUE "ProductName", "效果控制台"
+      VALUE "ProductVersion", "1.0.18"
+      VALUE "FileVersion", "1.0.18.0"
+#ifdef XFX_UNINSTALLER
+      VALUE "FileDescription", "效果控制台一键卸载"
+#else
+      VALUE "FileDescription", "效果控制台一键安装"
+#endif
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0804, 1200
+  END
+END

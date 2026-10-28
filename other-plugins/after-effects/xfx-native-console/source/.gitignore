@@ -1,0 +1,12 @@
+artifacts/
+bin/
+obj/
+*.obj
+*.pdb
+native/build/
+native/plugin/*.rc
+installer/obj-installer/
+installer/*.exe
+installer/*.aex
+vendor/ae-sdk/*
+!vendor/ae-sdk/README.txt

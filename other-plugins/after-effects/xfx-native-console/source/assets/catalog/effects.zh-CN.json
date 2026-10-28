@@ -1,0 +1,21 @@
+[
+  { "displayName": "模糊", "pinyinFull": "mohu", "pinyinInitials": "mh", "englishName": "Blur", "matchName": "ADBE Blur", "category": "效果", "source": "ae" },
+  { "displayName": "高斯模糊", "pinyinFull": "gaosimohu", "pinyinInitials": "gsmh", "englishName": "Gaussian Blur", "matchName": "ADBE Gaussian Blur 2", "category": "效果", "source": "ae" },
+  { "displayName": "方向模糊", "pinyinFull": "fangxiangmohu", "pinyinInitials": "fxmh", "englishName": "Directional Blur", "matchName": "ADBE Motion Blur", "category": "效果", "source": "ae" },
+  { "displayName": "锐化", "pinyinFull": "ruihua", "pinyinInitials": "rh", "englishName": "Sharpen", "matchName": "ADBE Sharpen", "category": "效果", "source": "ae" },
+  { "displayName": "亮度/对比度", "pinyinFull": "liangduiduibidu", "pinyinInitials": "lddbd", "englishName": "Brightness & Contrast", "matchName": "ADBE Brightness & Contrast 2", "category": "效果", "source": "ae" },
+  { "displayName": "色相/饱和度", "pinyinFull": "sexiangbaohedu", "pinyinInitials": "sxbhd", "englishName": "Hue/Saturation", "matchName": "ADBE HUE SATURATION", "category": "效果", "source": "ae" },
+  { "displayName": "曲线", "pinyinFull": "quxian", "pinyinInitials": "qx", "englishName": "Curves", "matchName": "ADBE CurvesCustom", "category": "效果", "source": "ae" },
+  { "displayName": "发光", "pinyinFull": "faguang", "pinyinInitials": "fg", "englishName": "Glow", "matchName": "ADBE Glo2", "category": "效果", "source": "ae" },
+  { "displayName": "阴影/高光", "pinyinFull": "yinyinggaoguang", "pinyinInitials": "yygg", "englishName": "Shadow/Highlight", "matchName": "ADBE Shadow Highlight", "category": "效果", "source": "ae" },
+  { "displayName": "噪波", "pinyinFull": "zaobo", "pinyinInitials": "zb", "englishName": "Fractal Noise", "matchName": "ADBE Fractal Noise", "category": "效果", "source": "ae" },
+  { "displayName": "色阶", "pinyinFull": "sejie", "pinyinInitials": "sj", "englishName": "Levels", "matchName": "ADBE Pro Levels2", "category": "效果", "source": "ae" },
+  { "displayName": "快速方框模糊", "pinyinFull": "kuaisufangkuangmohu", "pinyinInitials": "ksfkmh", "englishName": "Fast Box Blur", "matchName": "ADBE Box Blur2", "category": "效果", "source": "ae" },
+  { "displayName": "BCC 模糊", "pinyinFull": "bccmohu", "pinyinInitials": "bccmh", "englishName": "BCC Blur", "matchName": "BCC Blur", "category": "效果", "source": "ae" },
+  { "displayName": "BCC 辉光", "pinyinFull": "bcchuiguang", "pinyinInitials": "bcchg", "englishName": "BCC Glow", "matchName": "BCC Glow", "category": "效果", "source": "ae" },
+  { "displayName": "uni 故障", "pinyinFull": "uniguzhang", "pinyinInitials": "unigz", "englishName": "uni.Glitch", "matchName": "uni.Glitch", "category": "效果", "source": "ae" },
+  { "displayName": "uni VHS", "pinyinFull": "univhs", "pinyinInitials": "univhs", "englishName": "uni.VHS", "matchName": "uni.VHS", "category": "效果", "source": "ae" },
+  { "displayName": "Plexus 粒子", "pinyinFull": "plexuslizi", "pinyinInitials": "plexuslz", "englishName": "Plexus", "matchName": "Plexus", "category": "效果", "source": "ae" },
+  { "displayName": "S 效果", "pinyinFull": "sxiaoguo", "pinyinInitials": "sxg", "englishName": "S_Effect", "matchName": "S_Effect", "category": "效果", "source": "ae" },
+  { "displayName": "默认字体", "pinyinFull": "morenziti", "pinyinInitials": "mrzt", "englishName": "Default Font", "matchName": "", "category": "字体", "source": "font" }
+]
