@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -181,34 +182,20 @@ def test_unlisted_file_invalidates_cached_runtime(tmp_path):
         install(tmp_path / "state", channel)
 
 
-def test_windows_powershell51_bootstrap_helpers_share_cache_and_reject_traversal(tmp_path):
+def test_windows_powershell51_desktop_bootstrap_rejects_escape_and_missing_install(tmp_path):
     powershell = shutil.which("powershell.exe")
     if powershell is None:
         pytest.skip("Windows PowerShell 5.1 is only available on Windows")
-    channel = release(tmp_path)
-    state = tmp_path / "state"
-    install(state, channel)
-    evil = tmp_path / "evil.zip"
-    with zipfile.ZipFile(evil, "w") as z:
-        z.writestr("../outside.exe", b"unsafe")
-    bootstrap = (Path(__file__).resolve().parents[1] / "bootstrap.ps1").read_text(encoding="utf-8")
-    helper_code = bootstrap.split("$lock = Join-Path $StateDir 'update.lock'", 1)[0]
-    helper_code = helper_code.replace("} catch { return $null }", "} catch { throw }")
-    # Test the production helpers in the actual no-profile 5.1 interpreter. Do
-    # not execute bootstrap's network or process launch segment in a unit test.
-    quote = lambda path: "'" + str(path).replace("'", "''") + "'"
-    script = tmp_path / "bootstrap-check.ps1"
-    script.write_text(helper_code + f"""
-$cached = Get-Cached
-if (-not $cached -or $cached.version -ne '1.0.0') {{ throw 'Python/PowerShell cache contract mismatch' }}
-$rejected = $false
-try {{ Expand-Safe {quote(evil)} {quote(tmp_path / 'extract')} }} catch {{ $rejected = $true }}
-if (-not $rejected) {{ throw 'PowerShell accepted archive traversal' }}
-$rejected = $false
-try {{ Remove-StateDirectory {quote(tmp_path)} }} catch {{ $rejected = $true }}
-if (-not $rejected) {{ throw 'PowerShell cleanup escaped its state directory' }}
-Write-Output 'bootstrap-helpers-ok'
-""", encoding="utf-8-sig")
-    result = subprocess.run([powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script), "-StateDir", str(state)], capture_output=True, text=True, timeout=30)
-    assert result.returncode == 0, result.stderr
-    assert "bootstrap-helpers-ok" in result.stdout
+    source = Path(__file__).resolve().parents[1] / "bootstrap.ps1"
+    script = tmp_path / "bootstrap.ps1"
+    script.write_text(source.read_text(encoding="utf-8"), encoding="utf-8-sig")
+    environment = dict(os.environ, LOCALAPPDATA=str(tmp_path))
+    arguments = [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script)]
+    missing = subprocess.run(arguments, env=environment, capture_output=True, timeout=30)
+    assert missing.returncode == 1 and missing.stderr
+    install = tmp_path / "FrameFit"
+    install.mkdir()
+    (install / "current.json").write_text(json.dumps({"versionDirectory": "../outside"}))
+    traversal = subprocess.run(arguments, env=environment, capture_output=True, timeout=30)
+    assert traversal.returncode == 1 and traversal.stderr
+    assert not (tmp_path / "outside").exists()

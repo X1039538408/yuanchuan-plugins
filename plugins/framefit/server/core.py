@@ -11,17 +11,31 @@ import subprocess
 import sys
 import threading
 import uuid
+import tempfile
+from contextlib import contextmanager
 from fractions import Fraction
 from functools import lru_cache
 
 from PIL import Image, ImageChops
+from framefit_workflow import detect_borders, group_border_samples
 
 ROOT = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 CREATE_FLAGS = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+_processing = threading.local()
+
+
+@contextmanager
+def cancellable(cancel):
+    previous = getattr(_processing, 'cancel', None)
+    _processing.cancel = cancel
+    try:
+        yield
+    finally:
+        _processing.cancel = previous
 
 
 def binary(name):
-    local = ROOT / 'bin' / (name + '.exe')
+    local = Path(os.getenv('FRAMEFIT_BIN_DIR') or ROOT / 'bin') / (name + '.exe')
     found = str(local) if local.exists() else shutil.which(name)
     if not found:
         raise RuntimeError(f'缺少 {name}，请完整解压软件文件夹后再启动。')
@@ -29,8 +43,28 @@ def binary(name):
 
 
 def run(args, timeout=60):
-    result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            creationflags=CREATE_FLAGS, timeout=timeout)
+    import time
+    cancel = getattr(_processing, 'cancel', None)
+    if cancel is not None and cancel.is_set():
+        raise Cancelled('已取消')
+    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=CREATE_FLAGS)
+    deadline = time.monotonic() + timeout
+    try:
+        while True:
+            if cancel is not None and cancel.is_set():
+                raise Cancelled('已取消')
+            if time.monotonic() >= deadline:
+                raise subprocess.TimeoutExpired(args, timeout)
+            try:
+                stdout, stderr = process.communicate(timeout=.1)
+                break
+            except subprocess.TimeoutExpired:
+                pass
+    finally:
+        if process.poll() is None:
+            process.kill()
+        process.communicate()
+    result = subprocess.CompletedProcess(args, process.returncode, stdout, stderr)
     if result.returncode:
         raise RuntimeError(result.stderr.decode('utf-8', 'replace')[-2500:] or '媒体文件读取失败。')
     return result
@@ -190,6 +224,9 @@ def filter_graph(image_size, rect, output_size, mode, background_fps=None, zoom=
 
 
 def preview(video, template, rect, output_size, mode, seconds=1, zoom=100):
+    info = probe(video)
+    last_frame = max(0, (math.ceil(info['duration'] * info['fps']) - 1) / info['fps'])
+    seconds = min(max(0, seconds), math.floor(last_frame * 1e6) / 1e6)
     with Image.open(template) as im:
         graph = filter_graph(im.size, rect, output_size, mode, zoom=zoom)
     args = [binary('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-ss', str(seconds),
@@ -198,6 +235,202 @@ def preview(video, template, rect, output_size, mode, seconds=1, zoom=100):
             '-f', 'image2pipe', '-c:v', 'png', 'pipe:1']
     result = run(args)
     return Image.open(io.BytesIO(result.stdout)).convert('RGB')
+
+
+def thumbnail(video, seconds=0, maximum=(144, 88)):
+    info = probe(video)
+    seconds = min(max(0, seconds), max(0, (math.ceil(info['duration'] * info['fps']) - 1) / info['fps']))
+    args = [binary('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-ss', str(max(0, seconds)),
+            '-i', str(video), '-frames:v', '1', '-vf',
+            f'scale={maximum[0]}:{maximum[1]}:force_original_aspect_ratio=decrease:flags=area',
+            '-f', 'image2pipe', '-c:v', 'mjpeg', 'pipe:1']
+    result = run(args, timeout=30)
+    return Image.open(io.BytesIO(result.stdout)).convert('RGB')
+
+
+def border_frame(video, seconds=0):
+    """Lossless source frame for precise checks; never average thin edges away."""
+    info = probe(video)
+    seconds = min(max(0, seconds), max(0, (math.ceil(info['duration'] * info['fps']) - 1) / info['fps']))
+    result = run([binary('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-ss', str(seconds),
+                  '-i', str(video), '-frames:v', '1', '-f', 'image2pipe', '-c:v', 'png', 'pipe:1'], timeout=30)
+    return Image.open(io.BytesIO(result.stdout)).convert('RGB')
+
+
+def analyze_borders(video, interval=.5, on_progress=None):
+    info = probe(video)
+    samples = []
+    width, height = info['width'], info['height']
+    thumb_height = max(2, round(640 * height / width / 2) * 2)
+    # Keep every source row and column while compressing only the other axis.
+    # The compact profiles preserve 1px borders without writing full 4K frames.
+    filters = (
+        f'[0:v]fps=1/{interval}:start_time=0,split=3[t][h][v];'
+        f'[t]scale=640:{thumb_height}:flags=area[thumb];'
+        f'[h]scale=64:{height}:flags=area,pad=640:{height}:0:0:black[rows];'
+        f'[v]scale={width}:64:flags=area,transpose=1,pad=640:{width}:0:0:black[cols];'
+        '[thumb][rows][cols]vstack=inputs=3[out]')
+    with tempfile.TemporaryDirectory(prefix='framefit-borders-') as temporary:
+        pattern = str(Path(temporary) / 'frame-%08d.png')
+        args = [binary('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-nostdin',
+                '-threads', '2', '-i', str(video), '-an', '-filter_threads', '1',
+                '-filter_complex_threads', '1', '-filter_complex', filters, '-map', '[out]',
+                '-fps_mode', 'passthrough', '-c:v', 'png', '-compression_level', '1',
+                '-progress', 'pipe:1', '-nostats', pattern]
+        with tempfile.TemporaryFile() as errors:
+            process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=errors, creationflags=CREATE_FLAGS)
+            expired = threading.Event()
+            def expire():
+                expired.set()
+                try:
+                    process.kill()
+                except OSError:
+                    pass
+            timer = threading.Timer(max(120, int(info['duration'] * 2)), expire)
+            timer.daemon = True
+            timer.start()
+            cancel = getattr(_processing, 'cancel', None)
+            finished = threading.Event()
+            def watch_cancel():
+                while not finished.wait(.1):
+                    if cancel is not None and cancel.is_set():
+                        try:
+                            process.kill()
+                        except OSError:
+                            pass
+                        return
+            watcher = threading.Thread(target=watch_cancel,daemon=True)
+            watcher.start()
+            try:
+                for raw in process.stdout:
+                    if on_progress and raw.startswith(b'out_time_us='):
+                        try:
+                            fraction = int(raw.split(b'=', 1)[1]) / 1e6 / max(.001, info['duration'])
+                        except ValueError:
+                            continue
+                        on_progress(min(.8, max(0, fraction * .8)))
+                code = process.wait()
+                if cancel is not None and cancel.is_set():
+                    raise Cancelled('已取消边缘扫描')
+                if expired.is_set():
+                    raise TimeoutError('视频边缘抽样超时，请重试或检查源文件。')
+                if code:
+                    errors.seek(0)
+                    raise RuntimeError(errors.read().decode('utf-8', 'replace')[-2500:] or '视频边缘抽样失败。')
+            finally:
+                timer.cancel()
+                finished.set()
+                if process.poll() is None:
+                    process.kill()
+                process.wait()
+                process.stdout.close()
+        frames = sorted(Path(temporary).glob('frame-*.png'))
+        for index, path in enumerate(frames):
+            if cancel is not None and cancel.is_set():
+                raise Cancelled('已取消边缘扫描')
+            with Image.open(path) as frame:
+                rows = detect_borders(frame.crop((0, thumb_height, 64, thumb_height + height)), include_internal=False)
+                cols = detect_borders(frame.crop((0, thumb_height + height, 64, thumb_height + height + width)), include_internal=False)
+                for color in ('black', 'white'):
+                    horizontal = next((edge for edge in rows if edge['color'] == color), {})
+                    vertical = next((edge for edge in cols if edge['color'] == color), {})
+                    border = dict(color=color, top=horizontal.get('top', 0), bottom=horizontal.get('bottom', 0),
+                                  left=vertical.get('top', 0), right=vertical.get('bottom', 0), width=width, height=height)
+                    if any(border[side] for side in ('top', 'bottom', 'left', 'right')):
+                        samples.append(dict(border, seconds=min(info['duration'], index * interval)))
+                from framefit_workflow import dark_seams
+                seam = dark_seams(frame.crop((0, 0, 640, thumb_height)))
+                if seam:
+                    samples.append(dict(seam, seconds=min(info['duration'], index * interval)))
+            if on_progress:
+                on_progress(.8 + .2 * (index + 1) / max(1, len(frames)))
+    if on_progress:
+        on_progress(1.0)
+    return {'duration': info['duration'], 'sampleInterval': interval,
+            'checkedFrames': len(frames), 'segments': group_border_samples(samples,gap_seconds=interval*1.1)}
+
+
+def analyze_composite_borders(video, template, rect, output_size, mode, zoom=100, source_segments=None, on_progress=None, sample_points=None):
+    import copy
+    def identity(path):
+        path = Path(path).resolve()
+        stat = path.stat()
+        return str(path), stat.st_size, stat.st_mtime_ns
+    key = (identity(video), identity(template), tuple(rect), tuple(output_size), mode, zoom,tuple(sample_points) if sample_points else None)
+    cache = getattr(analyze_composite_borders, '_cache', {})
+    if key in cache:
+        if on_progress:
+            on_progress(1.0)
+        return copy.deepcopy(cache[key])
+    info = probe(video)
+    points = sorted(set(sample_points or (0.0, max(0.0, info['duration'] / 2), max(0.0, info['duration'] - .15))))
+    source_segments = source_segments or []
+    results = []
+    factor = min(1.0, 960 / max(output_size))
+    check_size = tuple(max(2, round(value * factor / 2) * 2) for value in output_size)
+    with Image.open(template) as background:
+        sx, sy = check_size[0] / background.width, check_size[1] / background.height
+    x, y, w, h = rect
+    window = (round(x * sx), round(y * sy), round((x + w) * sx), round((y + h) * sy))
+    for index, seconds in enumerate(points):
+        cancel = getattr(_processing, 'cancel', None)
+        if cancel is not None and cancel.is_set():
+            raise Cancelled('已取消边缘检查')
+        image = preview(video, template, rect, check_size, mode, seconds, zoom)
+        # Bars can sit inside the template's video opening, away from canvas edges.
+        original = detect_borders(border_frame(video, seconds))
+        borders=detect_borders(image.crop(window),include_internal=False)
+        # A gap may lie just outside a detected opening. Inspect a small surrounding
+        # strip too, without mistaking decorative borders elsewhere on the canvas.
+        from framefit_workflow import dark_seams
+        pad=max(2,round(max(check_size)*.006))
+        expanded=(max(0,window[0]-pad),max(0,window[1]-pad),min(image.width,window[2]+pad),min(image.height,window[3]+pad))
+        seam=dark_seams(image.crop(expanded))
+        if seam:
+            relevant=[]
+            for band in seam['bands']:
+                dimension=seam['height'] if band['axis']=='horizontal' else seam['width']
+                center=(band['start']+band['end'])/2
+                if center<=pad*2 or dimension-center<=pad*2:
+                    relevant.append(band)
+                    side=('top' if center<dimension/2 else 'bottom') if band['axis']=='horizontal' else ('left' if center<dimension/2 else 'right')
+                    seam[side]=max(seam[side],band['end'] if center<dimension/2 else dimension-band['start'])
+            if relevant:
+                seam['bands']=relevant
+                borders.append(seam)
+        for border in borders:
+            def source_covers(source):
+                if source['color'] != border['color']:
+                    return False
+                return all(border[side] / border[axis] <= source[side] / source[axis] + .01
+                           for side, axis in (('top', 'height'), ('bottom', 'height'), ('left', 'width'), ('right', 'width')))
+            existed = any(source_covers(source) for source in original)
+            results.append(dict(border, seconds=seconds, origin='source' if existed else 'composite',
+                                outputSize=list(output_size), template=str(template)))
+        if on_progress:
+            on_progress((index + 1) / len(points))
+    report = {'samples': results, 'newBorders': [item for item in results if item['origin'] == 'composite']}
+    if len(cache) >= 128:
+        cache.pop(next(iter(cache)), None)
+    cache[key] = copy.deepcopy(report)
+    analyze_composite_borders._cache = cache
+    return report
+
+
+def remove_composite_borders(video, template, rect, output_size, mode, zoom=100, source_segments=None):
+    """Find a verified uniform enlargement; never claim bars disappeared without rechecking."""
+    candidate = max(100.0, zoom if mode == 'zoom' else 100.0)
+    for _ in range(18):
+        report = analyze_composite_borders(video, template, rect, output_size, 'zoom', candidate, source_segments)
+        borders = report['newBorders']
+        if not borders:
+            return {'fit': 'zoom', 'zoom': candidate, 'report': report}
+        ratio = max(max((b['top'] + b['bottom']) / b['height'],
+                        (b['left'] + b['right']) / b['width']) for b in borders)
+        candidate = math.ceil(candidate / max(.1, 1 - ratio) + 1)
+        if candidate > 500:
+            break
+    raise ValueError('在 500% 缩放范围内仍检测到新增黑白边，请手动检查窗口或选择保留。')
 
 
 class Cancelled(Exception):
@@ -240,7 +473,7 @@ def unique_output(directory, stem, output_size=(1920, 1080)):
 
 
 def export(video, template, rect, output_size, mode, directory, crf=18,
-           cancel=None, progress=None, duration_limit=None, backend='auto', on_backend=None, zoom=100):
+           cancel=None, progress=None, duration_limit=None, backend='auto', on_backend=None, zoom=100, output_name=None):
     if mode == 'zoom':
         zoom = validate_zoom(zoom)
     cancel = cancel or threading.Event()
@@ -263,7 +496,7 @@ def export(video, template, rect, output_size, mode, directory, crf=18,
         on_backend(selected, note)
     try:
         return _export_once(video, template, rect, output_size, mode, directory, crf,
-                            cancel, progress, duration_limit, selected, zoom)
+                            cancel, progress, duration_limit, selected, zoom, output_name)
     except HardwareEncodingError:
         if backend != 'auto' or selected != 'nvenc':
             raise
@@ -274,11 +507,11 @@ def export(video, template, rect, output_size, mode, directory, crf=18,
         if progress:
             progress(0)
         return _export_once(video, template, rect, output_size, mode, directory, crf,
-                            cancel, progress, duration_limit, 'cpu', zoom)
+                            cancel, progress, duration_limit, 'cpu', zoom, output_name)
 
 
 def _export_once(video, template, rect, output_size, mode, directory, crf,
-                 cancel, progress, duration_limit, backend, zoom=100):
+                 cancel, progress, duration_limit, backend, zoom=100, output_name=None):
     cancel = cancel or threading.Event()
     info = probe(video)
     duration = min(info['duration'], duration_limit) if duration_limit else info['duration']
@@ -345,7 +578,17 @@ def _export_once(video, template, rect, output_size, mode, directory, crf,
             raise RuntimeError('导出文件尺寸校验失败。')
         # Windows rename does not replace another task's output, even if created concurrently.
         while True:
-            destination = unique_output(directory, Path(video).stem, output_size)
+            if output_name:
+                name = Path(output_name)
+                if name.name != output_name or name.suffix.lower() != '.mp4' or any(c in output_name for c in '<>:"/\\|?*'):
+                    raise ValueError('输出文件名无效。')
+                destination = directory / name.name
+                count = 2
+                while destination.exists():
+                    destination = directory / f'{name.stem} ({count}).mp4'
+                    count += 1
+            else:
+                destination = unique_output(directory, Path(video).stem, output_size)
             try:
                 temporary.rename(destination)
                 break
