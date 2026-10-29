@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([string]$ProjectRoot)
 $ErrorActionPreference='Stop'
 if (!$ProjectRoot) { $ProjectRoot=Split-Path -Parent $PSScriptRoot }

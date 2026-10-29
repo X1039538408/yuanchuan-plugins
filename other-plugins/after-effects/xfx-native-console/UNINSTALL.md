@@ -1,8 +1,8 @@
 # 效果控制台 · 卸载与删除图文教程
 
-适用 1.0.18；也可移除旧版 XFX 中文控制台的活动文件。**安装和卸载均不会结束 AE。**
+适用 1.0.19；也可移除旧版 XFX 中文控制台的活动文件。**安装和卸载均不会结束 AE。**
 
-[下载一键卸载器](https://github.com/X1039538408/yuanchuan-plugins/raw/refs/heads/main/other-plugins/after-effects/xfx-native-console/EffectConsoleUninstaller-1.0.18.exe) · [返回下载与使用教程](tutorial/README.md)
+[下载一键卸载器](https://github.com/X1039538408/yuanchuan-plugins/raw/refs/heads/main/other-plugins/after-effects/xfx-native-console/EffectConsoleUninstaller-1.0.19.exe) · [返回下载与使用教程](tutorial/README.md)
 
 ## 1. 保存工程，再退出 AE
 
@@ -14,7 +14,7 @@
 
 ## 2. 使用一键卸载器
 
-1. 下载 **EffectConsoleUninstaller-1.0.18.exe**，无需解压或下载额外运行时。
+1. 下载 **EffectConsoleUninstaller-1.0.19.exe**，无需解压或下载额外运行时。
 2. 双击运行，在 Windows 管理员权限提示中允许执行。
 3. 查看确认框内列出的 AE 目录，点击“是”继续；“否”取消。程序会处理所有检测到的有效 AE 目录。
 4. 收到“卸载完成”后重开 AE，检查“窗口”菜单中“效果控制台”及旧工具栏入口已移除。再次卸载不会影响其他插件。
@@ -36,7 +36,7 @@
 在下载文件的目录打开 PowerShell，用真实 Support Files 路径替换示例：
 
 ```powershell
-.\EffectConsoleUninstaller-1.0.18.exe --target 'D:\Adobe\Adobe After Effects 2026\Support Files'
+.\EffectConsoleUninstaller-1.0.19.exe --target 'D:\Adobe\Adobe After Effects 2026\Support Files'
 ```
 
 安装器也支持 `--uninstall`。自动化场景可加 `--silent` 跳过确认和结果框；此时运行中 AE 仍会阻止操作并返回 1，原因记录在日志，不会自动关闭 AE。GUI 程序需要等待退出时用 Start-Process -Wait -PassThru。

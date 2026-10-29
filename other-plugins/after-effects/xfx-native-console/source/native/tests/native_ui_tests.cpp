@@ -283,12 +283,21 @@ int wmain(int argc, wchar_t** argv) {
     SetEnvironmentVariableW(L"XFX_THUMBNAIL_CACHE_DIR", (directory / L"thumbnail-cache").c_str());
     {
         std::ofstream(directory / L"XFXNativeConsole.aliases.default.tsv") <<
-            "ADBE Glo2\tGlow\t默认发光\t\t\t\n";
+            "ADBE Glo2\tGlow\t默认发光\t\t\t\n"
+            "\tBCC+ Rectangular Wipe\tBCC+ 矩形擦除\t\t\t矩形转场\n";
         std::ofstream(directory / L"aliases.user.tsv") <<
             "\xEF\xBB\xBF\tGlow\t自定义辉光\t\t\t自定义\n";
         const auto aliases = load_aliases();
         assert(aliases.by_english_name.at("glow").chinese_name == L"自定义辉光");
         assert(aliases.by_english_name.at("glow").priority > aliases.by_match_name.at("adbe glo2").priority);
+        const auto& rectangular = aliases.by_english_name.at(canonical_alias_key("BCC+Rectangular Wipe"));
+        assert(rectangular.chinese_name == L"BCC+ 矩形擦除");
+        assert(canonical_alias_key("BCC+Rectangular Wipe") == canonical_alias_key(" bcc+\tRectangular Wipe "));
+        assert(canonical_alias_key("BCC Linear Wipe") != canonical_alias_key("BCC+Linear Wipe"));
+        const auto external = xfx::SearchEngine({{L"BCC+Rectangular Wipe", "", "", "BCC+Rectangular Wipe",
+                                                "fixture-external-wipe", L"效果", "ae"}}).search(L"矩形擦除");
+        assert(external.size() == 1);
+        assert(item_display_label(external[0].item) == L"BCC+Rectangular Wipe（BCC+ 矩形擦除）");
         AliasEntry drop_shadow;
         drop_shadow.english_name = "Drop Shadow";
         assert(safe_effect_display_name(L"iy", &drop_shadow) == L"Drop Shadow");

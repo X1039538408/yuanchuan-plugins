@@ -224,6 +224,9 @@ bool ascii_key_equal(std::string_view left, std::string_view right) {
             const char folded = static_cast<char>(folded_latin(ch));
             result.push_back(folded);
         }
+        // Continuum labels use both BCC+Foo and BCC+ Foo. Only ignore the
+        // brand separator; preserve the plus and all word boundaries.
+        if (result.rfind("bcc+ ", 0) == 0) result.erase(4, 1);
         return result;
     };
     return !left.empty() && canonical(left) == canonical(right);
