@@ -1,0 +1,2 @@
+# Keep Git source and source ZIP hashes identical across Windows checkouts.
+* text=auto eol=lf

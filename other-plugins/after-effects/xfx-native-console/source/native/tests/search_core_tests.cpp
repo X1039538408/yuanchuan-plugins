@@ -477,6 +477,47 @@ static void sapphire_warp_effects_translate_with_padded_or_case_changed_host_nam
                          "case/space tolerant translation lookup failed");
 }
 
+static void external_wipes_from_user_screenshot_translate_and_keep_host_ids() {
+    const LocalizationFixture fixtures[] = {
+        {"fixture-sapphire-bubble", "S_WipeBubble", L"Sapphire 气泡擦除", L"气泡擦除", L"qipaocachu", L"qpcc"},
+        {"fixture-bcc-depth", "BCC+Depth Wipe ML", L"BCC+ 深度擦除 ML", L"深度擦除", L"shenducachu", L"sdcc"},
+        {"fixture-bcc-linear", "BCC+Linear Wipe", L"BCC+ 线性擦除", L"线性擦除", L"xianxingcachu", L"xxcc"},
+        {"fixture-bcc-radial", "BCC+Radial Wipe", L"BCC+ 径向擦除", L"径向擦除", L"jingxiangcachu", L"jxcc"},
+        {"fixture-bcc-rect", "BCC+Rectangular Wipe", L"BCC+ 矩形擦除", L"矩形擦除", L"juxingcachu", L"jxcc"},
+        {"fixture-bcc-smoke", "BCC+Smoke Wipe", L"BCC+ 烟雾擦除", L"烟雾擦除", L"yanwucachu", L"ywcc"},
+        {"fixture-bcc-texture", "BCC+Texture Wipe", L"BCC+ 纹理擦除", L"纹理擦除", L"wenlicachu", L"wlcc"},
+        {"fixture-bcc-glow", "BCC+Film Glow", L"BCC+ 胶片发光", L"胶片发光", L"jiaopianfaguang", L"jpfg"},
+    };
+    for (const auto& fixture : fixtures) {
+        std::vector<std::string> names{fixture.english_name};
+        if (names.front().rfind("BCC+", 0) == 0) {
+            names.push_back("BCC+ " + names.front().substr(4));
+            names.push_back("  bcc+\t" + names.front().substr(4) + "  ");
+        }
+        for (const auto& name : names) {
+            CatalogItem item{localization_utf8(name), "", "", name, fixture.match_name, L"效果", "ae"};
+            SearchEngine engine({item});
+            const auto all = engine.search(L"");
+            localization_require(all.size() == 1 && all[0].item.translated_name == fixture.chinese_name,
+                                 "missing screenshot effect translation: " + name);
+            localization_require(all[0].item.match_name == fixture.match_name &&
+                                 all[0].item.english_name == name && all[0].item.display_name == item.display_name,
+                                 "translation changed a host label or application identifier");
+            for (const auto* query : {fixture.query, fixture.full, fixture.initials})
+                localization_require(engine.search(query).size() == 1, "Chinese/pinyin search missed: " + name);
+        }
+    }
+    CatalogItem custom{L"BCC+Rectangular Wipe", "", "", "BCC+Rectangular Wipe", "fixture-custom", L"效果", "ae"};
+    custom.translated_name = L"团队矩形转场";
+    localization_require(SearchEngine({custom}).search(L"团队矩形转场").size() == 1,
+                         "bundled translation overwrote a user translation");
+    for (const auto* name : {"BCCLinear Wipe", "BCC+LinearWipe", "Other+Linear Wipe"}) {
+        CatalogItem unrelated{localization_utf8(name), "", "", name, "fixture-unknown", L"效果", "ae"};
+        localization_require(SearchEngine({unrelated}).search(L"")[0].item.translated_name.empty(),
+                             "BCC+ spacing normalization leaked into other names");
+    }
+}
+
 static void settings_round_trip() {
     const auto path = std::filesystem::temp_directory_path() / "xfx-native-settings-test.ini";
     xfx::Settings settings;
@@ -558,6 +599,8 @@ int main() {
                        obsolete_and_pseudo_effects_get_descriptive_chinese_search_names);
     check_localization("installed and embedded translation data consistency",
                        translation_tsv_and_embedded_rows_agree_without_ambiguous_english_fallbacks);
+    check_localization("screenshot external wipes, BCC+ spacing, Chinese/pinyin and unchanged identities",
+                       external_wipes_from_user_screenshot_translate_and_keep_host_ids);
     search_matches_chinese();
     search_matches_full_pinyin();
     search_matches_initials();

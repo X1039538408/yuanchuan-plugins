@@ -234,6 +234,7 @@ CC Hair	CC Hair	CC 毛发			头发
 	S_DropShadow	Sapphire 投影			阴影
 	S_WipeStar	Sapphire 星形擦除			星形转场
 	S_WipeCircle	Sapphire 圆形擦除			圆形转场
+	S_WipeBubble	Sapphire 气泡擦除			气泡转场
 	S_DissolveGlow	Sapphire 发光溶解			发光转场
 	S_DissolveShake	Sapphire 抖动溶解			抖动转场
 	BCC Gaussian Blur	BCC 高斯模糊
@@ -243,6 +244,12 @@ CC Hair	CC Hair	CC 毛发			头发
 	BCC Fast Film Glow	BCC 快速胶片发光			胶片辉光
 	BCC Film Glow	BCC 胶片发光
 	BCC+ Film Glow	BCC+ 胶片发光
+	BCC+ Depth Wipe ML	BCC+ 深度擦除 ML			深度转场|深度擦除
+	BCC+ Linear Wipe	BCC+ 线性擦除			线性转场
+	BCC+ Radial Wipe	BCC+ 径向擦除			径向转场
+	BCC+ Rectangular Wipe	BCC+ 矩形擦除			矩形转场
+	BCC+ Smoke Wipe	BCC+ 烟雾擦除			烟雾转场
+	BCC+ Texture Wipe	BCC+ 纹理擦除			纹理转场
 	BCC Film Grain	BCC 胶片颗粒
 	BCC Film Damage	BCC 胶片损伤
 	BCC Lens Flare 3D	BCC 三维镜头光晕			镜头光斑

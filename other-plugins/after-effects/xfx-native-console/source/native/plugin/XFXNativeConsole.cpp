@@ -311,6 +311,9 @@ std::string canonical_alias_key(std::string value) {
         pending_space = false;
         result.push_back(ch >= 'A' && ch <= 'Z' ? static_cast<char>(ch + ('a' - 'A')) : static_cast<char>(ch));
     }
+    // Match the built-in dictionary's BCC+ prefix rule without rewriting
+    // the host label or matchName used when applying an effect.
+    if (result.rfind("bcc+ ", 0) == 0) result.erase(4, 1);
     return result;
 }
 
