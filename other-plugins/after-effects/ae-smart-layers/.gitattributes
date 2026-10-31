@@ -1,0 +1,2 @@
+# Preserve the verified byte hashes, UTF-8 BOMs and embedded payloads on every platform.
+* -text

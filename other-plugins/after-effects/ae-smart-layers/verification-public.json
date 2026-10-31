@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "release_version": "1.0.0",
+  "kernel": "portable14-native-text",
+  "jsx_sha256": "2EB5FA596DFF774F50AA4029AAAAE8B3907F540475F6642E9825B52BBAAE279D",
+  "public_source_host_mock": "passed from exported source",
+  "public_source_worker": {
+    "cases": 96,
+    "failures": 0,
+    "private_image_variants_omitted": 5,
+    "native_process_fixture": "synthetic Arial SECOND",
+    "native_process_seconds_observed": 2.641,
+    "petals_transparent": {"regions": 6, "kind": "OBJECT"},
+    "petals_solid": {"regions": 6, "kind": "OBJECT"},
+    "petals_gradient": {"regions": 6, "kind": "OBJECT"},
+    "petals_mixed_text": {"regions": 9, "objects": 6, "text": 3}
+  },
+  "historical_private_full_suite": {"cases": 101, "failures": 0, "publicly_reproducible_without_private_fixtures": false},
+  "actual_ae25_host_validation": false,
+  "digital_signature": "unsigned",
+  "private_user_media_distributed": false,
+  "notes": ["Worker execution is not AE rendering validation.", "Installer fixture tests use temporary fake AE directories, not actual installations.", "Timing is one observed run, not a performance guarantee."]
+}

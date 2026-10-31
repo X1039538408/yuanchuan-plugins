@@ -16,6 +16,7 @@
 | 插件 | 简介 | 下载与使用 |
 | --- | --- | --- |
 | 效果控制台 | Windows x64 原生插件，提供中文／拼音效果搜索、快捷槽和合成快照，当前为 1.0.19 测试版，附安装/卸载器与源码。 | [详细介绍](docs/xfx-native-console.md) · [一键安装器与说明](other-plugins/after-effects/xfx-native-console/README.md) |
+| AE 智能分层 | 原生文字逐字可编辑，图片/预合成当前帧拆文字与花瓣等非文字；提供 EXE 安装/卸载、完整源码及图文教程，1.0.0 测试版。 | [详细介绍](docs/ae-smart-layers.md) · [安装包与图文教程](other-plugins/after-effects/ae-smart-layers/README.md) |
 
 此类插件通过 EXE 安装到 After Effects，不通过下方 Codex 市场入口安装。
 

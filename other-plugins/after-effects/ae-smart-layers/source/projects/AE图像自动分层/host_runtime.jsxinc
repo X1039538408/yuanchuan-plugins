@@ -1,0 +1,240 @@
+        var records=[];
+        for(var ri=0;ri<sources.length;ri++){
+            var L=sources[ri],nativeText=isNativeText(L),foot=L.source,orig=foot instanceof FootageItem?foot.file:null,tr=L.property('ADBE Transform Group');
+            var rec={layer:L,id:L.id,nativeText:nativeText,textSignature:nativeText?nativeTextPreflight(L):null,footage:foot,width:nativeText?comp.width:foot.width,height:nativeText?comp.height:foot.height,original:orig,path:orig?orig.fsName:null,length:orig?orig.length:0,modified:orig?stamp(orig):-1,proxy:foot?!!foot.useProxy:false,enabled:L.enabled,locked:L.locked,anchor:tr.property('ADBE Anchor Point').value.slice(0),position:tr.property('ADBE Position').value.slice(0),scale:tr.property('ADBE Scale').value.slice(0),rotation:tr.property('ADBE Rotate Z').value,parts:null};
+            rec.matte=L.trackMatteLayer||null;rec.matteType=L.trackMatteType;
+            rec.startTime=L.startTime;rec.stretch=L.stretch;rec.timeRemapEnabled=!!L.timeRemapEnabled;rec.remapTime=foot instanceof CompItem&&rec.timeRemapEnabled?L.property('ADBE Time Remapping').valueAtTime(comp.time,false):null;
+            rec.maskCount=L.property('ADBE Mask Parade').numProperties;rec.effectCount=L.property('ADBE Effect Parade').numProperties;
+            rec.token=token+'_'+ri;rec.folder=new Folder(folder.fsName+'/'+rec.token);
+            rec.image=orig;rec.snapshot=!nativeText&&(foot instanceof CompItem||rec.proxy||!orig||! /\.(png|jpe?g|bmp|tiff?)$/i.test(orig.name));
+            records.push(rec);
+        }
+        state={token:token,build:BUILD,active:true,mutating:false,cancelRequested:false,task:null,started:new Date().getTime(),project:app.project,comp:comp,compId:comp.id,records:records,index:0,record:records[0],phase:'PREPARING',snapshotTime:comp.time,folder:folder,progress:null};
+        function current(){return G.__ZExpSplitPortable===state&&state.active&&!state.cancelRequested;}
+        function checkCurrent(){if(!current())throw Error('任务已取消或被替换。');if(app.project!==state.project)throw Error('工程已切换，已停止本批操作。');}
+        function closeProgress(){
+            if(!state||!state.progress)return;
+            var p=state.progress;if(p.closing)return;
+            if(p.userClosing){if(!state.mutating)p.closing=true;return;}p.closing=true;
+            try{p.window.close();}catch(e){try{p.window.hide();}catch(ignoreHide){}state.uiCleanupError=String(e);}
+        }
+        function stop(cancelWorker){
+            state.active=false;
+            if(state.task!==null){try{app.cancelTask(state.task);}catch(ignoreTask){}state.task=null;}
+            if(cancelWorker)for(var ci=0;ci<state.records.length;ci++)try{if(state.records[ci].folder.exists)writeFile(new File(state.records[ci].folder.fsName+'/cancel.txt'),'cancel');}catch(ignoreCancel){}
+            closeProgress();
+        }
+        function requestCancel(){
+            if(G.__ZExpSplitPortable!==state||!state.active||state.cancelRequested)return;
+            state.cancelRequested=true;
+            try{if(state.progress){state.progress.cancelButton.enabled=false;state.progress.status.text='正在取消…';state.progress.detail.text='等待当前 AE 操作返回；生成阶段会恢复本批次全部输出。';}}catch(ignoreCancelUI){}
+            if(state.mutating||state.phase==='APPLYING')return;
+            state.phase='CANCELLED';stop(true);
+        }
+        function makeProgress(){
+            stage='创建进度窗口';var window=new Window('palette','AE 智能分层 · 进度',undefined,{closeButton:true});
+            window.orientation='column';window.alignChildren=['fill','top'];window.margins=14;window.spacing=8;
+            var status=window.add('statictext',undefined,'准备分析图层…',{multiline:true});status.preferredSize=[420,42];
+            var bar=window.add('progressbar',undefined,0,0,Math.max(1,records.length));bar.preferredSize=[420,18];
+            var detail=window.add('statictext',undefined,'',{multiline:true});detail.preferredSize=[420,42];
+            var note=window.add('statictext',undefined,'按当前阶段显示已完成数量；后台分析单层时进度会等待结果。',{multiline:true});note.preferredSize=[420,34];
+            var cancelButton=window.add('button',undefined,'取消本批次');cancelButton.alignment='right';cancelButton.helpTip='取消会恢复本批次输出；当前同步 AE 快照或图层操作需返回后才能响应。';
+            var p={window:window,bar:bar,status:status,detail:detail,cancelButton:cancelButton,closing:false};state.progress=p;
+            cancelButton.onClick=requestCancel;
+            window.onClose=function(){
+                if(!p.closing&&G.__ZExpSplitPortable===state&&state.active){p.userClosing=true;try{requestCancel();}finally{p.userClosing=false;}return !state.mutating;}
+                return true;
+            };
+            window.center();window.show();checkCurrent();
+        }
+        function progress(statusText,done,total,detailText){
+            checkCurrent();var p=state.progress;
+            if(p){p.status.text=statusText;p.status.helpTip=statusText;p.detail.text=detailText||'';p.bar.minvalue=0;p.bar.maxvalue=Math.max(1,total);p.bar.value=Math.max(0,Math.min(done,total));p.window.update();}
+            checkCurrent();
+        }
+        function phaseLabel(rec){
+            try{
+                var f=new File(rec.folder.fsName+'/phase.txt');if(!f.exists)return '等待后台启动或返回结果';
+                var text=readFile(f,4096),map={LOAD_IMAGE:'读取图片',WAIT_INPUT:'等待分析快照就绪',WAITING_IMAGE_READY:'等待快照就绪',OBJECT_SEGMENTATION:'识别前景区域与分类',TRACE:'整理轮廓'};
+                return map[text]||'识别字符、分类并整理区域';
+            }catch(ignorePhaseRead){return '后台正在处理，等待阶段信息';}
+        }
+        function schedule(){
+            if(!current()||state.phase!=='ANALYSIS')return;
+            state.task=app.scheduleTask("if($.global.__ZExpSplitPortable&&$.global.__ZExpSplitPortable.active&&$.global.__ZExpSplitPortable.token==='"+token+"')$.global.__ZExpSplitPortable.poll();",500,false);
+        }
+        function sameArray(a,b){if(!a||!b||a.length!==b.length)return false;for(var i=0;i<a.length;i++)if(Math.abs(a[i]-b[i])>0.0001)return false;return true;}
+        function validateSources(){
+            checkCurrent();var foundComp=null;
+            for(var n=1;n<=app.project.numItems;n++){var item=app.project.item(n);if(item.id===state.compId)foundComp=item;}
+            if(!foundComp||foundComp!==state.comp)throw Error('原合成已改变，结果已丢弃。');
+            var layers=[];
+            for(var ri=0;ri<records.length;ri++){
+                var rec=records[ri],found=null;
+                for(var n=1;n<=foundComp.numLayers;n++)if(foundComp.layer(n).id===rec.id)found=foundComp.layer(n);
+                if(!found||found!==rec.layer||!supported(found)||found.source!==rec.footage||!isStatic2D(found))throw Error('源图层已删除、改变或不支持锚点居中：'+rec.layer.name);
+                if(found.property('ADBE Mask Parade').numProperties!==rec.maskCount||found.property('ADBE Effect Parade').numProperties!==rec.effectCount)throw Error('分析期间源蒙版或效果数量已改变：'+rec.layer.name);
+                if((found.trackMatteLayer||null)!==rec.matte||found.trackMatteType!==rec.matteType)throw Error('分析期间轨道遮罩关系已改变：'+rec.layer.name);
+                for(var di=1;di<=foundComp.numLayers;di++){var dependent=foundComp.layer(di);if(dependent!==found&&dependent.trackMatteLayer===found)throw Error('源图层正在提供轨道遮罩，不能隐藏：'+found.name);}
+                if(rec.snapshot&&foundComp.time!==state.snapshotTime)throw Error('分析快照后时间指针已改变。');
+                if(rec.footage instanceof CompItem&&(found.startTime!==rec.startTime||found.stretch!==rec.stretch||!!found.timeRemapEnabled!==rec.timeRemapEnabled||(rec.timeRemapEnabled&&!(Math.abs(found.property('ADBE Time Remapping').valueAtTime(state.snapshotTime,false)-rec.remapTime)<=0.000001))))throw Error('分析期间预合成时间映射已改变：'+rec.layer.name);
+                var f=found.source instanceof FootageItem?found.source.file:null,tr=found.property('ADBE Transform Group');
+                if(!sameArray(tr.property('ADBE Anchor Point').value,rec.anchor)||!sameArray(tr.property('ADBE Position').value,rec.position)||!sameArray(tr.property('ADBE Scale').value,rec.scale)||Math.abs(tr.property('ADBE Rotate Z').value-rec.rotation)>0.0001)throw Error('分析期间变换已改变：'+rec.layer.name);
+                if(rec.nativeText){if(!isNativeText(found)||nativeTextPreflight(found)!==rec.textSignature)throw Error('源文字或样式已改变：'+rec.layer.name);}
+                else if(found.source.width!==rec.width||found.source.height!==rec.height||!!found.source.useProxy!==rec.proxy)throw Error('源素材尺寸或代理已改变：'+rec.layer.name);
+                if(rec.path!==null&&(!f||!f.exists||f.fsName!==rec.path||f.length!==rec.length||stamp(f)!==rec.modified))throw Error('源图片文件已改变：'+rec.layer.name);
+                layers.push(found);
+            }
+            return layers;
+        }
+        function apply(){
+            if(!current()||state.phase!=='APPLYING')return;
+            if(app.project.renderQueue&&app.project.renderQueue.rendering)throw Error('AE 已开始渲染，本批未提交，请渲染结束后重新运行。');
+            stage='批次提交前验证';var layers=validateSources(),allParts=[],selection=[],oldStates=[],copies=[],outputs=[],total=0,points=0,completed=0,nativeCount=0,counts={TEXT:0,OBJECT:0,UNKNOWN:0};
+            for(var ri=0;ri<records.length;ri++){
+                var parts=spatialOrder(records[ri].parts,records[ri]);allParts.push(parts);total+=parts.length;
+                for(var pi=0;pi<parts.length;pi++){counts[parts[pi].kind]++;for(var li=0;li<parts[pi].loops.length;li++)points+=parts[pi].loops[li].length;}
+                var hadMasks=layers[ri].property('ADBE Mask Parade').numProperties>0;
+                if(hadMasks)for(var pi=0;pi<parts.length;pi++)if(parts[pi].loops.length>1)throw Error('已有蒙版的源层含多轮廓区域，无法安全求交：'+layers[ri].name);
+                oldStates.push({layer:layers[ri],enabled:layers[ri].enabled,locked:layers[ri].locked});
+            }
+            if(total>120||points>12000)throw Error('本批结果过大（最多120个输出区域/12000个轮廓点），未修改合成。');
+            for(var si=1;si<=comp.numLayers;si++){var layer=comp.layer(si);selection.push({layer:layer,value:layer.selected});}
+            var undo=false,renderCaptured=false,oldRendering,committed=false,errors='',start=new Date().getTime();state.mutating=true;
+            try{
+                progress('生成输出图层',0,total,'已完成 0/'+total+' 个区域；整批统一提交。');validateSources();
+                try{oldRendering=app.disableRendering;if(typeof oldRendering==='boolean'){app.disableRendering=true;renderCaptured=true;}}catch(ignorePreview){}
+                app.beginUndoGroup('AE 智能分层 · 多图层批次');undo=true;
+                for(var ri=0;ri<records.length;ri++){
+                    var rec=records[ri],L=layers[ri],parts=allParts[ri],sourceOutputs=[],hadMasks=L.property('ADBE Mask Parade').numProperties>0;
+                    L.locked=false;
+                    for(var i=0;i<parts.length;i++){
+                        checkCurrent();if(new Date().getTime()-start>45000)throw Error('本批 AE 输出超时，已请求整体回滚。');
+                        stage='生成 '+L.name+' 区域 '+(i+1)+'/'+parts.length;
+                        var copy=L.duplicate();copies.push(copy);outputs.push(copy);sourceOutputs.push(copy);
+                        if(L.hasTrackMatte&&L.trackMatteLayer&&typeof copy.setTrackMatte==='function')copy.setTrackMatte(L.trackMatteLayer,L.trackMatteType);
+                        copy.locked=false;copy.enabled=true;copy.moveBefore(i>0?sourceOutputs[i-1]:L);
+                        var kindName=parts[i].kind==='TEXT'?'文字':parts[i].kind==='OBJECT'?'非文字':'类型待确认';copy.name=L.name+' ['+(rec.nativeText?'可编辑文字':kindName)+'] · 区域_'+(i+1)+(rec.nativeText?' · '+parts[i].text:'');
+                        if(rec.nativeText){configureNativeCopy(copy,parts[i],rec);nativeCount++;}
+                        else{
+                        var minX=rec.width,minY=rec.height,maxX=0,maxY=0;
+                        for(var j=0;j<parts[i].loops.length;j++){
+                            var vertices=parts[i].loops[j],tangents=[];
+                            for(var k=0;k<vertices.length;k++){minX=Math.min(minX,vertices[k][0]);minY=Math.min(minY,vertices[k][1]);maxX=Math.max(maxX,vertices[k][0]);maxY=Math.max(maxY,vertices[k][1]);tangents.push([0,0]);}
+                            var mask=copy.property('ADBE Mask Parade').addProperty('ADBE Mask Atom');mask.name='主体与模糊边缘';mask.maskMode=hadMasks?MaskMode.INTERSECT:MaskMode.ADD;mask.inverted=false;
+                            var shape=new Shape();shape.vertices=vertices;shape.inTangents=tangents;shape.outTangents=tangents;shape.closed=true;mask.property('ADBE Mask Shape').setValue(shape);mask.property('ADBE Mask Opacity').setValue(100);mask.property('ADBE Mask Feather').setValue([parts[i].feather,parts[i].feather]);mask.property('ADBE Mask Offset').setValue(parts[i].padding);
+                        }
+                        var anchor=[(minX+maxX)/2,(minY+maxY)/2],dx=anchor[0]-rec.anchor[0],dy=anchor[1]-rec.anchor[1],rad=rec.rotation*Math.PI/180,sx=rec.scale[0]/100,sy=rec.scale[1]/100,tr=copy.property('ADBE Transform Group');
+                        tr.property('ADBE Anchor Point').setValue(anchor);tr.property('ADBE Position').setValue([rec.position[0]+Math.cos(rad)*sx*dx-Math.sin(rad)*sy*dy,rec.position[1]+Math.sin(rad)*sx*dx+Math.cos(rad)*sy*dy]);
+                        }
+                        completed++;
+                        progress('生成输出图层',completed,total,'源 '+(ri+1)+'/'+records.length+'：'+L.name+'；已完成 '+completed+'/'+total+' 个区域。');
+                        validateSources();
+                    }
+                }
+                checkCurrent();validateSources();
+                for(var ri=0;ri<layers.length;ri++)layers[ri].enabled=false;
+                for(var d=1;d<=comp.numLayers;d++)comp.layer(d).selected=false;
+                for(var o=0;o<outputs.length;o++)outputs[o].selected=true;
+                for(var ri=0;ri<oldStates.length;ri++)oldStates[ri].layer.locked=oldStates[ri].locked;
+                checkCurrent();committed=true;
+            }catch(e){
+                errors=describe(e,stage);try{if(state.progress){state.progress.status.text='正在恢复本批次…';state.progress.cancelButton.enabled=false;}}catch(ignoreRollbackUI){}
+                for(var ci=copies.length-1;ci>=0;ci--)try{copies[ci].locked=false;copies[ci].remove();}catch(clean){errors+='\n清理输出失败：'+clean;}
+                for(var oi=0;oi<oldStates.length;oi++)try{oldStates[oi].layer.enabled=oldStates[oi].enabled;oldStates[oi].layer.locked=oldStates[oi].locked;}catch(restore){errors+='\n恢复源图层失败：'+restore;}
+                for(var qi=0;qi<selection.length;qi++)try{selection[qi].layer.selected=selection[qi].value;}catch(restoreSelection){errors+='\n恢复选择失败：'+restoreSelection;}
+            }finally{
+                try{if(undo)app.endUndoGroup();}catch(undoError){errors+='\n关闭撤销组失败：'+undoError;}
+                try{if(renderCaptured)app.disableRendering=oldRendering;}catch(renderError){errors+='\n恢复预览失败：'+renderError;}
+                state.mutating=false;
+            }
+            if(errors)throw Error((committed?'分层已提交但收尾异常，请检查工程。\n':'')+errors);
+            state.phase='DONE';stop(false);
+            alert('AE 智能分层完成（'+BUILD+'）：处理 '+records.length+' 个源图层，生成 '+outputs.length+' 个输出（可编辑文字 '+nativeCount+'，图片文字 '+(counts.TEXT-nativeCount)+'，非文字 '+counts.OBJECT+'，类型待确认 '+counts.UNKNOWN+'）。\n原图层已保留并隐藏；锚点已居中；所有输出已选中。各源内部按左到右、下到上编号与堆叠。图片/预合成画面结果不是可编辑文字；原生文字结果可编辑。'+(state.uiCleanupError?'\n进度窗口收尾异常：'+state.uiCleanupError:''));
+        }
+        function advanceAnalysis(){
+            checkCurrent();
+            while(state.index<records.length&&records[state.index].nativeText){
+                var rec=records[state.index];state.record=rec;
+                progress('分析图层 '+(state.index+1)+'/'+records.length,state.index+1,records.length,rec.layer.name+'：原生文字测量完成，无需图像识别。');state.index++;
+            }
+            if(state.index>=records.length){state.phase='APPLYING';apply();return;}
+            state.record=records[state.index];launchWorker();schedule();
+        }
+        function launchWorker(){
+            checkCurrent();stage='异步启动 Windows 后台（无 File.execute）';var rec=state.record,job=rec.folder;rec.started=new Date().getTime();
+            progress('分析图层 '+(state.index+1)+'/'+records.length,state.index,records.length,rec.layer.name+'；已完成 '+state.index+'/'+records.length+' 个源图层。');
+            var vbs=new File(job.fsName+'/launch.vbs');
+            var code=[
+                'Option Explicit',
+                'On Error Resume Next',
+                'Dim fso, sh, job, exe, command, status, failure, number, message, marker',
+                'Set fso = CreateObject("Scripting.FileSystemObject")',
+                'Set sh = CreateObject("WScript.Shell")',
+                'job = fso.GetParentFolderName(WScript.ScriptFullName)',
+                'exe = sh.ExpandEnvironmentStrings("%SystemRoot%") & "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"',
+                'command = Chr(34) & exe & Chr(34) & " -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File " & Chr(34) & job & "\\worker.ps1" & Chr(34)',
+                'Err.Clear',
+                'status = sh.Run(command, 0, False)',
+                'number = Err.Number',
+                'message = Err.Description',
+                'If number <> 0 Then',
+                '  Set failure = fso.CreateTextFile(job & "\\launch_error.txt", True, True)',
+                '  failure.WriteLine "WSH launch failed: " & CStr(number) & " | " & message',
+                '  failure.Close',
+                'Else',
+                '  Set marker = fso.CreateTextFile(job & "\\launch_ok.txt", True, False)',
+                '  marker.WriteLine "submitted"',
+                '  marker.Close',
+                'End If'
+            ].join('\r\n');
+            vbs.encoding='BINARY';if(!vbs.open('w'))throw Error('无法写入后台启动文件。');try{if(!vbs.write(code))throw Error('写入后台启动文件失败。');}finally{vbs.close();}
+            var systemDir=ps.parent.parent.parent,commandHost=new File(systemDir.fsName+'/cmd.exe'),scriptHost=new File(systemDir.fsName+'/wscript.exe');
+            if(!commandHost.exists||!scriptHost.exists)throw Error('未找到 cmd.exe / wscript.exe。');
+            var paths=[commandHost.fsName,scriptHost.fsName,vbs.fsName];for(var pi=0;pi<paths.length;pi++)if(/[\x00-\x1f"%]/.test(paths[pi]))throw Error('后台路径包含不支持的字符。');
+            checkCurrent();var command='"'+commandHost.fsName+'" /d /s /v:off /c ""'+scriptHost.fsName+'" //B //NoLogo "'+vbs.fsName+'" >nul 2>&1"';system.callSystem(command);checkCurrent();
+        }
+        function fail(e){
+            if(G.__ZExpSplitPortable!==state||state.phase==='RETIRED')return;
+            var cancelled=state.cancelRequested;state.phase=cancelled?'CANCELLED':'FAILED';stop(true);
+            if(!cancelled)alert('AE 智能分层报告：\n'+describe(e,stage)+'\n\n诊断目录：'+folder.fsName);
+            else if(String(e).indexOf('清理输出失败')>=0||String(e).indexOf('恢复')>=0||String(e).indexOf('关闭撤销组失败')>=0)alert('取消后的清理报告：\n'+describe(e,stage));
+        }
+        state.cancel=requestCancel;
+        state.poll=function(){
+            if(!current()||state.phase!=='ANALYSIS')return;state.task=null;
+            try{
+                var rec=state.record;stage='等待或读取后台结果';
+                if(!rec||new Date().getTime()-rec.started>45000)throw Error('当前源图层后台分析超时。');
+                var launchError=new File(rec.folder.fsName+'/launch_error.txt'),failure=new File(rec.folder.fsName+'/error.txt'),result=new File(rec.folder.fsName+'/result.txt');
+                if(launchError.exists)throw Error(readFile(launchError,65536,'UTF-16'));if(failure.exists)throw Error(readFile(failure,65536));
+                if(result.exists){
+                    if(app.project&&app.project.renderQueue.rendering){progress('等待 AE 渲染结束',state.index,records.length,'已完成 '+state.index+'/'+records.length+' 个源图层；暂不写入。');schedule();return;}
+                    stage='读取并验证分区结果';rec.parts=parseResult(readFile(result,2000000),rec.token,rec.width,rec.height);checkCurrent();
+                    var done=state.index+1;progress('分析图层 '+done+'/'+records.length,done,records.length,rec.layer.name+' 分析完成；已完成 '+done+'/'+records.length+'。');
+                    state.index=done;advanceAnalysis();return;
+                }
+                var elapsed=new Date().getTime()-rec.started;
+                if(elapsed>20000&&!(new File(rec.folder.fsName+'/started.txt')).exists)throw Error('后台未返回 started 握手，请检查 Windows Script Host / PowerShell 是否被系统策略拦截。');
+                progress('分析图层 '+(state.index+1)+'/'+records.length,state.index,records.length,rec.layer.name+' · '+phaseLabel(rec)+'；已完成 '+state.index+'/'+records.length+' 个源图层。');schedule();
+            }catch(e){fail(e);}
+        };
+        G.__ZExpSplitPortable=state;
+        makeProgress();
+        for(var ri=0;ri<records.length;ri++){
+            var rec=records[ri];state.record=rec;state.index=ri;
+            progress('准备图层 '+(ri+1)+'/'+records.length,ri,records.length,rec.layer.name+'；同步 AE 操作需返回后才能取消。');
+            if(rec.nativeText)rec.parts=prepareNativeText(rec);
+            else{
+                if(!rec.folder.create())throw Error('无法创建源图层临时目录：'+rec.layer.name);
+                writeFile(new File(rec.folder.fsName+'/worker.ps1'),WORKER);checkCurrent();
+                if(rec.snapshot){state.mutating=true;try{rec.image=new File(rec.folder.fsName+'/analysis.png');renderAnalysisSnapshot(rec.layer,rec.image);}finally{state.mutating=false;}checkCurrent();}
+                writeFile(new File(rec.folder.fsName+'/source.txt'),rec.image.fsName);
+            }
+            progress('准备图层 '+(ri+1)+'/'+records.length,ri+1,records.length,rec.layer.name+' 准备完成。');
+        }
+        validateSources();state.index=0;state.record=records[0];state.phase='ANALYSIS';advanceAnalysis();
+    } catch(e){
+        if(state){if(G.__ZExpSplitPortable===state)fail(e);else{try{stop(true);}catch(ignoreStaleStop){}}}
+        else alert('AE 智能分层准备报告：\n'+describe(e,stage)+'\n诊断目录：'+folder.fsName);
+    }

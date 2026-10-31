@@ -1,0 +1,137 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-10-31T11:13:18.5565102+08:00",
+  "environment": ".NET Framework 4 WinForms / empty AfterFX.exe fixtures only",
+  "realAfterEffectsTouched": false,
+  "registryMutated": false,
+  "passed": 30,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "normal install copies exact payload only to Scripts",
+      "passed": true
+    },
+    {
+      "name": "reinstall idempotent and manifest no duplicates",
+      "passed": true
+    },
+    {
+      "name": "other files preserved at install and uninstall",
+      "passed": true
+    },
+    {
+      "name": "uninstall idempotent",
+      "passed": true
+    },
+    {
+      "name": "Support Files accepted directly",
+      "passed": true
+    },
+    {
+      "name": "modified plugin retained and record retained",
+      "passed": true
+    },
+    {
+      "name": "same-name conflict never overwritten",
+      "passed": true
+    },
+    {
+      "name": "multiple targets recorded independently",
+      "passed": true
+    },
+    {
+      "name": "standalone installer can also uninstall",
+      "passed": true
+    },
+    {
+      "name": "embedded uninstaller identical to standalone binary",
+      "passed": true
+    },
+    {
+      "name": "invalid target never creates Scripts",
+      "passed": true
+    },
+    {
+      "name": "AfterFX must still exist at uninstall",
+      "passed": true
+    },
+    {
+      "name": "missing manifest explicit uninstall uses built-in hash",
+      "passed": true
+    },
+    {
+      "name": "corrupt manifest blocks install and uninstall without deleting",
+      "passed": true
+    },
+    {
+      "name": "DTD and external entity manifest rejected",
+      "passed": true
+    },
+    {
+      "name": "manifest arbitrary file/path fields cannot authorize deletion",
+      "passed": true
+    },
+    {
+      "name": "manifest cannot substitute payload hash",
+      "passed": true
+    },
+    {
+      "name": "install failure rolls back newly copied plugin",
+      "passed": true
+    },
+    {
+      "name": "manifest commit failure restores old uninstaller and old manifest",
+      "passed": true
+    },
+    {
+      "name": "uninstall delete failure rolls back manifest and preserves plugin",
+      "passed": true
+    },
+    {
+      "name": "junction Scripts and ancestor paths rejected",
+      "passed": true
+    },
+    {
+      "name": "state directory junction rejected",
+      "passed": true
+    },
+    {
+      "name": "test state override requires explicit test-mode",
+      "passed": true
+    },
+    {
+      "name": "test mode requires isolated state directory",
+      "passed": true
+    },
+    {
+      "name": "quiet mode never auto-selects a target",
+      "passed": true
+    },
+    {
+      "name": "quiet mode requires explicit operation",
+      "passed": true
+    },
+    {
+      "name": "standalone uninstaller rejects install operation",
+      "passed": true
+    },
+    {
+      "name": "unknown and duplicate options rejected",
+      "passed": true
+    },
+    {
+      "name": "no recursive deletion implementation",
+      "passed": true
+    },
+    {
+      "name": "native WinForms minimum layout and actual install/error/uninstall buttons",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "No real After Effects invocation or JSX execution",
+    "No Program Files ACL mutation",
+    "Native UI is tested off-screen with fixture targets; no real AE UI/menu validation",
+    "Registry discovery is read-only and not invoked by test-mode CLI"
+  ]
+}

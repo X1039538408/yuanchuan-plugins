@@ -1,0 +1,115 @@
+    // Native text stays native: trim rich TextDocuments, never mask a hidden full string.
+    function isNativeText(L){return !!L&&L.matchName==='ADBE Text Layer';}
+    function nativeProperty(L){return L.property('ADBE Text Properties').property('ADBE Text Document');}
+    function nativeUnits(text){
+        var units=[],i=0;
+        while(i<text.length){
+            var start=i,code=text.charCodeAt(i++);
+            if(code>=0xD800&&code<=0xDBFF){var low=text.charCodeAt(i);if(!(low>=0xDC00&&low<=0xDFFF))throw Error('文字包含无效Unicode代理项。');i++;}
+            else if(code>=0xDC00&&code<=0xDFFF)throw Error('文字包含无效Unicode代理项。');
+            if(code===13&&text.charCodeAt(i)===10)i++;
+            // Keep surrogate pairs, combining accents, selectors and emoji skin-tone modifiers with their base.
+            if(code===0xD83C&&text.charCodeAt(start+1)>=0xDDE6&&text.charCodeAt(start+1)<=0xDDFF&&text.charCodeAt(i)===0xD83C&&text.charCodeAt(i+1)>=0xDDE6&&text.charCodeAt(i+1)<=0xDDFF)i+=2;
+            while(i<text.length){var mark=text.charCodeAt(i),tail=text.charCodeAt(i+1);if((mark>=0x0300&&mark<=0x036F)||(mark>=0x1AB0&&mark<=0x1AFF)||(mark>=0x1DC0&&mark<=0x1DFF)||(mark>=0x20D0&&mark<=0x20FF)||(mark>=0xFE00&&mark<=0xFE0F)||(mark>=0xFE20&&mark<=0xFE2F))i++;else if((mark===0xD83C&&tail>=0xDFFB&&tail<=0xDFFF)||(mark===0xDB40&&tail>=0xDD00&&tail<=0xDDEF))i+=2;else break;}
+            units.push({start:start,end:i,text:text.substring(start,i)});
+        }
+        return units;
+    }
+    function nativeValueString(value){
+        if(value===undefined)return '?';if(value===null)return 'null';
+        if(value instanceof Array){var a=[];for(var i=0;i<value.length;i++)a.push(nativeValueString(value[i]));return '['+a.join(',')+']';}
+        return String(value);
+    }
+    function nativeStyleSignature(doc,start,end){
+        var range=doc.characterRange(start,end),fields=['font','fontSize','tracking','horizontalScale','verticalScale','baselineShift','applyFill','fillColor','applyStroke','strokeColor','strokeWidth','strokeOverFill','fauxBold','fauxItalic','fontCapsOption','fontBaselineOption','ligature','tsume'],out=[];
+        for(var i=0;i<fields.length;i++)try{out.push(fields[i]+':'+nativeValueString(range[fields[i]]));}catch(unsupportedStyle){out.push(fields[i]+':!');}
+        return out.join('|');
+    }
+    function nativeSignature(L){
+        var doc=nativeProperty(L).value,out=[doc.text],fields=['font','fontSize','tracking','kerning','autoKernType','horizontalScale','verticalScale','baselineShift','applyFill','fillColor','applyStroke','strokeColor','strokeWidth','strokeOverFill','fauxBold','fauxItalic','allCaps','smallCaps','fontCapsOption','fontBaselineOption','ligature','tsume','leading','autoLeading','justification','direction','lineOrientation','firstLineIndent','startIndent','endIndent','spaceBefore','spaceAfter','composerEngine','everyLineComposer','noBreak'];
+        out.push(nativeValueString(doc.baselineLocs));
+        for(var i=0;i<fields.length;i++){try{out.push(fields[i]+':'+nativeValueString(doc[fields[i]]));}catch(ignoreField){out.push(fields[i]+':!');}}
+        // A Source Text string alone does not detect same-text styling edits.
+        for(var n=0;n<doc.text.length;n++){
+            var range=doc.characterRange(n,n+1);
+            for(var f=0;f<fields.length;f++)try{out.push(nativeValueString(range[fields[f]]));}catch(ignoreRange){out.push('!');}
+        }
+        return out.join('|');
+    }
+    function nativeTextPreflight(L){
+        var prop=nativeProperty(L),doc=prop.value,text=doc.text;
+        if(prop.expressionEnabled||prop.numKeys>0)throw Error('文字层暂不支持来源文字关键帧或表达式：'+L.name);
+        if(!doc.pointText||doc.boxText)throw Error('文字层请先转换为点文字；暂不支持段落文本框：'+L.name);
+        if(typeof doc.characterRange!=='function')throw Error('原生文字拆分需要AE24.3以上的CharacterRange API。');
+        if(!text||text.length>2000)throw Error('文字层为空或超过2000个UTF-16字符：'+L.name);
+        if(/[\u0590-\u1CFF\u200C-\u200F\u202A-\u202E\u2066-\u2069\uA960-\uA97F\uD7B0-\uD7FF]/.test(text))throw Error('暂不支持双向、连接书写或复杂塑形文字，请改用预合成画面拆分：'+L.name);
+        if(doc.lineOrientation!==undefined&&(typeof LineOrientation==='undefined'||doc.lineOrientation!==LineOrientation.HORIZONTAL))throw Error('暂不支持竖排文字：'+L.name);
+        if(doc.direction!==undefined&&(typeof ParagraphDirection==='undefined'||doc.direction!==ParagraphDirection.DIRECTION_LEFT_TO_RIGHT))throw Error('暂不支持非从左到右排版：'+L.name);
+        var group=L.property('ADBE Text Properties'),animators=group.property('ADBE Text Animators');
+        if(animators&&animators.numProperties>0)throw Error('文字动画器会改变逐字排版，请先移除或预合成：'+L.name);
+        // AE text paths use a mask on this text layer. Reject all masks rather than guessing a localized/NO_VALUE Path=None sentinel.
+        if(L.property('ADBE Mask Parade').numProperties||L.property('ADBE Effect Parade').numProperties||L.hasTrackMatte)throw Error('原生文字含蒙版/文字路径、效果或轨道遮罩，请预合成后按画面拆分：'+L.name);
+        var units=nativeUnits(text),visible=0;for(var i=0;i<units.length;i++)if(!/^\s+$/.test(units[i].text))visible++;
+        if(!visible||visible>120)throw Error('单个文字层需要1–120个可见字符：'+L.name);
+        return nativeSignature(L);
+    }
+    function nativeSlice(L,start,end){
+        var doc=nativeProperty(L).value,len=doc.text.length;
+        if(end<len)doc.characterRange(end,len).text='';
+        if(start>0)doc.characterRange(0,start).text='';
+        doc.justification=ParagraphJustification.LEFT_JUSTIFY;
+        return doc;
+    }
+    function prepareNativeText(rec){
+        var scratch=null,measure=null,undo=false,oldMutating=state.mutating,failure=null,cleanupErrors='',parts=[],lineMetrics={},doc=nativeProperty(rec.layer).value,text=doc.text,baselines=doc.baselineLocs,units=nativeUnits(text),line=0,lineStart=0;
+        state.mutating=true;var measureStarted=new Date().getTime();
+        function metric(document){
+            checkCurrent();if(new Date().getTime()-measureStarted>45000)throw Error('原生文字测量超时，请减少字数后重试。');nativeProperty(measure).setValue(document);var evaluated=nativeProperty(measure).value,b=evaluated.baselineLocs,rect=measure.sourceRectAtTime(0,false);
+            if(!b||b.length!==4||!isFinite(b[0])||!isFinite(b[1])||!isFinite(b[2])||!isFinite(b[3])||Math.abs(b[0])>1000000||Math.abs(b[1])>1000000||Math.abs(b[2])>1000000||Math.abs(b[3])>1000000||Math.abs(b[3]-b[1])>0.35)throw Error('AE未提供可用的水平文字基线，无法安全定位单字。');
+            if(!rect||!isFinite(rect.left)||!isFinite(rect.top)||!isFinite(rect.width)||!isFinite(rect.height)||rect.width<0||rect.height<0)throw Error('AE返回了无效文字边界。');
+            return {document:evaluated,width:b[2]-b[0],x:b[0],y:b[1],rect:rect};
+        }
+        try{
+            app.beginUndoGroup('AE 智能分层 · 测量原生文字');undo=true;
+            scratch=app.project.items.addComp('__AE智能分层_文字测量_'+token,Math.max(16,comp.width),Math.max(16,comp.height),1,1,comp.frameRate||25);
+            measure=scratch.layers.addText('');
+            for(var i=0;i<units.length;i++){
+                var unit=units[i];
+                if(/^[\r\n]+$/.test(unit.text)){line++;lineStart=unit.end;continue;}
+                if(/^\s+$/.test(unit.text))continue;
+                var lineEnd=text.length;for(var e=unit.end;e<text.length;e++)if(text.charAt(e)==='\r'||text.charAt(e)==='\n'){lineEnd=e;break;}
+                var bi=line*4;if(!baselines||baselines.length<bi+4||!isFinite(baselines[bi])||!isFinite(baselines[bi+1])||Math.abs(baselines[bi])>1000000||Math.abs(baselines[bi+1])>1000000)throw Error('源文字行基线无效：'+rec.layer.name);
+                var full=lineMetrics['$'+line];
+                if(!full){
+                    full=metric(nativeSlice(rec.layer,lineStart,lineEnd));lineMetrics['$'+line]=full;
+                    // Compare a no-ligature line probe. This is a conservative geometry screen, not a pixel-equivalence proof.
+                    var noLig=nativeSlice(rec.layer,lineStart,lineEnd);if(noLig.ligature!==undefined){noLig.ligature=false;var plain=metric(noLig);if(Math.abs(plain.width-full.width)>0.1||Math.abs(plain.rect.left-full.rect.left)>0.1||Math.abs(plain.rect.top-full.rect.top)>0.1||Math.abs(plain.rect.width-full.rect.width)>0.1||Math.abs(plain.rect.height-full.rect.height)>0.1)throw Error('检测到连字或上下文替换，请预合成后按画面拆分：'+rec.layer.name);}
+                }
+                var single=metric(nativeSlice(rec.layer,unit.start,unit.end)),prefix=unit.start===lineStart?single:metric(nativeSlice(rec.layer,lineStart,unit.end)),suffix=unit.end===lineEnd?single:metric(nativeSlice(rec.layer,unit.start,lineEnd));
+                var a=prefix.width-single.width,b=full.width-suffix.width;
+                if(Math.abs(a-b)>0.35||single.width<0||!isFinite(baselines[bi+2])||Math.abs((baselines[bi+2]-baselines[bi])-full.width)>0.35)throw Error('文字上下文排版不一致，不能可靠逐字定位：'+unit.text+'（'+rec.layer.name+'）');
+                var style=nativeStyleSignature(doc,unit.start,unit.end);
+                if(single.document.text!==unit.text||nativeStyleSignature(single.document,0,unit.text.length)!==style)throw Error('AE 剪裁文字时改变了字符内容或样式，已停止：'+unit.text);
+                var offset=[baselines[bi]+a-single.x,baselines[bi+1]-single.y],r=single.rect,x=r.left+offset[0],y=r.top+offset[1];
+                if(r.width<=0||r.height<=0)throw Error('字符无可见边界：'+unit.text+'（'+rec.layer.name+'）');
+                parts.push({kind:'TEXT',nativeText:true,text:unit.text,document:single.document,nativeStyle:style,nativeOffset:offset,nativeRect:r,feather:0,padding:0,loops:[[[x,y],[x+r.width,y],[x+r.width,y+r.height],[x,y+r.height]]]});
+                progress('测量文字 '+(state.index+1)+'/'+records.length,state.index,records.length,rec.layer.name+'：已测量 '+parts.length+' 个可见字符；空白保留间距但不生成空层。');
+                if(nativeSignature(rec.layer)!==rec.textSignature)throw Error('测量期间源文字或样式已改变：'+rec.layer.name);
+            }
+        }catch(e){failure=e;}finally{
+            try{if(scratch)scratch.remove();}catch(cleanup){cleanupErrors+='\n恢复文字测量临时合成失败：'+cleanup;}
+            try{if(undo)app.endUndoGroup();}catch(closeUndo){cleanupErrors+='\n关闭撤销组失败：'+closeUndo;}
+            state.mutating=oldMutating;
+        }
+        if(failure||cleanupErrors)throw Error((failure?String(failure):'')+cleanupErrors);
+        return parts;
+    }
+    function configureNativeCopy(copy,part,rec){
+        nativeProperty(copy).setValue(part.document);
+        var actual=nativeProperty(copy).value;
+        if(actual.text!==part.text||nativeStyleSignature(actual,0,part.text.length)!==part.nativeStyle)throw Error('AE 未保留真实单字符文字内容或样式，已停止本批次。');
+        var r=copy.sourceRectAtTime(comp.time,false),expected=part.nativeRect;
+        if(!r||!isFinite(r.left)||!isFinite(r.top)||!isFinite(r.width)||!isFinite(r.height)||Math.abs(r.left-expected.left)>0.35||Math.abs(r.top-expected.top)>0.35||Math.abs(r.width-expected.width)>0.35||Math.abs(r.height-expected.height)>0.35)throw Error('输出单字边界与测量不符，已停止本批次。');
+        var anchor=[r.left+r.width/2,r.top+r.height/2],dx=part.nativeOffset[0]+anchor[0]-rec.anchor[0],dy=part.nativeOffset[1]+anchor[1]-rec.anchor[1],rad=rec.rotation*Math.PI/180,sx=rec.scale[0]/100,sy=rec.scale[1]/100,tr=copy.property('ADBE Transform Group');
+        tr.property('ADBE Anchor Point').setValue(anchor);tr.property('ADBE Position').setValue([rec.position[0]+Math.cos(rad)*sx*dx-Math.sin(rad)*sy*dy,rec.position[1]+Math.sin(rad)*sx*dx+Math.cos(rad)*sy*dy]);
+    }

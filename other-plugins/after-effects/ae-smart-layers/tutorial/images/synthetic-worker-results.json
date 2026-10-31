@@ -1,0 +1,35 @@
+{
+  "provenance": "Self-drawn geometric synthetic fixtures; actual worker extracted from root portable14 JSX. No user images read. Not an AE screenshot.",
+  "jsx_sha256": "2eb5fa596dff774f50aa4029aaaae8b3907f540475f6642e9825b52bbaae279d",
+  "cases": [
+    {
+      "fixture": "petals",
+      "regions": 6,
+      "classification": [
+        "OBJECT",
+        "OBJECT",
+        "OBJECT",
+        "OBJECT",
+        "OBJECT",
+        "OBJECT"
+      ],
+      "input_sha256": "4be3a83c7281f9671ee3287278f56e8a7185b106f1396ee1675cce6ef83dd2d4"
+    },
+    {
+      "fixture": "petals-mixed",
+      "regions": 9,
+      "classification": [
+        "OBJECT",
+        "OBJECT",
+        "TEXT",
+        "TEXT",
+        "OBJECT",
+        "OBJECT",
+        "TEXT",
+        "OBJECT",
+        "OBJECT"
+      ],
+      "input_sha256": "d66668986d08f5bcb350c2d689f0b37ff1add84b3ebac2659d78c4d44bbf5838"
+    }
+  ]
+}
