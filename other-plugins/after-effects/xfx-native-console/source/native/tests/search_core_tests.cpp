@@ -10,6 +10,8 @@
 #include <vector>
 
 #include "../src/search_core.h"
+#include "../src/effect_catalog.h"
+#include "../src/data/display_label_cleanups.h"
 #include "../src/settings.h"
 #include "../src/hotkey.h"
 #include "../src/data/effect_translations.h"
@@ -183,8 +185,8 @@ static void expression_controls_keep_english_fallback_rows_and_host_identities()
 
 static void openexr_product_names_are_preserved_with_chinese_search_aliases() {
     for (const auto& fixture : std::vector<LocalizationFixture>{
-             {"EXtractoR", "EXtractoR", L"EXtractoR", L"提取器", L"tiquqi", L"tqq"},
-             {"IDentifier", "IDentifier", L"IDentifier", L"标识符", L"biaoshifu", L"bsf"}}) {
+             {"EXtractoR", "EXtractoR", L"多通道图像提取", L"提取器", L"tiquqi", L"tqq"},
+             {"IDentifier", "IDentifier", L"对象编号遮罩提取", L"标识符", L"biaoshifu", L"bsf"}}) {
         CatalogItem item{localization_utf8(fixture.english_name), "", "", fixture.english_name,
                          fixture.match_name, L"3D 通道", "ae"};
         SearchEngine engine({item});
@@ -341,7 +343,29 @@ static void aliases_are_searchable() {
     assert(engine.search(L"球动作").size() == 1);
 }
 
+static void display_cleanup_rules_are_exact_and_search_preserving() {
+    assert(std::size(xfx::kDisplayLabelCleanups)==82);
+    for(const auto& rule:xfx::kDisplayLabelCleanups) {
+        CatalogItem item{localization_utf8(*rule.english_name?rule.english_name:rule.match_name),"","",
+            *rule.english_name?rule.english_name:rule.match_name,rule.match_name,L"效果","ae"};
+        item.translated_name=rule.previous;
+        const auto id=item.match_name, english=item.english_name;
+        xfx::enrich_catalog_item(item);
+        assert(item.translated_name==rule.replacement && item.match_name==id && item.english_name==english);
+        assert(std::find(item.aliases.begin(),item.aliases.end(),rule.previous)!=item.aliases.end());
+        const SearchEngine engine({item});assert(engine.search(rule.previous).size()==1);
+        auto custom=item;custom.translated_name=L"团队自定义译名";xfx::enrich_catalog_item(custom);
+        assert(custom.translated_name==L"团队自定义译名");
+    }
+}
+
 static void effect_label_uses_single_line_bilingual_format() {
+    CatalogItem deep{L"Deep Glow 2", "", "", "Deep Glow 2", "PEDG2", L"效果", "ae"};
+    xfx::enrich_catalog_item(deep);
+    assert(deep.translated_name == L"深度辉光");
+    assert(xfx::bilingual_effect_label(deep.display_name,deep.translated_name) == L"Deep Glow 2（深度辉光）");
+    assert(xfx::bilingual_effect_label(L"定向模糊",L"方向模糊") == L"定向模糊");
+    assert(xfx::bilingual_effect_label(L"投影",L"投影") == L"投影");
     assert(xfx::bilingual_effect_label(L"CC Ball Action", L"CC球动作") ==
            L"CC Ball Action（CC球动作）");
 }
@@ -518,6 +542,99 @@ static void external_wipes_from_user_screenshot_translate_and_keep_host_ids() {
     }
 }
 
+static void actual_ae_inventory_has_chinese_without_rewriting_effect_identities() {
+    const auto fixture = std::filesystem::path(localization_utf8(__FILE__)).parent_path() /
+                         "data" / "ae-25.4-effects.txt";
+    std::ifstream input(fixture, std::ios::binary);
+    localization_require(input.good(), "cannot read real AE effect inventory fixture");
+    std::vector<CatalogItem> items;
+    std::string line;
+    size_t missing = 0;
+    std::string first_missing;
+    while (std::getline(input, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line.empty() || line[0] == '#') continue;
+        const auto tab = line.find('\t');
+        const auto second = line.find('\t', tab == std::string::npos ? 0 : tab + 1);
+        localization_require(tab != std::string::npos && second != std::string::npos, "invalid inventory row");
+        const auto id = line.substr(0, tab), label = line.substr(tab + 1, second - tab - 1);
+        CatalogItem item{localization_utf8(label), "", "", label, id, L"效果", "ae"};
+        const auto expected_display = xfx::catalog_display_name(item);
+        xfx::enrich_catalog_item(item);
+        localization_require(item.match_name == id && item.english_name == label &&
+                             item.display_name == expected_display, "inventory identity changed: " + id);
+        const bool chinese = std::any_of(item.translated_name.begin(), item.translated_name.end(),
+            [](wchar_t ch) { return (ch >= 0x3400 && ch <= 0x9FFF) || (ch >= 0xF900 && ch <= 0xFAFF); });
+        if (!chinese) { ++missing; if (first_missing.empty()) first_missing = id; }
+        else localization_require(!item.pinyin_full_variants.empty() && !item.pinyin_initial_variants.empty(),
+                                  "Chinese inventory label has no generated pinyin: " + id);
+        items.push_back(std::move(item));
+    }
+    localization_require(items.size() == 1401, "actual AE inventory fixture count changed");
+    localization_require(!missing, "actual AE inventory missing translations: " + std::to_string(missing) +
+                                  "; first=" + first_missing);
+    SearchEngine engine(items);
+    // Sample the public search interface across the complete inventory, not a
+    // table-derived expected output. Every sampled ID must remain applicable.
+    for (size_t i = 0; i < items.size(); i += 19) {
+        const auto& item = items[i];
+        for (const auto& query : {item.translated_name,
+                                  localization_utf8(item.pinyin_full_variants.front()),
+                                  localization_utf8(item.pinyin_initial_variants.front())}) {
+            const auto results = engine.search(query);
+            localization_require(std::any_of(results.begin(), results.end(), [&](const auto& result) {
+                return result.item.match_name == item.match_name;
+            }), "inventory Chinese/pinyin search lost ID: " + item.match_name);
+        }
+    }
+}
+
+static void actual_catalog_excludes_hidden_registration_not_valid_same_name_effects() {
+    const auto fixture = std::filesystem::path(localization_utf8(__FILE__)).parent_path() /
+                         "data" / "ae-25.4-effects.txt";
+    std::ifstream input(fixture, std::ios::binary);
+    localization_require(input.good(), "catalog inventory fixture missing");
+    std::map<std::string, size_t> labels;
+    std::map<std::string, std::string> visible;
+    size_t total = 0, hidden = 0, internal = 0, bcc_deprecated = 0, adobe_deprecated = 0;
+    std::string line;
+    while (std::getline(input, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line.empty() || line[0] == '#') continue;
+        const auto first = line.find('\t'), second = line.find('\t', first + 1);
+        localization_require(first != std::string::npos && second != std::string::npos, "invalid inventory row");
+        const auto id = line.substr(0, first), label = line.substr(first + 1, second - first - 1), category = line.substr(second + 1);
+        ++total;
+        const bool included = xfx::effect_is_discoverable(id, label, category);
+        if (category == "_Obsolete") { ++hidden; localization_require(!included, "hidden registration exposed: " + id); }
+        else if (category.empty()) { ++internal; localization_require(!included, "internal registration exposed: " + id); }
+        else {
+            localization_require(included, "user-facing category removed: " + id);
+            visible.emplace(id, label);
+            ++labels[label];
+            if (category == "BCC Obsolete") ++bcc_deprecated;
+            if (category == "过时") ++adobe_deprecated;
+        }
+    }
+    localization_require(total == 1401 && hidden == 90 && internal == 108 && visible.size() == 1203,
+                         "whole-inventory discovery policy counts changed");
+    localization_require(bcc_deprecated == 117 && adobe_deprecated == 10, "visible deprecated effects were wrongly hidden");
+    localization_require(!visible.count("ADBE Geometry") && visible.at("ADBE Geometry2") == "变换",
+                         "current Transform not preserved or hidden Transform still exposed");
+    localization_require(!visible.count("ADBE PSL Drop Shadow") && visible.count("ADBE Drop Shadow"),
+                         "Photoshop helper exposure or normal Drop Shadow lost");
+    for (const auto& [label, count] : labels) localization_require(count == 1, "unexplained inventory duplicate: " + label);
+    localization_require(xfx::effect_is_discoverable("VendorA", "Same Name", "Vendor") &&
+                         xfx::effect_is_discoverable("VendorB", "Same Name", "Vendor") &&
+                         xfx::effect_is_discoverable("Custom", "Custom", "_Vendor"),
+                         "same-label distinct valid effects or arbitrary vendor category removed");
+    localization_require(!xfx::effect_is_discoverable("", "Effect", "Vendor") &&
+                         !xfx::effect_is_discoverable("ID", "  ", "Vendor") &&
+                         !xfx::effect_is_discoverable("ID", "Effect", "  \t") &&
+                         !xfx::effect_is_discoverable("ID", "Effect", "Vendor", false),
+                         "invalid or unknown effect metadata leaked into discovery");
+}
+
 static void settings_round_trip() {
     const auto path = std::filesystem::temp_directory_path() / "xfx-native-settings-test.ini";
     xfx::Settings settings;
@@ -601,6 +718,10 @@ int main() {
                        translation_tsv_and_embedded_rows_agree_without_ambiguous_english_fallbacks);
     check_localization("screenshot external wipes, BCC+ spacing, Chinese/pinyin and unchanged identities",
                        external_wipes_from_user_screenshot_translate_and_keep_host_ids);
+    check_localization("actual 1401-effect AE inventory Chinese labels, pinyin and preserved application IDs",
+                       actual_ae_inventory_has_chinese_without_rewriting_effect_identities);
+    check_localization("whole catalog discovery removes hidden/internal entries but retains valid deprecated/same-name effects",
+                       actual_catalog_excludes_hidden_registration_not_valid_same_name_effects);
     search_matches_chinese();
     search_matches_full_pinyin();
     search_matches_initials();
@@ -610,6 +731,7 @@ int main() {
     english_search_works_when_display_name_is_missing();
     translated_name_is_searchable();
     aliases_are_searchable();
+    display_cleanup_rules_are_exact_and_search_preserving();
     effect_label_uses_single_line_bilingual_format();
     exact_match_ranks_first();
     translated_effect_generates_pinyin_without_manual_fields();

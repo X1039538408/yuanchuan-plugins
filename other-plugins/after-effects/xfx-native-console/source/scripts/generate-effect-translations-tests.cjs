@@ -1,0 +1,13 @@
+'use strict';
+const assert = require('node:assert/strict');
+const { generate } = require('./generate-effect-translations.cjs');
+const source = '\uFEFF# columns\r\nVendor ID\tBrand "Name"\t品牌中文🎬\t\t\t别名|alias\\path\r\n';
+const result = generate(source);
+assert.ok(result.includes('{"Vendor ID", "Brand \\"Name\\"", L"\\u54c1\\u724c\\u4e2d\\u6587\\U0001f3ac", L"\\u522b\\u540d|alias\\\\path"}'));
+assert.equal(result.includes('\r'), false);
+assert.equal(generate(source), result);
+assert.throws(() => generate(''), /Empty/);
+assert.throws(() => generate('id\tName'), /columns/);
+assert.throws(() => generate('\t\t中文'), /Missing/);
+assert.throws(() => generate('id\tName\t中文\nid\tName2\t中文2'), /Duplicate/);
+console.log('PASS translation generator Unicode, quoting, determinism, CRLF/BOM and invalid/duplicate keys');

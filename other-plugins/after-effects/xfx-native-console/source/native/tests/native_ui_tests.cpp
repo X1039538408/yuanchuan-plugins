@@ -266,6 +266,8 @@ static void check_button_hover(HWND button) {
 #include "combo_geometry_checks.h"
 #include "ime_integration_checks.h"
 #include "apply_click_checks.h"
+#include "input_cursor_checks.h"
+#include "filter_surface_checks.h"
 
 int wmain(int argc, wchar_t** argv) {
     std::set_terminate([] {
@@ -282,6 +284,64 @@ int wmain(int argc, wchar_t** argv) {
     g_test_settings_path = directory / L"settings.ini";
     SetEnvironmentVariableW(L"XFX_THUMBNAIL_CACHE_DIR", (directory / L"thumbnail-cache").c_str());
     {
+        const auto source = fs::path(utf8_to_wide(__FILE__)).parent_path().parent_path().parent_path();
+        fs::copy_file(source / "installer" / "XFXNativeConsole.aliases.tsv",
+                      directory / L"XFXNativeConsole.aliases.default.tsv");
+        const auto aliases = load_aliases();
+        std::ifstream inventory(source / "native" / "tests" / "data" / "ae-25.4-effects.txt", std::ios::binary);
+        assert(inventory.good());
+        std::string row;
+        size_t count = 0, discoverable = 0;
+        std::set<std::string> catalog_ids;
+        std::vector<xfx::CatalogItem> native_catalog;
+        while (std::getline(inventory, row)) {
+            if (!row.empty() && row.back() == '\r') row.pop_back();
+            if (row.empty() || row[0] == '#') continue;
+            const auto fields = split_tsv(row);
+            const auto* alias = find_effect_alias(aliases, fields[1].c_str(), fields[0].c_str());
+            assert(alias && contains_cjk(alias->chinese_name));
+            const auto original = utf8_to_wide(fields[1].c_str());
+            if (!original.empty()) assert(safe_effect_display_name(original, alias) == original);
+            if (append_registered_effect(native_catalog, aliases, catalog_ids, fields[1].c_str(), fields[0].c_str(),
+                                         fields[2].c_str(), true)) {
+                ++discoverable;
+                const auto& item = native_catalog.back();
+                assert(item.match_name == fields[0] && item.category == L"效果" &&
+                       item.host_category == utf8_to_wide(fields[2].c_str()));
+                if (contains_cjk(original)) assert(item_display_label(item)==original);
+                if (const auto* localized=xfx::saved_native_chinese_label(fields[0])) {
+                    assert(std::wstring(localized)==original);
+                    assert(safe_effect_display_name(L"iy",alias,fields[0],true)==original);
+                }
+                if(fields[0]=="PEDG2")assert(item_display_label(item)==L"Deep Glow 2（深度辉光）");
+            }
+            ++count;
+        }
+        assert(count == 1401 && discoverable == 1203 && native_catalog.size() == 1203);
+        {
+            std::vector<xfx::CatalogItem> localized;std::set<std::string> ids;
+            assert(append_registered_effect(localized,aliases,ids,"Drop Shadow","ADBE Drop Shadow","透视",true));
+            assert(localized[0].display_name==L"投影" && item_display_label(localized[0])==L"投影");
+            assert(xfx::SearchEngine(localized).search(L"drop shadow").size()==1);
+        }
+        for (const auto* category : {"Perspective","遠近","透视"}) for (const auto* raw : {"iy","Drop Shadow"}) {
+            std::vector<xfx::CatalogItem> localized;std::set<std::string> ids;
+            assert(append_registered_effect(localized,aliases,ids,raw,"ADBE Drop Shadow",category,true));
+            const auto expected=std::string(category)=="透视"?L"投影":L"Drop Shadow";
+            assert(localized[0].display_name==expected && localized[0].match_name=="ADBE Drop Shadow");
+            assert(xfx::SearchEngine(localized).search(L"drop shadow").size()==1);
+        }
+        std::set<std::string> synthetic_ids;
+        std::vector<xfx::CatalogItem> synthetic;
+        assert(!append_registered_effect(synthetic, aliases, synthetic_ids, "Hidden", "Same ID", "_Obsolete", true));
+        assert(!append_registered_effect(synthetic, aliases, synthetic_ids, "Unknown", "Other", "Vendor", false));
+        assert(append_registered_effect(synthetic, aliases, synthetic_ids, "Same Name", "Same ID", "BCC Obsolete", true));
+        assert(append_registered_effect(synthetic, aliases, synthetic_ids, "Same Name", "Distinct ID", "_Vendor", true));
+        assert(!append_registered_effect(synthetic, aliases, synthetic_ids, "Same Name", "Same ID", "Vendor", true));
+        assert(synthetic.size() == 2 && synthetic[0].match_name != synthetic[1].match_name);
+        std::cout << "PASS native TSV loader and visible original labels for all 1401 actual AE effects\n";
+    }
+    {
         std::ofstream(directory / L"XFXNativeConsole.aliases.default.tsv") <<
             "ADBE Glo2\tGlow\t默认发光\t\t\t\n"
             "\tBCC+ Rectangular Wipe\tBCC+ 矩形擦除\t\t\t矩形转场\n";
@@ -290,6 +350,27 @@ int wmain(int argc, wchar_t** argv) {
         const auto aliases = load_aliases();
         assert(aliases.by_english_name.at("glow").chinese_name == L"自定义辉光");
         assert(aliases.by_english_name.at("glow").priority > aliases.by_match_name.at("adbe glo2").priority);
+        assert(find_effect_alias(aliases, "Glow", "ADBE Glo2")->chinese_name == L"自定义辉光");
+        assert(find_effect_alias(aliases,"Glow","ADBE Glo2")->custom_translation);
+        {
+            std::vector<xfx::CatalogItem> custom;std::set<std::string> ids;
+            assert(append_registered_effect(custom,aliases,ids,"发光","ADBE Glo2","风格化",true));
+            assert(!custom[0].translated_name_custom && item_display_label(custom[0])==L"发光");
+            // A late ID-based user override must remain visible and both original
+            // host English and explicitly overridden English must be searchable.
+            std::ofstream(directory/L"aliases.user.tsv",std::ios::app)<<"ADBE Glo2\tTeam Light\t团队柔光\t\t\t\n";
+            const auto custom_aliases=load_aliases();
+            assert(custom_aliases.by_match_name.at("adbe glo2").custom_translation);
+            custom.clear();ids.clear();
+            assert(append_registered_effect(custom,custom_aliases,ids,"Glow","ADBE Glo2","风格化",true));
+            assert(item_display_label(custom[0])==L"发光（团队柔光）");
+            const xfx::SearchEngine engine(custom);
+            assert(engine.search(L"Glow").size()==1 && engine.search(L"Team Light").size()==1);
+            assert(engine.search(L"团队柔光").size()==1 && custom[0].match_name=="ADBE Glo2");
+            custom.clear();ids.clear();
+            assert(append_registered_effect(custom,custom_aliases,ids,"发光","ADBE Glo2","风格化",true));
+            assert(item_display_label(custom[0])==L"发光（团队柔光）");
+        }
         const auto& rectangular = aliases.by_english_name.at(canonical_alias_key("BCC+Rectangular Wipe"));
         assert(rectangular.chinese_name == L"BCC+ 矩形擦除");
         assert(canonical_alias_key("BCC+Rectangular Wipe") == canonical_alias_key(" bcc+\tRectangular Wipe "));
@@ -299,9 +380,22 @@ int wmain(int argc, wchar_t** argv) {
         assert(external.size() == 1);
         assert(item_display_label(external[0].item) == L"BCC+Rectangular Wipe（BCC+ 矩形擦除）");
         AliasEntry drop_shadow;
+        drop_shadow.match_name = "ADBE Drop Shadow";
         drop_shadow.english_name = "Drop Shadow";
-        assert(safe_effect_display_name(L"iy", &drop_shadow) == L"Drop Shadow");
+        drop_shadow.chinese_name = L"投影";
+        assert(safe_effect_display_name(L"iy", &drop_shadow,{},true) == L"投影");
+        assert(safe_effect_display_name(L"\uFFFD", &drop_shadow,{},true) == L"投影");
+        assert(safe_effect_display_name(L"", &drop_shadow,{},true) == L"投影");
+        assert(safe_effect_display_name(L"Drop Shadow", &drop_shadow) == L"Drop Shadow");
         assert(safe_effect_display_name(L"阴影", &drop_shadow) == L"阴影");
+        // Stable-ID-only third-party translations must not mistake legitimate
+        // short product labels for encoding corruption.
+        for (const auto& fixture : std::vector<std::pair<std::string, std::wstring>>{
+                 {"tc Lux", L"Lux"}, {"tc Tao", L"Tao"}, {"Geo", L"Geo"}}) {
+            AliasEntry product;
+            product.match_name = fixture.first;
+            assert(safe_effect_display_name(fixture.second, &product) == fixture.second);
+        }
         AliasEntry photoshop_drop_shadow;
         photoshop_drop_shadow.match_name = "ADBE PSL Drop Shadow";
         photoshop_drop_shadow.chinese_name = L"Photoshop 投影";
@@ -319,6 +413,9 @@ int wmain(int argc, wchar_t** argv) {
     g_test_catalog[1].translated_name = L"发光";
     assert(item_display_label(g_test_catalog[1]) == L"Glow（发光）");
     xfx::Settings settings; settings.hotkey = L"Ctrl+Alt+Shift+F23";
+    // Drawing/input checks must not be destroyed by the user's external focus.
+    // The explicit focus-away lifecycle check below still enables auto-close.
+    settings.auto_close = false;
     settings.custom_aliases[L"ADBE Gaussian Blur 2"] = {L"柔化专用"};
     xfx::SettingsStore::save(g_test_settings_path, settings);
     g_state = new PluginState();
@@ -355,6 +452,40 @@ int wmain(int argc, wchar_t** argv) {
         else if (check == L"--ime-retry") check_ime_failure_retry();
         else if (check == L"--ime-pending-restore") check_ime_pending_restore();
         else if (check == L"--apply-click") check_result_click_is_deferred();
+        else if (check == L"--search-cursor") check_search_cursor_stability();
+        else if (check == L"--filter-surface") check_filter_background_transitions(regression_artifacts);
+        else if (check == L"--filter-center") check_filter_combo_group_center();
+        else if (check == L"--display-labels") {
+            const auto source=fs::path(utf8_to_wide(__FILE__)).parent_path().parent_path().parent_path();
+            fs::copy_file(source/"installer"/"XFXNativeConsole.aliases.tsv",directory/L"XFXNativeConsole.aliases.default.tsv",fs::copy_options::overwrite_existing);
+            const auto aliases=load_aliases();std::set<std::string> ids;std::vector<xfx::CatalogItem> catalog;
+            std::ifstream input(source/"native"/"tests"/"data"/"ae-25.4-effects.txt",std::ios::binary);std::string row;
+            while(std::getline(input,row)){
+                if(!row.empty() && row.back()=='\r')row.pop_back();
+                if(row.empty() || row[0]=='#')continue;const auto f=split_tsv(row);
+                append_registered_effect(catalog,aliases,ids,f[1].c_str(),f[0].c_str(),f[2].c_str(),true);
+            }
+            assert(catalog.size()==1203);g_state->base_catalog=catalog;rebuild_customized_catalog();
+            for(const auto& preview:std::vector<std::pair<std::wstring,std::wstring>>{{L"touy",L"native-shadow-labels.png"},{L"Deep Glow 2",L"deep-glow-label.png"}}){
+                SetWindowTextW(g_state->search,preview.first.c_str());populate_results();pump();
+                assert(SendMessageW(g_state->results,LB_GETCOUNT,0,0)>0);
+                save_test_preview(g_state->window,regression_artifacts/preview.second);
+            }
+            SetWindowTextW(g_state->search,L"");g_state->settings.slots[0]=L"PEDG2";
+            g_state->settings.slots[1]=L"ADBE Fill";g_state->settings.slots[2]=L"ADBE Tint";
+            populate_results();pump();check_home_layout_restored();
+            save_test_preview(g_state->window,regression_artifacts/L"home-unchanged.png");
+            std::cout<<"PASS real saved inventory label screenshots and unchanged home (isolated fixture settings)\n";
+        }
+        else if (check == L"--home-restored") {
+            check_home_layout_restored();
+            g_state->settings.slots[0]=L"ADBE Gaussian Blur 2";
+            g_state->settings.slots[1]=L"ADBE Glo2";
+            populate_results();pump();
+            save_test_preview(g_state->window,regression_artifacts/L"home-restored.png");
+            SetWindowTextW(g_state->search,L"g");populate_results();pump();
+            save_test_preview(g_state->window,regression_artifacts/L"search-restored.png");
+        }
         else return 2;
         death_hook(nullptr, reinterpret_cast<AEGP_DeathRefcon>(g_state));
         return 0;
@@ -385,7 +516,45 @@ int wmain(int argc, wchar_t** argv) {
         assert(IsWindowVisible(g_state->capture));
         std::cout << "PASS search restores all child visibility and preserves native text/parent visibility\n";
     }
+    {
+        // Dedicated style row is independent of search and user 1-9 bindings.
+        const auto slots_before = g_state->settings.slots;
+        RECT previous{};
+        for (int index = 0; index < 9; ++index) {
+            const HWND button = GetDlgItem(g_state->window, 1100 + index);
+            assert(IsWindow(button) && IsWindowVisible(button));
+            wchar_t label[32]{}; GetWindowTextW(button, label, 32);
+            assert(std::wstring(label) == xfx::layer_styles[static_cast<size_t>(index)].short_label);
+            const RECT cell = child_rect_in_parent(g_state->window, button);
+            assert(cell.bottom - cell.top >= ui_px(28) && cell.right - cell.left >= ui_px(28));
+            if (index) assert(cell.top == previous.top && cell.left >= previous.right + ui_px(2));
+            previous = cell;
+            assert(child_rect_in_parent(g_state->window, g_state->results).bottom <= cell.top);
+            assert(cell.bottom <= child_rect_in_parent(g_state->window, g_state->status).top);
+        }
+        g_test_script_reply = xfx::ScriptReply{false, false, 0, "fixture style failure"};
+        g_test_last_script.clear();
+        SendMessageW(g_state->window, WM_COMMAND, MAKEWPARAM(1108, BN_CLICKED),
+                     reinterpret_cast<LPARAM>(GetDlgItem(g_state->window, 1108)));
+        assert(g_test_last_script.empty()); // deferred, not inside button event
+        pump();
+        assert(g_test_last_script.find("frameFX/enabled") != std::string::npos);
+        assert(g_test_last_script.find("executeCommand") != std::string::npos);
+        assert(g_test_last_script.find("addProperty") == std::string::npos);
+        assert(IsWindowVisible(g_state->window));
+        g_test_script_reply.reset();
+        assert(g_state->settings.slots == slots_before);
+        assert(SendMessageW(g_state->filter, CB_GETCOUNT, 0, 0) == 5);
+        assert(std::none_of(g_state->catalog.begin(), g_state->catalog.end(), [](const auto& item) {
+            return item.item_type == L"layer_style";
+        }));
+        std::cout << "PASS dedicated nine-style row, layout, existing shortcuts and search unchanged\n";
+    }
     check_search_input_geometry(regression_artifacts);
+    check_home_layout_restored();
+    check_filter_background_transitions(regression_artifacts);
+    check_filter_combo_group_center();
+    check_search_cursor_stability();
     check_console_paint_geometry();
     check_hotkey_dispatch_guards();
     check_result_hover_leave();
@@ -519,7 +688,14 @@ int wmain(int argc, wchar_t** argv) {
         SendMessageW(g_state->capture, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(3, 3));
         *g_test_button_hover_time += 180;
         SendMessageW(g_state->capture, WM_TIMER, kButtonHoverTimerId, 0);
-        assert(button_background(g_state->capture) != before);
+        const auto pressed_color=button_background(g_state->capture);
+        if(pressed_color==before) {
+            const auto& hover=g_state->button_hovers.at(g_state->capture);
+            std::cerr<<"ripple diagnostic before="<<before<<" after="<<pressed_color<<" enabled="<<IsWindowEnabled(g_state->capture)
+                <<" visible="<<IsWindowVisible(g_state->capture)<<" waves="<<hover.ripples.size()<<" progress="<<hover.progress
+                <<" reduced="<<reduced_motion()<<" time="<<button_hover_time()<<"\n";
+        }
+        assert(pressed_color != before);
         SendMessageW(g_state->capture, WM_CANCELMODE, 0, 0);
         *g_test_button_hover_time += 800;
         SendMessageW(g_state->capture, WM_TIMER, kButtonHoverTimerId, 0);
@@ -544,7 +720,9 @@ int wmain(int argc, wchar_t** argv) {
         assert(g_state->button_hovers.at(g_state->capture).ripples.empty());EnableWindow(g_state->capture,TRUE);
         GetWindowRect(g_state->capture,&after);assert(EqualRect(&before,&after));g_test_button_hover_time.reset();
         set_status(L"配置已导入",true);pump_for(2100);
-        wchar_t status[128]{};GetWindowTextW(g_state->status,status,128);assert(std::wstring(status)==L"就绪");
+        wchar_t status[128]{};GetWindowTextW(g_state->status,status,128);
+        if(std::wstring(status)!=L"就绪")std::wcerr<<L"status timer diagnostic actual="<<status<<L" expiry="<<g_state->status_expires<<L" now="<<GetTickCount64()<<L"\n";
+        assert(std::wstring(status)==L"就绪");
         set_status(L"操作失败：测试原因");pump_for(2100);GetWindowTextW(g_state->status,status,128);
         assert(std::wstring(status)==L"操作失败：测试原因");
         std::cout<<"PASS rapid/off-center/keyboard/disabled ripples, stable bounds, success expiry and persistent errors\n";
@@ -1033,6 +1211,7 @@ int wmain(int argc, wchar_t** argv) {
     show_console();
     assert(IsWindow(g_state->window));
     assert(g_state->settings.full_resolution_screenshots);
+    g_state->settings.auto_close = true;
     HWND external_focus = CreateWindowExW(WS_EX_TOOLWINDOW, L"STATIC", L"focus-away fixture",
         WS_POPUP | WS_VISIBLE, 10, 10, 30, 30, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
     assert(external_focus);
@@ -1040,6 +1219,8 @@ int wmain(int argc, wchar_t** argv) {
     SendMessageW(g_state->window, WM_ACTIVATE, WA_INACTIVE, reinterpret_cast<LPARAM>(external_focus)); pump();
     assert(!g_state->window);
     DestroyWindow(external_focus);
+    g_state->settings.auto_close = false;
+    xfx::SettingsStore::save(g_test_settings_path,g_state->settings);
     auto& bridge = xfx::script_bridge();
     if (IsWindow(g_state->gallery_window)) DestroyWindow(g_state->gallery_window);
     bridge.set_available(true); // Standalone harness substitutes for AE idle registration.

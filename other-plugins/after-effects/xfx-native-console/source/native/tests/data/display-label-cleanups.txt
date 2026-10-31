@@ -1,0 +1,84 @@
+# Explicitly reviewed display cleanup rules; not a generic ASCII/brand removal policy.
+# matchName	englishName	comparisonLabel	oldTranslation	newTranslation
+	Vegas	Vegas	Vegas 描边	描边
+	Particular	Particular	Trapcode Particular 粒子	粒子
+	Form	Form	Trapcode Form 粒子阵列	粒子阵列
+	Shine	Shine	Trapcode Shine 放射光	放射光
+	Starglow	Starglow	Trapcode Starglow 星光	星光
+	3D Stroke	3D Stroke	Trapcode 3D Stroke 三维描边	三维描边
+	Sound Keys	Sound Keys	Trapcode Sound Keys 音频驱动	音频驱动
+	Twixtor	Twixtor	Twixtor 变速补帧	变速补帧
+	Twixtor Pro	Twixtor Pro	Twixtor Pro 变速补帧	变速补帧
+	RSMB	RSMB	RSMB 运动模糊	运动模糊
+	RSMB Pro	RSMB Pro	RSMB Pro 运动模糊	运动模糊
+	ReelSmart Motion Blur	ReelSmart Motion Blur	ReelSmart Motion Blur 运动模糊	运动模糊
+	Optical Flares	Optical Flares	Optical Flares 光学光斑	光学光斑
+	Saber	Saber	Saber 光剑	光剑
+	Element	Element	Element 三维模型	三维模型
+	Heat Distortion	Heat Distortion	Heat Distortion 热扭曲	热扭曲
+	Deep Glow	Deep Glow	Deep Glow 深度发光	深度发光
+EXtractoR	EXtractoR	EXtractoR	EXtractoR 多通道图像提取	多通道图像提取
+IDentifier	IDentifier	IDentifier	IDentifier 对象编号遮罩提取	对象编号遮罩提取
+mochaAECC		Mocha AE	Mocha AE 平面跟踪与遮罩	平面跟踪与遮罩
+PEAF		AutoFill	Plugin Everything AutoFill 自动生长填充	自动生长填充
+BAO_Boa		Boa	BAO Boa 沿遮罩路径弯曲	沿遮罩路径弯曲
+BAO_Layer_Sculptor		Layer Sculptor	BAO Layer Sculptor 图层雕塑变形	图层雕塑变形
+PEDF		Digit Fiddler	Plugin Everything Digit Fiddler 数字计数动画	数字计数动画
+PEDX		Displacer Pro	Plugin Everything Displacer Pro 专业置换扭曲	专业置换扭曲
+RWB Fast Bokeh		Fast Bokeh	Rowbyte Fast Bokeh 快速散景模糊	快速散景模糊
+One Chance Furikake		Furikake	One Chance Furikake 高性能粒子生成	高性能粒子生成
+AESweetsGlitch7in1		Glitch 7in1	AESweets Glitch 7in1 七合一故障失真	七合一故障失真
+irrealix loopFlow		loopFlow	irrealix loopFlow 循环流动动画	循环流动动画
+Vimager ScaleUp		ScaleUp	Vimager ScaleUp 图像放大增强	图像放大增强
+PESS3		Shadow Studio 3	Plugin Everything Shadow Studio 3 阴影生成	阴影生成
+ADBE TimeMachine		TimeMachine	TimeMachine 时间机器（功能待确认）	时间机器（功能待确认）
+Videocopilot Twitch		Twitch	Video Copilot Twitch 随机抖动故障	随机抖动故障
+KNSW Unmult		UnMult	Knoll UnMult 黑底转透明	黑底转透明
+VIDEOCOPILOT VCReflect		VC Reflect	Video Copilot VC Reflect 镜面倒影	镜面倒影
+VIDEOCOPILOT VIBRANCE		VC Color Vibrance	Video Copilot VC Color Vibrance 色彩鲜艳度	色彩鲜艳度
+PEDG2		Deep Glow 2	Plugin Everything Deep Glow 2 深度辉光	深度辉光
+omino color extract		omino colorizer	omino colorizer 色彩映射着色	色彩映射着色
+omino_diffusion		omino diffusion	omino diffusion 误差扩散抖色	误差扩散抖色
+omino_halftone		omino halftone++	omino halftone++ 半色调网点	半色调网点
+omino_kaleidoscope		omino kaleidoscope	omino kaleidoscope 万花筒	万花筒
+omino_snake		omino snake	omino snake 沿路径蛇形弯曲	沿路径蛇形弯曲
+omino_sphere_map		omino sphere map	omino sphere map 球面映射	球面映射
+omino squares		omino squares	omino squares 方块重构图像	方块重构图像
+omino_test		omino test	omino test 测试工具（用途待确认）	测试工具（用途待确认）
+GUTS BadTV		Bad TV	Rowbyte Bad TV 老电视信号故障	老电视信号故障
+RWB DATA GLITCH		Data Glitch	Rowbyte Data Glitch 数字数据故障	数字数据故障
+RWB DOT PIXELS		Dot Pixels	Rowbyte Dot Pixels 圆点像素化	圆点像素化
+GUTS SEPRGB		Separate RGB	Rowbyte Separate RGB 红绿蓝通道分离	红绿蓝通道分离
+RWB TV PIXEL		TVPixel	Rowbyte TVPixel 电视像素点阵	电视像素点阵
+CINEMA 4D Effect		Cineware	Maxon Cineware 三维场景联动渲染	三维场景联动渲染
+Cryptomatte		Cryptomatte	Cryptomatte 对象材质遮罩提取	对象材质遮罩提取
+tc Echospace		Echospace	Red Giant Trapcode Echospace 三维图层回声阵列	三维图层回声阵列
+Geo		Geo	Red Giant Geo 三维模型材质灯光与克隆	三维模型材质灯光与克隆
+tc Trapcode Horizon		Horizon	Red Giant Trapcode Horizon 环境全景背景	环境全景背景
+tc Lux		Lux	Red Giant Trapcode Lux 三维体积光	三维体积光
+rg Mir		Mir 3	Red Giant Trapcode Mir 3 三维分形网格	三维分形网格
+tc Particular		Trapcode Particular	Red Giant Trapcode Particular 三维粒子系统	三维粒子系统
+tc Tao		Tao	Red Giant Trapcode Tao 三维路径几何生成	三维路径几何生成
+Red Giant GrowBounds		Grow Bounds	Red Giant Grow Bounds 扩展图层边界	扩展图层边界
+RG_MB_ParamCurve_AE		Parametric Curve	Red Giant Magic Bullet Parametric Curve 参数化曲线调色	参数化曲线调色
+RG MB COLORISTA IV		Colorista V	Red Giant Magic Bullet Colorista V 专业色彩校正	专业色彩校正
+RG Cosmo_II		Cosmo II	Red Giant Magic Bullet Cosmo II 人像美肤	人像美肤
+RG Denoiser3		Denoiser III	Red Giant Magic Bullet Denoiser III 视频降噪	视频降噪
+Magic_Bullet_Mojo_II		Mojo II	Red Giant Magic Bullet Mojo II 电影风格调色	电影风格调色
+Magic_Bullet_Renoiser		Renoiser	Red Giant Magic Bullet Renoiser 胶片颗粒添加	胶片颗粒添加
+Magic_Bullet_Suite_Magic_Bullet		Film	Red Giant Magic Bullet Film 胶片质感模拟	胶片质感模拟
+MB LookSuite3		Magic Bullet Looks	Red Giant Magic Bullet Looks 影视风格调色	影视风格调色
+rgBang		Bang	Red Giant Bang 枪口火焰生成	枪口火焰生成
+RG_VFX_ChromaDisp_AE		Chromatic Displacement	Red Giant Chromatic Displacement 色散置换	色散置换
+RG_VFX_Depth_Generator_AE		Depth Generator	Red Giant Depth Generator 深度图生成	深度图生成
+RG_KingPin_Tracker		King Pin Tracker	Red Giant King Pin Tracker 平面跟踪贴合	平面跟踪贴合
+RG_Lens_Distortion		Lens Distortion Matcher	Red Giant Lens Distortion Matcher 镜头畸变匹配	镜头畸变匹配
+MX_Lens_Flare		Real Lens Flares	Red Giant Real Lens Flares 真实镜头光晕	真实镜头光晕
+RG_VFX_OpticalGlow_AE		Optical Glow	Red Giant Optical Glow 光学辉光	光学辉光
+Photron Primatte6		Primatte Keyer 6	Red Giant Primatte Keyer 6 色键抠像	色键抠像
+rg.vfx.reflection		Reflection	Red Giant Reflection 反射倒影	反射倒影
+rg.vfx.shadow		Shadow	Red Giant Shadow 阴影生成	阴影生成
+RG_VFX_SpotClone_Tracker_AE		Spot Clone Tracker	Red Giant Spot Clone Tracker 跟踪克隆修补	跟踪克隆修补
+RG_VFX_Supernova_AE		Supercomp	Red Giant Supercomp 多图层光效合成	多图层光效合成
+Create Motion Vectors 3.x		Motion Vectors: Create	RE:Vision Motion Vectors: Create 运动矢量生成	运动矢量生成
+Twixtor 4 Vectors In		Twixtor Pro, Vectors In	RE:Vision Twixtor Pro, Vectors In 输入矢量变速补帧	输入矢量变速补帧

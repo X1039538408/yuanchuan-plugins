@@ -35,10 +35,13 @@ script_names = ['build-native-plugin.ps1', 'build-installer-exe.ps1', 'build-eff
     'test-effect-console-lifecycle.ps1', 'test-installer-exe.ps1', 'test-installer-payloads.ps1',
     'test-ae-process-detection.ps1', 'scriptui-toolbar-tests.cjs', 'package-effect-console-source.py',
     'audit-effect-translations.cjs', 'audit-effect-translations-tests.cjs',
-    'export-effect-inventory.jsx', 'effect-inventory-tests.cjs']
+    'export-effect-inventory.jsx', 'effect-inventory-tests.cjs',
+    'generate-effect-translations.cjs', 'generate-effect-translations-tests.cjs', 'display-label-tests.cjs',
+    'audit-effect-catalog.cjs', 'effect-catalog-tests.cjs',
+    'export-effect-availability.jsx', 'effect-availability-tests.cjs', 'test-layer-styles-in-ae.jsx']
 files += [Path('scripts') / name for name in script_names]
 files += [p.relative_to(root) for p in (root / 'scripts').glob('run-*-tests.ps1') if p.name != 'run-core-tests.ps1']
-files += [Path('Directory.Build.props'), Path('vendor/ae-sdk/README.txt'), Path('README.md'), Path('VERSION'), Path('.gitignore'), Path('.gitattributes')]
+files += [Path('Directory.Build.props'), Path('vendor/ae-sdk/README.txt'), Path('README.md'), Path('LOCALIZATION.md'), Path('CATALOG.md'), Path('LAYER-STYLES.md'), Path('INPUT-FIX.md'), Path('MENU-LABELS.md'), Path('PAINT-FIX.md'), Path('VERSION'), Path('.gitignore'), Path('.gitattributes')]
 # Validate the entire allowlist before creating an incomplete export.
 for rel in sorted(set(files)):
     if not (root / rel).is_file():

@@ -86,13 +86,18 @@ static RECT combo_text_ink_bounds(HWND combo, const InputPaintSample& sample) {
     RECT ink{client.right, client.bottom, 0, 0};
     const COLORREF text = IsWindowEnabled(combo) ? colors().text : colors().disabled;
     const int inset = MulDiv(5, GetDpiForWindow(combo), 96);
-    const int arrow_width = MulDiv(20, GetDpiForWindow(combo), 96);
+    wchar_t label[128]{};
+    const auto selection=SendMessageW(combo,CB_GETCURSEL,0,0);
+    if(selection>=0)SendMessageW(combo,CB_GETLBTEXT,selection,reinterpret_cast<LPARAM>(label));
+    HDC metrics_dc=GetDC(combo);const auto previous_font=SelectObject(metrics_dc,g_state->font);
+    const auto content=combo_face_content(metrics_dc,client,GetDpiForWindow(combo),label);
+    SelectObject(metrics_dc,previous_font);ReleaseDC(combo,metrics_dc);
     // Use a broad solid-core band instead of requiring a particular ClearType
     // channel to land within three levels. Some font/host combinations never
     // produce an exact core pixel, while the surrounding surface remains far
     // from the text role; the independent ODS coordinate check stays exact.
     for (int y = inset; y < client.bottom - inset; ++y) {
-        for (int x = inset; x < client.right - arrow_width; ++x) {
+        for (int x = (std::max)(inset,static_cast<int>(content.text.left)); x < content.text.right; ++x) {
             const COLORREF pixel = sample.pixels[static_cast<size_t>(y) * client.right + x];
             const int nearest_channel = (std::min)({
                 std::abs(static_cast<int>(GetRValue(pixel)) - GetRValue(text)),

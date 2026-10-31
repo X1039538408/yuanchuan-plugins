@@ -41,6 +41,9 @@
 #include "../src/hotkey.h"
 #include "../src/ime_controller.h"
 #include "../src/search_core.h"
+#include "../src/effect_catalog.h"
+#include "../src/data/saved_native_labels.h"
+#include "../src/layer_styles.h"
 #include "../src/settings.h"
 #include "../src/ae_script.h"
 #include "../src/ae_capture.h"
@@ -98,6 +101,8 @@ constexpr int kChooseCaptureLocationId = 1035;
 constexpr int kCaptureLocationLabelId = 1036;
 constexpr int kFullResolutionId = 1037;
 constexpr int kThumbnailCacheClearId = 1038;
+constexpr int kLayerStyleFirstId = 1100;
+constexpr int kLayerStyleRowHeight = 36;
 constexpr int kSettingsHeight = 132;
 constexpr int kResultHeight = 28;
 constexpr int kResultActionWidth = 24;
@@ -122,6 +127,11 @@ std::vector<xfx::CatalogItem> g_test_catalog;
 unsigned int g_test_catalog_scan_count = 0;
 std::optional<xfx::ScriptReply> g_test_script_reply;
 void (*g_test_before_script)() = nullptr;
+std::string g_test_last_script;
+std::optional<POINT> g_test_cursor_position;
+POINT g_test_cursor_point{};
+bool g_test_cursor_in_surface = false;
+unsigned g_test_cursor_calls = 0;
 std::optional<ULONGLONG> g_test_button_hover_time;
 std::optional<bool> g_test_drag_button_held;
 std::optional<UINT> g_test_popup_command;
@@ -264,6 +274,7 @@ std::wstring after_effects_root() {
 
 struct AliasEntry {
     int priority = 0;
+    bool custom_translation = false;
     std::string match_name;
     std::string english_name;
     std::wstring chinese_name;
@@ -334,7 +345,8 @@ std::string alias_display_fallback(const AliasEntry& alias) {
     return alias.match_name;
 }
 
-std::wstring safe_effect_display_name(const std::wstring& decoded, const AliasEntry* alias) {
+std::wstring safe_effect_display_name(const std::wstring& decoded, const AliasEntry* alias,
+                                      std::string_view stable_id = {}, bool chinese_host = false) {
     if (!alias) return decoded;
     const std::string fallback_utf8 = alias_display_fallback(*alias);
     if (fallback_utf8.empty()) return decoded;
@@ -342,16 +354,24 @@ std::wstring safe_effect_display_name(const std::wstring& decoded, const AliasEn
     const std::string decoded_key = canonical_alias_key(wide_to_utf8(decoded));
     const std::string fallback_key = canonical_alias_key(fallback_utf8);
     // A short non-CJK token or replacement character is a strong sign that
-    // AE returned a localized A_char buffer in a different code page. For
-    // matchName-only aliases also repair longer mixed labels such as
+    // AE returned a localized A_char buffer in a different code page. Only
+    // treat arbitrary short tokens as suspect when a real English label is
+    // known: matchName-only third-party entries legitimately use Lux/Tao/Geo.
+    // For matchName-only aliases still repair longer mixed labels such as
     // "Photoshop iy" by comparing with the derived stable fallback.
     const bool mojibake_token = decoded_key == "iy" ||
         (decoded_key.size() > 3 && decoded_key.rfind(" iy") == decoded_key.size() - 3);
     const bool suspicious = !decoded.empty() &&
         (decoded.find(0xFFFD) != std::wstring::npos ||
          (!contains_cjk(decoded) && decoded_key != fallback_key &&
-          (decoded.size() <= 3 || mojibake_token)));
-    if (suspicious || decoded.empty()) return fallback;
+          ((decoded.size() <= 3 && !alias->english_name.empty()) || mojibake_token)));
+    if (suspicious || decoded.empty()) {
+        // Restore the exact known Chinese-host label, not an inferred English
+        // name from a damaged A_char token. Unknown/third-party IDs stay on
+        // the existing fallback path; legitimate short product names survive.
+        if (chinese_host) if (const auto* localized=xfx::saved_native_chinese_label(stable_id.empty() ? std::string_view(alias->match_name) : stable_id)) return localized;
+        return fallback;
+    }
     return decoded;
 }
 
@@ -396,6 +416,7 @@ AliasCatalog load_aliases() {
         const auto fields = split_tsv(line);
         AliasEntry entry;
         entry.priority = ++priority;
+        entry.custom_translation = source != sources[0];
         entry.match_name = fields[0];
         entry.english_name = fields[1];
         entry.chinese_name = utf8_to_wide(fields[2].c_str());
@@ -407,6 +428,57 @@ AliasCatalog load_aliases() {
     }
     }
     return catalog;
+}
+
+const AliasEntry* find_effect_alias(const AliasCatalog& aliases, const char* name, const char* match_name) {
+    const auto find = [](const auto& values, const char* raw) -> const AliasEntry* {
+        auto found = values.find(canonical_alias_key(raw ? raw : ""));
+        if (found != values.end()) return &found->second;
+        // Preserve legacy ACP-label fallback while sharing the exact native
+        // selection path with the real-inventory regression.
+        const auto wide = runtime_text_to_wide(raw);
+        if (wide.empty()) return nullptr;
+        found = values.find(canonical_alias_key(wide_to_utf8(wide)));
+        return found == values.end() ? nullptr : &found->second;
+    };
+    const auto* alias = find(aliases.by_match_name, match_name);
+    const auto* english = find(aliases.by_english_name, name);
+    return english && (!alias || english->priority > alias->priority) ? english : alias;
+}
+
+bool append_registered_effect(std::vector<xfx::CatalogItem>& items, const AliasCatalog& aliases,
+                              std::set<std::string>& seen, const char* name, const char* match_name,
+                              const char* category, bool category_known) {
+    if (!name || !match_name || !category ||
+        !xfx::effect_is_discoverable(match_name, name, category, category_known)) return false;
+    // Different valid effects may share a label; only exact IDs deduplicate.
+    if (!seen.insert(match_name).second) return false;
+    const auto* alias = find_effect_alias(aliases, name, match_name);
+    xfx::CatalogItem item;
+    const auto original=runtime_text_to_wide(name);
+    item.host_category=runtime_text_to_wide(category);
+    const bool chinese_host=xfx::saved_chinese_native_category(item.host_category);
+    item.display_name = safe_effect_display_name(original,alias,match_name,chinese_host);
+    item.pinyin_full = alias ? alias->pinyin_full : "";
+    item.pinyin_initials = alias ? alias->pinyin_initials : "";
+    // Preserve the raw host identity for application; visible labels use UTF-8
+    // so ACP/GBK bytes never enter the search core's UTF-8 decoder.
+    item.english_name = alias && !alias->english_name.empty() ? alias->english_name : wide_to_utf8(item.display_name);
+    item.match_name = match_name;
+    item.translated_name = alias ? alias->chinese_name : L"";
+    item.translated_name_custom=alias && alias->custom_translation;
+    if (alias) item.aliases.insert(item.aliases.end(),alias->aliases.begin(),alias->aliases.end());
+    item.category = L"效果";
+    if (!contains_cjk(item.display_name) && chinese_host) {
+        if (const auto* localized=xfx::saved_native_chinese_label(match_name)) item.display_name=localized;
+    }
+    if(!original.empty() && (original!=item.display_name || wide_to_utf8(original)!=item.english_name) &&
+        std::find(item.aliases.begin(),item.aliases.end(),original)==item.aliases.end()) item.aliases.push_back(original);
+    item.source = "ae";
+    item.item_type = L"effect";
+    xfx::enrich_catalog_item(item);
+    items.push_back(std::move(item));
+    return true;
 }
 
 void append_effects(std::vector<xfx::CatalogItem>& items) {
@@ -432,50 +504,8 @@ void append_effects(std::vector<xfx::CatalogItem>& items) {
             char category[AEGP_MAX_EFFECT_CATEGORY_NAME_SIZE + 1] = {};
             if (suites.EffectSuite2()->AEGP_GetEffectName(key, name)) continue;
             if (suites.EffectSuite2()->AEGP_GetEffectMatchName(key, match_name)) continue;
-            suites.EffectSuite2()->AEGP_GetEffectCategory(key, category);
-            if (!seen.insert(match_name).second) continue;
-
-            const auto find_alias = [](const auto& values, const char* raw) -> const AliasEntry* {
-                auto found = values.find(canonical_alias_key(raw ? raw : ""));
-                if (found != values.end()) return &found->second;
-                // A few legacy effects expose their label in the Windows ACP
-                // while the bundled dictionary is UTF-8. Decode once and try
-                // the canonical UTF-8 form before giving up.
-                const auto wide = runtime_text_to_wide(raw);
-                if (wide.empty()) return nullptr;
-                const auto normalized = canonical_alias_key(wide_to_utf8(wide));
-                found = values.find(normalized);
-                return found == values.end() ? nullptr : &found->second;
-            };
-            const AliasEntry* alias = find_alias(aliases.by_match_name, match_name);
-            const AliasEntry* alias_english = find_alias(aliases.by_english_name, name);
-            if (alias_english && (!alias || alias_english->priority > alias->priority)) alias = alias_english;
-            xfx::CatalogItem item;
-            item.display_name = runtime_text_to_wide(name);
-            // A localized host label can be returned in an encoding different
-            // from the process ACP. If the decoded value is a short mojibake
-            // token (for example "iy") but the stable dictionary identifies
-            // the effect, use the dictionary's English label as a readable
-            // fallback. The matchName remains untouched for application.
-            item.display_name = safe_effect_display_name(item.display_name, alias);
-            item.pinyin_full = alias && !alias->pinyin_full.empty()
-                ? alias->pinyin_full : "";
-            item.pinyin_initials = alias && !alias->pinyin_initials.empty()
-                ? alias->pinyin_initials : "";
-            // Keep the host identifier byte-for-byte in match_name for
-            // ExtendScript, while storing the visible label as UTF-8 here so
-            // search normalization never feeds ACP/GBK bytes to the decoder.
-            item.english_name = item.display_name.empty() ? std::string(name) : wide_to_utf8(item.display_name);
-            item.match_name = match_name;
-            if (item.display_name.empty()) item.display_name = xfx::catalog_display_name(item);
-            item.translated_name = alias && !alias->chinese_name.empty()
-                ? alias->chinese_name : L"";
-            if (alias) item.aliases = alias->aliases;
-            item.category = L"效果";
-            item.source = "ae";
-            item.item_type = L"effect";
-            xfx::enrich_catalog_item(item);
-            items.push_back(std::move(item));
+            const bool category_known = suites.EffectSuite2()->AEGP_GetEffectCategory(key, category) == A_Err_NONE;
+            append_registered_effect(items, aliases, seen, name, match_name, category, category_known);
         }
     } catch (...) {
     }
@@ -561,6 +591,8 @@ struct PluginState {
     HWND hotkey_window = nullptr;
     HWND search = nullptr;
     HWND filter = nullptr;
+    RECT search_surface_bounds{};
+    std::array<HWND, 9> layer_style_buttons{};
     HWND results = nullptr;
     HWND refresh = nullptr;
     HWND hotkey_edit = nullptr;
@@ -1100,12 +1132,15 @@ bool point_is_window_edge(HWND hwnd, POINT screen_point) {
          screen_point.x >= window.right - kDragEdge || screen_point.y >= window.bottom - kDragEdge);
 }
 
+bool point_in_search_surface(HWND hwnd, POINT client_point);
+
 bool forward_edge_drag(HWND child, UINT message, WPARAM wparam, LPARAM lparam) {
     if (!g_state || !g_state->window || g_state->modal_depth || message != WM_LBUTTONDOWN) return false;
     POINT point{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
     ClientToScreen(child, &point);
     ScreenToClient(g_state->window, &point);
-    if (!point_is_drag_edge(g_state->window, point)) return false;
+    if (point_in_search_surface(g_state->window, point) ||
+        !point_is_drag_edge(g_state->window, point)) return false;
     SendMessageW(g_state->window, WM_LBUTTONDOWN, wparam, MAKELPARAM(point.x, point.y));
     return true;
 }
@@ -1226,6 +1261,11 @@ ToolbarLayout toolbar_layout(HWND hwnd) {
     return result;
 }
 
+bool point_in_search_surface(HWND hwnd, POINT point) {
+    return g_state && hwnd == g_state->window && IsWindow(g_state->search) &&
+        IsWindowEnabled(g_state->search) && PtInRect(&g_state->search_surface_bounds,point);
+}
+
 LRESULT CALLBACK hotkey_edit_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     return guarded_callback([&]() -> LRESULT {
     if (message == WM_SETFONT) {
@@ -1307,6 +1347,10 @@ void cycle_filter() {
 LRESULT CALLBACK search_edit_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     return guarded_callback([&]() -> LRESULT {
     if (message == WM_ERASEBKGND) return TRUE;
+    if (message == WM_SETCURSOR && LOWORD(lparam) == HTCLIENT) {
+        SetCursor(LoadCursorW(nullptr,IDC_IBEAM));
+        return TRUE;
+    }
     if (forward_edge_drag(hwnd, message, wparam, lparam)) return 0;
     if(message==WM_IME_STARTCOMPOSITION) {
         g_state->search_composing=true;
@@ -1714,7 +1758,7 @@ std::wstring item_display_label(const xfx::CatalogItem& item) {
     const auto original = xfx::catalog_display_name(item);
     return item.translated_name.empty()
         ? original
-        : xfx::bilingual_effect_label(original, item.translated_name);
+        : xfx::bilingual_effect_label(original, item.translated_name,item.translated_name_custom);
 }
 
 ResultAction result_action_at_point(POINT point) {
@@ -1846,6 +1890,10 @@ void populate_results(bool resize_window, bool update_status) {
     const std::wstring filter = filter_name();
     const bool desired_shortcut_mode = shortcut_list_mode();
     const bool was_shortcut_mode = (GetWindowLongW(g_state->results, GWL_STYLE) & LBS_MULTICOLUMN) != 0;
+    // Every population path can change parent height and move the footer,
+    // including native combo notifications (not only EDIT search changes).
+    // Own one complete subtree redraw after all controls reach final bounds.
+    SearchRedrawGuard surface_redraw(g_state->window);
     update_results_list_style(desired_shortcut_mode);
     const bool list_style_changed = was_shortcut_mode != desired_shortcut_mode;
     ListRedrawGuard redraw(g_state->results);
@@ -1967,6 +2015,7 @@ xfx::ScriptReply run_ae_script(const std::string& script, bool show_feedback = t
     if (show_feedback) feedback = std::make_unique<BusyFeedback>(L"正在处理 AE 操作…");
     xfx::ScriptReply reply;
 #ifdef XFX_CONSOLE_TEST
+    g_test_last_script = script;
     if (g_test_before_script) g_test_before_script();
     if (g_test_script_reply) return *g_test_script_reply;
 #endif
@@ -2039,6 +2088,19 @@ struct ApplyPresentation {
         if (IsWindow(window)) SendMessageW(window, WM_CLOSE, 0, 0);
     }
 };
+
+void execute_layer_style(size_t index) {
+    if (!g_state || index >= xfx::layer_styles.size() || g_state->applying_item) return;
+    ModalGuard modal;
+    ApplyPresentation presentation;
+    const auto reply = run_ae_script(xfx::script_apply_layer_style(xfx::layer_styles[index].match_name), false);
+    if (reply.succeeded) {
+        set_status(L"图层样式已启用到 " + std::to_wstring(reply.count) + L" 个所选图层 · Ctrl+Z 撤销", true);
+        presentation.finish();
+    } else {
+        set_status((reply.partial ? L"部分完成：" : L"图层样式添加失败：") + utf8_to_wide(reply.message.c_str()));
+    }
+}
 
 xfx::ScriptReply execute_item(const xfx::CatalogItem& selected_item) {
     if (g_state->applying_item)
@@ -3107,56 +3169,60 @@ std::wstring menu_text(const std::wstring& value) {
     return text;
 }
 
-void append_slot_menu(HMENU menu, bool binding) {
-    for (int slot = 0; slot < 9; ++slot) {
-        HMENU actions = CreatePopupMenu();
-        const bool empty = g_state->settings.slots[static_cast<size_t>(slot)].empty();
-        AppendMenuW(actions, MF_STRING | (empty ? MF_GRAYED : 0), 70 + slot, L"执行快捷项");
-        if (binding) AppendMenuW(actions, MF_STRING, 10 + slot, L"绑定当前项目");
-        AppendMenuW(actions, MF_STRING | (empty ? MF_GRAYED : 0), 30 + slot, L"编辑备注…");
-        AppendMenuW(actions, MF_STRING | (empty ? MF_GRAYED : 0), 50 + slot, L"清空快捷槽");
-        const auto label = L"Ctrl+" + std::to_wstring(slot + 1) + L" · " + menu_text(slot_display_label(slot));
-        AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(actions), label.c_str());
-    }
+bool selected_item_can_bind() {
+    const auto row=SendMessageW(g_state->results,LB_GETCURSEL,0,0);
+    if(row==LB_ERR)return false;
+    const auto data=SendMessageW(g_state->results,LB_GETITEMDATA,row,0);
+    if(!data || data==LB_ERR)return false;
+    return reinterpret_cast<const xfx::CatalogItem*>(data)->item_type!=L"empty";
+}
+
+void append_slot_action_row(HMENU menu, int slot, bool binding, xfx::MenuActionRows* rows) {
+    const bool occupied=!g_state->settings.slots[static_cast<size_t>(slot)].empty();
+    const auto label=L"Ctrl+"+std::to_wstring(slot+1)+L" · "+menu_text(slot_display_label(slot));
+    const auto position=static_cast<UINT>(GetMenuItemCount(menu));
+    AppendMenuW(menu,MF_STRING,900+slot,label.c_str()); // inert label, never an execute command
+    if(rows)rows->push_back({menu,position,{{
+        {static_cast<UINT>(10+slot),xfx::MenuActionIcon::Bind,binding,L"绑定当前项目到槽 "+std::to_wstring(slot+1)},
+        {static_cast<UINT>(30+slot),xfx::MenuActionIcon::Edit,occupied,L"编辑槽 "+std::to_wstring(slot+1)+L" 备注"},
+        {static_cast<UINT>(50+slot),xfx::MenuActionIcon::Clear,occupied,L"清空槽 "+std::to_wstring(slot+1)}
+    }}});
+}
+
+void append_slot_menu(HMENU menu, bool binding, xfx::MenuActionRows* rows=nullptr) {
+    for(int slot=0;slot<9;++slot)append_slot_action_row(menu,slot,binding,rows);
 }
 
 void handle_slot_command(UINT command) {
-    if (command >= 10 && command <= 18) assign_slot(command - 10);
-    if (command >= 30 && command <= 38) edit_slot_label(command - 30);
-    if (command >= 50 && command <= 58) clear_slot(command - 50);
-    if (command >= 70 && command <= 78) execute_slot(command - 70);
+    if(command>=10 && command<=18)assign_slot(command-10);
+    if(command>=30 && command<=38)edit_slot_label(command-30);
+    if(command>=50 && command<=58)clear_slot(command-50);
+}
+
+UINT track_slot_actions(HMENU menu, POINT point, HWND owner, const xfx::MenuActionRows& rows) {
+#ifdef XFX_CONSOLE_TEST
+    if(g_test_popup_command){const auto command=*g_test_popup_command;g_test_popup_command.reset();return command;}
+#endif
+    return xfx::track_themed_action_popup(menu,TPM_RETURNCMD|TPM_NONOTIFY,
+        point.x,point.y,owner,colors(),g_state->font,rows);
 }
 
 void show_slot_menu(int slot, POINT point) {
-    if (slot < 0 || slot >= 9) return;
+    if(slot<0 || slot>=9)return;
     ModalGuard modal;
-    HMENU menu = CreatePopupMenu();
-    const bool empty = g_state->settings.slots[static_cast<size_t>(slot)].empty();
-    AppendMenuW(menu, MF_STRING | (empty ? MF_GRAYED : 0), 70 + slot, L"执行快捷项");
-    AppendMenuW(menu, MF_STRING | (empty ? MF_GRAYED : 0), 30 + slot, L"编辑备注…");
-    AppendMenuW(menu, MF_STRING | (empty ? MF_GRAYED : 0), 50 + slot, L"清空快捷槽");
-    UINT command = 0;
-#ifdef XFX_CONSOLE_TEST
-    if (g_test_popup_command) {
-        command = *g_test_popup_command;
-        g_test_popup_command.reset();
-    } else
-#endif
-        command = xfx::track_themed_popup(menu, TPM_RETURNCMD | TPM_NONOTIFY,
-            point.x, point.y, g_state->window, colors(), g_state->font);
-    DestroyMenu(menu);
-    handle_slot_command(command);
+    HMENU menu=CreatePopupMenu();xfx::MenuActionRows rows;
+    append_slot_action_row(menu,slot,selected_item_can_bind(),&rows);
+    const auto command=track_slot_actions(menu,point,g_state->window,rows);
+    DestroyMenu(menu);handle_slot_command(command);
 }
 
 void show_shortcut_menu() {
     ModalGuard modal;
-    HMENU menu = CreatePopupMenu();
-    append_slot_menu(menu, SendMessageW(g_state->results, LB_GETCURSEL, 0, 0) != LB_ERR);
-    RECT rect{}; GetWindowRect(g_state->slot, &rect);
-    const auto command = xfx::track_themed_popup(menu, TPM_RETURNCMD | TPM_NONOTIFY,
-        rect.left, rect.bottom, g_state->window, colors(), g_state->font);
-    DestroyMenu(menu);
-    handle_slot_command(command);
+    HMENU menu=CreatePopupMenu();xfx::MenuActionRows rows;
+    append_slot_menu(menu,selected_item_can_bind(),&rows);
+    RECT rect{};GetWindowRect(g_state->slot,&rect);
+    const auto command=track_slot_actions(menu,{rect.left,rect.bottom},g_state->window,rows);
+    DestroyMenu(menu);handle_slot_command(command);
 }
 
 void show_result_menu(HWND hwnd, LPARAM location) {
@@ -3193,9 +3259,10 @@ void show_result_menu(HWND hwnd, LPARAM location) {
         AppendMenuW(menu, MF_STRING, 5, L"取消预设覆盖");
     }
     HMENU slots = CreatePopupMenu();
-    append_slot_menu(slots, true);
+    xfx::MenuActionRows slot_actions;
+    append_slot_menu(slots,true,&slot_actions);
     AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(slots), L"快捷槽");
-    const UINT command = xfx::track_themed_popup(menu, TPM_RETURNCMD | TPM_NONOTIFY, point.x, point.y, hwnd, colors(), g_state->font);
+    const UINT command=track_slot_actions(menu,point,hwnd,slot_actions);
     DestroyMenu(menu);
     if (command == 1) toggle_favorite();
     if (command == 5) persist_settings_update([&](xfx::Settings& settings) { settings.overrides.erase(key); });
@@ -3223,7 +3290,7 @@ void adjust_console_height() {
         (std::min)(count, static_cast<LRESULT>(8))));
     RECT client{}; GetClientRect(hwnd, &client);
     const double scale = GetDpiForWindow(hwnd) / 96.0;
-    RECT desired{0, 0, client.right, static_cast<LONG>((56 + (shortcut_list_mode() ? kShortcutHeight : rows * kResultHeight) + 22 +
+    RECT desired{0, 0, client.right, static_cast<LONG>((56 + (shortcut_list_mode() ? kShortcutHeight : rows * kResultHeight) + kLayerStyleRowHeight + 22 +
         g_state->settings_extent)*scale)};
     AdjustWindowRectEx(&desired, style, FALSE, GetWindowLongW(hwnd, GWL_EXSTYLE));
     const int height = desired.bottom - desired.top;
@@ -3233,7 +3300,7 @@ void adjust_console_height() {
     GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &monitor);
     const int top = (std::max)(monitor.rcWork.top, (std::min)(current.top, monitor.rcWork.bottom - height));
     SetWindowPos(hwnd, nullptr, current.left, top, current.right - current.left, height,
-        SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOREDRAW);
+        SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOCOPYBITS);
 }
 
 void apply_button_region(HWND button) {
@@ -3288,6 +3355,7 @@ void layout_controls(HWND hwnd) {
         if (!g_state->redraw_transaction) InvalidateRect(child,nullptr,FALSE);
     };
     const auto toolbar_bounds = toolbar_layout(hwnd);
+    g_state->search_surface_bounds = toolbar_bounds.search_surface;
     const auto place = [hwnd](HWND child, const RECT& bounds) {
         if (!IsWindow(child)) return;
         RECT current{};
@@ -3321,7 +3389,16 @@ void layout_controls(HWND hwnd) {
     place(g_state->slot, toolbar_bounds.buttons[1]);
     place(g_state->preferences, toolbar_bounds.buttons[2]);
     const int footer = height - 22 - g_state->settings_extent;
-    move(g_state->results, margin, 56, inner, (std::max)(kResultHeight,footer-56));
+    const int styles_top = footer - kLayerStyleRowHeight;
+    move(g_state->results, margin, 56, inner, (std::max)(kResultHeight,styles_top-56));
+    // Separate always-visible row below the shortcut/results area. Preserve
+    // numeric 1-9 bindings and search results; compact labels have full tips.
+    for (size_t index = 0; index < g_state->layer_style_buttons.size(); ++index) {
+        const int left = margin + static_cast<int>(index) * inner / 9;
+        const int right = margin + static_cast<int>(index + 1) * inner / 9;
+        move(g_state->layer_style_buttons[index], left, styles_top + 4, right - left - 3, 28);
+        apply_button_region(g_state->layer_style_buttons[index]);
+    }
     const bool narrow = width < 440;
     const auto setting = [&](HWND child, int x, int y, int w, int h, int visual_height = 0) {
         move(child,x,footer+y,w,h);
@@ -3379,6 +3456,19 @@ void create_control(HWND parent, HWND* target, const wchar_t* class_name,
     set_font(*target);
     if(id==kStatusId && g_state->status_font) SendMessageW(*target,WM_SETFONT,reinterpret_cast<WPARAM>(g_state->status_font),TRUE);
 }
+struct ComboFaceContent { RECT text{}; float arrow_x=0,arrow_y=0; };
+ComboFaceContent combo_face_content(HDC dc,RECT rect,int dpi,const wchar_t* label) {
+    const auto px=[dpi](int n){return MulDiv(n,dpi?dpi:96,96);};
+    RECT measured{};DrawTextW(dc,label,-1,&measured,DT_SINGLELINE|DT_CALCRECT|DT_NOPREFIX);
+    const int gap=px(5),arrow_width=px(8),inset=px(5);
+    const int available=(std::max)(0,static_cast<int>(rect.right-rect.left)-2*inset-gap-arrow_width);
+    const int text_width=(std::min)(static_cast<int>(measured.right),available);
+    const int group_width=text_width+gap+arrow_width;
+    const int left=rect.left+(rect.right-rect.left-group_width)/2;
+    return {{left,rect.top,left+text_width,rect.bottom},
+        static_cast<float>(left+text_width+gap)+arrow_width*.5f,(rect.top+rect.bottom)*.5f};
+}
+
 void draw_combo_face(HWND hwnd, HDC dc) {
     const int saved = SaveDC(dc);
     RECT rect{}; GetClientRect(hwnd, &rect);
@@ -3392,14 +3482,16 @@ void draw_combo_face(HWND hwnd, HDC dc) {
     if (selection >= 0) SendMessageW(hwnd, CB_GETLBTEXT, selection, reinterpret_cast<LPARAM>(label));
     // Both normal painting and ODS_COMBOBOXEDIT use full-client coordinates.
     // Native rcItem is a clipping boundary, never a second text alignment box.
-    RECT text = rect;
-    DrawTextW(dc, label, -1, &text, DT_SINGLELINE | DT_CENTER | DT_VCENTER | DT_END_ELLIPSIS);
-    const int arrow = MulDiv(20, GetDpiForWindow(hwnd), 96);
+    const int dpi=GetDpiForWindow(hwnd);
+    auto content=combo_face_content(dc,rect,dpi,label);
+    DrawTextW(dc,label,-1,&content.text,DT_SINGLELINE|DT_LEFT|DT_VCENTER|DT_END_ELLIPSIS|DT_NOPREFIX);
     {
+        const float scale=(dpi?dpi:96)/96.0f;
         Gdiplus::Graphics graphics(dc); graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
-        Gdiplus::Pen pen(vector_color(c.icon), 1.5f);
-        const float x = static_cast<float>(rect.right - arrow / 2), y = rect.bottom * .5f;
-        graphics.DrawLine(&pen, x - 3, y - 1, x, y + 2); graphics.DrawLine(&pen, x, y + 2, x + 3, y - 1);
+        Gdiplus::Pen pen(vector_color(IsWindowEnabled(hwnd)?c.icon:c.disabled),1.5f*scale);
+        const float x=content.arrow_x,y=content.arrow_y;
+        graphics.DrawLine(&pen,x-3*scale,y-scale,x,y+2*scale);
+        graphics.DrawLine(&pen,x,y+2*scale,x+3*scale,y-scale);
     }
     if (saved) RestoreDC(dc, saved);
 }
@@ -3538,8 +3630,23 @@ bool add_tooltip_for_control(HWND parent, HWND tooltip, HWND control, UINT_PTR i
 LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     try {
     switch (message) {
+    case WM_SETCURSOR: {
+        POINT point{};GetCursorPos(&point);
+#ifdef XFX_CONSOLE_TEST
+        if(g_test_cursor_position)point=*g_test_cursor_position;
+#endif
+        ScreenToClient(hwnd,&point);
+        const bool in_input=reinterpret_cast<HWND>(wparam)==g_state->search || point_in_search_surface(hwnd,point);
+#ifdef XFX_CONSOLE_TEST
+        g_test_cursor_point=point;g_test_cursor_in_surface=in_input;++g_test_cursor_calls;
+#endif
+        if(LOWORD(lparam)==HTCLIENT && in_input){SetCursor(LoadCursorW(nullptr,IDC_IBEAM));return TRUE;}
+        break;
+    }
     case WM_NCHITTEST: {
         POINT screen_point{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+        POINT input_point=screen_point;ScreenToClient(hwnd,&input_point);
+        if(point_in_search_surface(hwnd,input_point))return HTCLIENT;
         if (point_is_window_edge(hwnd, screen_point)) return HTCAPTION;
         POINT point = screen_point;
         ScreenToClient(hwnd, &point);
@@ -3560,6 +3667,11 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
             const POINT point{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
             if (PtInRect(&search, point)) {
                 SetFocus(g_state->search);
+                POINT edit_point=point;MapWindowPoints(hwnd,g_state->search,&edit_point,1);
+                RECT edit{};GetClientRect(g_state->search,&edit);
+                edit_point.x=(std::max)(0,(std::min)(static_cast<int>(edit.right)-1,static_cast<int>(edit_point.x)));
+                edit_point.y=(edit.top+edit.bottom)/2;
+                SendMessageW(g_state->search,WM_LBUTTONDOWN,wparam,MAKELPARAM(edit_point.x,edit_point.y));
                 return 0;
             }
         }
@@ -3666,6 +3778,10 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
                        WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOTIFY |
                            LBS_OWNERDRAWFIXED | LBS_HASSTRINGS,
                        kResultsId);
+        for (size_t index = 0; index < xfx::layer_styles.size(); ++index) {
+            create_control(hwnd, &g_state->layer_style_buttons[index], L"BUTTON", xfx::layer_styles[index].short_label,
+                WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW, kLayerStyleFirstId + static_cast<int>(index));
+        }
         create_control(hwnd, &g_state->slot, L"BUTTON", L"快捷项", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, kSlotId);
         create_control(hwnd, &g_state->refresh, L"BUTTON", L"刷新索引", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, kRefreshId);
         create_control(hwnd, &g_state->capture, L"BUTTON", L"合成快照", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, kCaptureId);
@@ -3734,6 +3850,15 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
             if (SetWindowSubclass(button, button_hover_proc, kButtonHoverSubclassId, 0))
                 g_state->button_hovers.emplace(button, ButtonHoverState{});
         }
+        for (size_t index = 0; index < g_state->layer_style_buttons.size(); ++index) {
+            const HWND button = g_state->layer_style_buttons[index];
+            if (SetWindowSubclass(button, button_hover_proc, kButtonHoverSubclassId, 0))
+                g_state->button_hovers.emplace(button, ButtonHoverState{});
+            const auto& style = xfx::layer_styles[index];
+            const std::wstring tip = L"图层样式 · " + std::wstring(style.label) + L" (" +
+                utf8_to_wide(style.english_name) + L")：添加/启用到所选图层，保留已有参数；Ctrl+Z 撤销";
+            if (g_state->tooltip) add_tooltip_for_control(hwnd, g_state->tooltip, button, 500 + index, tip.c_str());
+        }
         const HWND tools[] = {
             g_state->search, g_state->filter, g_state->capture, g_state->slot, g_state->preferences,
             g_state->refresh, g_state->dictionary,
@@ -3784,10 +3909,16 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
             RECT bounds{};GetWindowRect(hwnd,&bounds);
             const SIZE size{bounds.right-bounds.left,bounds.bottom-bounds.top};
             if(size.cx!=g_state->corner_size.cx || size.cy!=g_state->corner_size.cy) {
-                g_state->corner_size=size;
                 HRGN region=CreateRoundRectRgn(0,0,size.cx+1,size.cy+1,ui_px(16),ui_px(16));
-                if(region && !SetWindowRgn(hwnd,region,FALSE))DeleteObject(region);
+                if(region) {
+                    if(SetWindowRgn(hwnd,region,FALSE))g_state->corner_size=size;
+                    else DeleteObject(region);
+                }
             }
+            // Child MoveWindow(...,FALSE) leaves its old parent-owned footprint
+            // behind. Queue the whole background; transactions present only
+            // after the final resize/layout, not midway through WM_SIZE.
+            InvalidateRect(hwnd,nullptr,FALSE);
         }
         return 0;
     case WM_DPICHANGED: {
@@ -3800,7 +3931,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
     case WM_GETMINMAXINFO: {
         auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
         info->ptMinTrackSize.x = MulDiv(360,GetDpiForWindow(hwnd),96);
-        info->ptMinTrackSize.y = MulDiv(114+g_state->settings_extent,GetDpiForWindow(hwnd),96);
+        info->ptMinTrackSize.y = MulDiv(114+kLayerStyleRowHeight+g_state->settings_extent,GetDpiForWindow(hwnd),96);
         return 0;
     }
     case WM_MEASUREITEM: {
@@ -3991,7 +4122,16 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
         }
         break;
     }
+    case WM_APP + 5:
+        execute_layer_style(static_cast<size_t>(wparam));
+        return 0;
     case WM_COMMAND:
+        if (LOWORD(wparam) >= kLayerStyleFirstId && LOWORD(wparam) < kLayerStyleFirstId + 9 &&
+            HIWORD(wparam) == BN_CLICKED) {
+            // Defer until the button's native notification/paint has unwound.
+            PostMessageW(hwnd, WM_APP + 5, LOWORD(wparam) - kLayerStyleFirstId, 0);
+            return 0;
+        }
         if (LOWORD(wparam) == kCaptureId) { save_current_snapshot(); return 0; }
         if (LOWORD(wparam) == kDictionaryId) { edit_dictionary(); return 0; }
         if (LOWORD(wparam) == kModeId && HIWORD(wparam) == BN_CLICKED) {

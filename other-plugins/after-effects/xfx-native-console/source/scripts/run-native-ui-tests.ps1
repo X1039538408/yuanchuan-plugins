@@ -1,3 +1,4 @@
+param([string]$Check = '')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $vcvars = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat'
@@ -10,6 +11,7 @@ try {
     cmd.exe /c $compile
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     New-Item -ItemType Directory -Force -Path (Join-Path $root 'artifacts') | Out-Null
-    & .\tests.exe (Join-Path $root 'artifacts\ui-preview.png')
+    if ($Check) { & .\tests.exe (Join-Path $root 'artifacts\ui-preview.png') $Check }
+    else { & .\tests.exe (Join-Path $root 'artifacts\ui-preview.png') }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } finally { Pop-Location }

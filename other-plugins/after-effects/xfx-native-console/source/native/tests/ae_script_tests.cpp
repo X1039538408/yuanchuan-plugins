@@ -3,6 +3,7 @@
 #include <string>
 
 #include "../src/ae_script.h"
+#include "../src/layer_styles.h"
 
 namespace {
 
@@ -38,6 +39,21 @@ int main() {
         std::cerr << "Cannot write AE script VM tests\n";
         return 1;
     }
+    out << "const styleScripts = [\n";
+    for (const auto& style : xfx::layer_styles) {
+        out << "{id:" << quote_js(style.match_name) << ",command:" << style.command_id
+            << ",script:" << quote_js(xfx::script_apply_layer_style(style.match_name)) << "},\n";
+    }
+    std::ofstream style_export("layer_style_scripts.json", std::ios::binary);
+    style_export << "[\n";
+    for (size_t i = 0; i < xfx::layer_styles.size(); ++i) {
+        const auto& style = xfx::layer_styles[i];
+        style_export << (i ? ",\n" : "") << "{\"id\":" << quote_js(style.match_name)
+            << ",\"command\":" << style.command_id << ",\"script\":"
+            << quote_js(xfx::script_apply_layer_style(style.match_name)) << "}";
+    }
+    style_export << "\n]\n";
+    out << "];\nconst unknownStyleScript = " << quote_js(xfx::script_apply_layer_style("unknown;injected=true")) << ";\n";
     out << "const scripts = {\n"
         << "effect: " << quote_js(xfx::script_apply_effect("ADBE Gaussian Blur 2")) << ",\n"
         << "effectEmpty: " << quote_js(xfx::script_apply_effect("")) << ",\n"
@@ -55,6 +71,12 @@ int main() {
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 let passed = 0;
+const expectedStyleCommands = [
+ ['dropShadow/enabled',9000],['innerShadow/enabled',9001],['outerGlow/enabled',9002],
+ ['innerGlow/enabled',9003],['bevelEmboss/enabled',9004],['chromeFX/enabled',9005],
+ ['solidFill/enabled',9006],['gradientFill/enabled',9007],['frameFX/enabled',9008],
+];
+assert.deepEqual(styleScripts.map(style=>[style.id,style.command]),expectedStyleCommands,'native style command table drifted');
 
 function test(name, body) {
     try {
@@ -71,7 +93,7 @@ function test(name, body) {
 // Modeling that side effect catches an otherwise silent N-squared application bug.
 function host(options = {}) {
     const state = {
-        begin: 0, end: 0, effectArgs: [], presetSelections: [],
+        begin: 0, end: 0, effectArgs: [], presetSelections: [], styleCommands: [], viewer: 0, styleWrites: [],
         files: [], captures: [], imports: [], existing: new Set(), sleeps: [], pendingCapture: null,
     };
     class CompItem {
@@ -82,6 +104,8 @@ function host(options = {}) {
         get selectedLayers() { return this._layers.filter(layer => layer.selected); }
         get numLayers() { return this._layers.length; }
         layer(index) { return this._layers[index - 1]; }
+        openInViewer() { state.viewer++; if (options.viewerError) throw Error('viewer failed');
+            return options.undefinedViewerReturn ? undefined : {setActive(){}}; }
         saveFrameToPng(time, file) {
             state.captures.push({time, path: file.fsName});
             if (options.captureError) throw Error(options.captureError);
@@ -106,12 +130,33 @@ function host(options = {}) {
     class ImportOptions {
         constructor(file) { this.file = file; this.sequence = true; }
     }
+    class AVLayer {}
     const comp = new CompItem();
+    const styleGroups = new Map();
+    function groupFor(index, id) {
+        const key = index + ':' + id;
+        if (!styleGroups.has(key)) {
+            const definition = options.existingStyles?.[index]?.[id];
+            const value = {canSetEnabled: definition !== undefined, _enabled: !!definition, parameter: 47};
+            Object.defineProperty(value, 'enabled', {get(){return this._enabled;},set(v){
+                if (!this.canSetEnabled) throw Error('style not exposed');
+                state.styleWrites.push({index,id,value:v}); this._enabled=v;
+            }});
+            styleGroups.set(key, value);
+        }
+        return styleGroups.get(key);
+    }
     const selection = options.selection || [true, true];
     comp._layers = selection.map((selected, index) => ({
         name: '图层 ' + (index + 1), index: index + 1, selected,
+        locked: options.lockedLayer === index + 1,
         effects: [], presets: [],
         property(name) {
+            if (name === 'ADBE Layer Styles') {
+                if (options.noStyleGroup === this.index) return null;
+                return {canSetEnabled: options.parentDisabled === this.index, enabled: options.parentDisabled !== this.index,
+                    property: id => groupFor(this.index, id)};
+            }
             assert.equal(name, 'ADBE Effect Parade');
             if (options.noEffectGroup === this.index) return null;
             return {
@@ -134,6 +179,7 @@ function host(options = {}) {
             if (options.changeSelection) comp._layers.forEach(layer => layer.selected = true);
         },
     }));
+    comp._layers.forEach(layer => { if (options.nonAVLayer !== layer.index) Object.setPrototypeOf(layer, AVLayer.prototype); });
     const project = {
         activeItem: options.noComp ? {} : comp,
         importFile(importOptions) {
@@ -146,7 +192,8 @@ function host(options = {}) {
         },
     };
     const context = {
-        CompItem, File, ImportOptions, injected: false,
+        CompItem, AVLayer, File, ImportOptions, injected: false,
+        ViewerType: {VIEWER_COMPOSITION: 1},
         $: {sleep(milliseconds) {
             state.sleeps.push(milliseconds);
             if (state.pendingCapture && state.sleeps.length >= options.captureDelay) {
@@ -155,6 +202,24 @@ function host(options = {}) {
         }},
         app: {
             project: options.noProject ? null : project,
+            activeViewer: options.noActiveViewer ? null : {type: options.wrongViewer ? 2 : 1, setActive(){}},
+            effects: Object.hasOwn(options, 'registeredEffects') ? options.registeredEffects : [
+                {matchName: 'ADBE Gaussian Blur 2', displayName: 'Gaussian Blur', category: 'Blur'},
+                {matchName: 'ADBE ";injected=true;//\n\t\x01中文\u2028', displayName: 'Hostile quoted ID', category: 'Vendor'},
+            ],
+            executeCommand(command) {
+                const selected = comp.selectedLayers;
+                state.styleCommands.push({command, selection:selected.map(layer=>layer.index)});
+                assert.equal(selected.length, 1, 'menu style action must isolate one target layer');
+                if (options.styleCommandError === selected[0].index) throw Error('style command failed');
+                const definition = styleScripts.find(style=>style.command===command);
+                assert.ok(definition, 'unrecognized command');
+                if (!options.styleCommandNoop) {
+                    const group=groupFor(selected[0].index,definition.id);
+                    group.canSetEnabled=true;group._enabled=true;
+                }
+                if (options.changeSelection) comp._layers.forEach(layer=>layer.selected=true);
+            },
             beginUndoGroup(label) {
                 if (options.beginError) throw Error('undo begin failed');
                 assert.ok(label.length);
@@ -166,7 +231,7 @@ function host(options = {}) {
             },
         },
     };
-    return {state, comp, context};
+    return {state, comp, context, styleGroups};
 }
 
 function run(script, options) {
@@ -185,6 +250,62 @@ function balanced(result, expected = 1) {
     assert.equal(result.state.end, expected);
 }
 
+)TESTJS";
+    out << R"TESTJS(
+for (const style of styleScripts) {
+    test('native layer style ' + style.id + ' applies once per selected layer and restores selection', () => {
+        const selection=[true,false,true];
+        const r=run(style.script,{selection,changeSelection:true});
+        assert.equal(r.value,'OK\t2'); balanced(r);
+        assert.deepEqual(r.state.styleCommands.map(call=>call.command),[style.command,style.command]);
+        assert.deepEqual(r.state.styleCommands.map(call=>call.selection),[[1],[3]]);
+        assert.deepEqual(r.comp._layers.map(layer=>layer.selected),selection);
+        assert.equal(r.state.effectArgs.length,0,'styles must not use effect.addProperty');
+    });
+    test('existing enabled/disabled style ' + style.id + ' preserves parameters without menu toggle', () => {
+        const r=run(style.script,{existingStyles:{1:{[style.id]:true},2:{[style.id]:false}}});
+        assert.equal(r.value,'OK\t2');balanced(r);
+        assert.equal(r.state.styleCommands.length,0);
+        for(const group of r.styleGroups.values()){assert.equal(group.enabled,true);assert.equal(group.parameter,47);}
+    });
+}
+for(const options of [{noProject:true},{noComp:true},{selection:[false,false]}]){
+    test('layer style validates project/composition/selection before mutation '+JSON.stringify(options),()=>{
+        const r=run(styleScripts[0].script,options);errorStatus(r);balanced(r,0);assert.equal(r.state.styleCommands.length,0);
+    });
+}
+test('unknown style never invokes a menu command',()=>{
+    const r=run(unknownStyleScript);errorStatus(r);balanced(r,0);assert.equal(r.state.styleCommands.length,0);
+});
+for(const options of [{lockedLayer:2},{nonAVLayer:2},{noStyleGroup:2},{styleCommandError:2},{parentDisabled:2}]){
+    test('layer style reports partial and restores original selection '+JSON.stringify(options),()=>{
+        const r=run(styleScripts[8].script,{...options,selection:[true,true,false]});
+        assert.match(r.value,/^PARTIAL\t1\t/);balanced(r);assert.deepEqual(r.comp._layers.map(layer=>layer.selected),[true,true,false]);
+    });
+}
+test('disabled parent style group refuses without touching menu or child parameters',()=>{
+    const r=run(styleScripts[0].script,{selection:[true],parentDisabled:1,
+        existingStyles:{1:{'dropShadow/enabled':false,'innerGlow/enabled':true}}});
+    errorStatus(r);balanced(r);assert.equal(r.state.styleCommands.length,0);assert.equal(r.state.styleWrites.length,0);
+    assert.deepEqual(r.comp._layers.map(layer=>layer.selected),[true]);
+});
+test('style command that silently does nothing is not reported as success',()=>{
+    const r=run(styleScripts[0].script,{styleCommandNoop:true});errorStatus(r);balanced(r);assert.equal(r.value.startsWith('OK'),false);
+});
+for(const options of [{wrongViewer:true},{noActiveViewer:true},{viewerError:true}]) {
+    test('style refuses unverified comp viewer before command '+JSON.stringify(options),()=>{
+        const r=run(styleScripts[0].script,options);errorStatus(r);balanced(r);assert.equal(r.state.styleCommands.length,0);
+        assert.deepEqual(r.comp._layers.map(layer=>layer.selected),[true,true]);
+    });
+}
+test('undefined openInViewer return is accepted only with verified actual composition viewer',()=>{
+    const r=run(styleScripts[0].script,{undefinedViewerReturn:true});assert.equal(r.value,'OK\t2');
+});
+test('style never changes selection if undo group cannot begin',()=>{
+    const r=run(styleScripts[0].script,{beginError:true,selection:[true,false]});errorStatus(r);balanced(r,0);
+    assert.equal(r.state.styleCommands.length,0);assert.deepEqual(r.comp._layers.map(layer=>layer.selected),[true,false]);
+});
+
 test('effect applies matchName once to both selected layers with one undo group', () => {
     const r = run(scripts.effect);
     assert.equal(r.value, 'OK\t2');
@@ -192,6 +313,48 @@ test('effect applies matchName once to both selected layers with one undo group'
         ['ADBE Gaussian Blur 2'], ['ADBE Gaussian Blur 2'],
     ]);
     balanced(r);
+});
+
+for (const [description, registeredEffects] of [
+    ['hidden legacy registration', [{matchName: 'ADBE Gaussian Blur 2', displayName: 'Gaussian Blur', category: '_Obsolete'}]],
+    ['internal registration', [{matchName: 'ADBE Gaussian Blur 2', displayName: 'Gaussian Blur', category: ''}]],
+    ['unregistered/stale identity', [{matchName: 'Unrelated effect', category: 'Vendor'}]],
+]) {
+    test('effect rejects ' + description + ' before mutation or undo', () => {
+        const r = run(scripts.effect, {registeredEffects});
+        errorStatus(r);
+        assert.match(r.value, /ADBE Gaussian Blur 2/);
+        assert.equal(r.state.effectArgs.length, 0);
+        balanced(r, 0);
+    });
+}
+for (const category of ['BCC Obsolete', '过时', '_Vendor']) {
+    test('effect retains valid visible deprecated/vendor category ' + category, () => {
+        const r = run(scripts.effect, {registeredEffects: [{matchName: 'ADBE Gaussian Blur 2', displayName: 'Gaussian Blur', category}]});
+        assert.equal(r.value, 'OK\t2');
+        balanced(r);
+    });
+}
+
+for (const registeredEffects of [undefined, null, {}, {length: 'bad'},
+    [{matchName: 'ADBE Gaussian Blur 2', displayName: '  ', category: 'Vendor'}]]) {
+    test('effect refuses missing/invalid registration metadata without undo or mutation', () => {
+        const r = run(scripts.effect, {registeredEffects});
+        errorStatus(r); assert.equal(r.state.effectArgs.length, 0); balanced(r, 0);
+    });
+}
+test('same exact ID first hidden then visible follows native discovery selection', () => {
+    const r = run(scripts.effect, {registeredEffects: [
+        {matchName: 'ADBE Gaussian Blur 2', displayName: 'Old', category: '_Obsolete'},
+        {matchName: 'ADBE Gaussian Blur 2', displayName: 'New', category: 'Vendor'},
+    ]});
+    assert.equal(r.value, 'OK\t2'); balanced(r);
+});
+test('ASCII category normalization does not invent a Unicode-whitespace hidden rule', () => {
+    const r = run(scripts.effect, {registeredEffects: [
+        {matchName: 'ADBE Gaussian Blur 2', displayName: 'Name', category: '\u00a0_Obsolete\u00a0'},
+    ]});
+    assert.equal(r.value, 'OK\t2');
 });
 
 test('effect snapshots selection before applying effects changes it', () => {
@@ -256,6 +419,8 @@ test('failed undo end preserves the successful layer count', () => {
     balanced(r);
 });
 
+)TESTJS";
+    out << R"TESTJS(
 test('preset isolates each selection so two layers receive one preset each', () => {
     const r = run(scripts.preset, {selection: [true, false, true], changeSelection: true});
     assert.equal(r.value, 'OK\t2');

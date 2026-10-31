@@ -32,4 +32,14 @@ assert.notEqual(key('BCC Linear Wipe'), key('BCC+Linear Wipe'));
 assert.throws(() => audit({ effects: [] }, table), /schema/);
 assert.throws(() => audit({ schemaVersion: 1, effects: [{ matchName: '', displayName: 'x' }] }, table), /record/);
 assert.equal(audit({ schemaVersion: 1, effects: [] }, table).total, 0);
+const families = audit({ schemaVersion: 1, effects: [
+  { matchName: 'BCC_AMBIENTLIGHT', displayName: ' BCC+Ambient Light', category: 'BCC Lights' },
+  { matchName: 'ScriptET', displayName: 'Extruded Text', category: 'BCC 3D Objects' },
+  { matchName: 'tc Form', displayName: 'Form', category: 'RG Particles and 3D' },
+  { matchName: 'rg Mir', displayName: 'Mir 3', category: 'RG Particles and 3D' },
+] }, table);
+assert.equal(families.groups['BCC+'].total, 1);
+assert.equal(families.groups['BCC / BorisFX'].total, 1);
+assert.equal(families.groups.Trapcode.total, 1);
+assert.equal(families.groups['Red Giant / Maxon'].total, 1);
 console.log('PASS coverage audit: missing/unclassified retained, BCC+ spacing, priority conflicts, IDs, duplicates and invalid input');

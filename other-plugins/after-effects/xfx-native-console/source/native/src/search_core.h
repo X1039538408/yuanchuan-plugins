@@ -20,6 +20,10 @@ struct CatalogItem {
     // Derived offline from all Chinese names/aliases; callers need not supply these.
     std::vector<std::string> pinyin_full_variants;
     std::vector<std::string> pinyin_initial_variants;
+    // Preserve host classification separately from the generic UI type filter.
+    std::wstring host_category;
+    // Explicit legacy/user dictionary translations remain visible on localized hosts.
+    bool translated_name_custom = false;
 };
 
 struct SearchResult {
@@ -52,6 +56,6 @@ std::wstring catalog_display_name(const CatalogItem& item);
 // Safe to call repeatedly. SearchEngine also calls this when accepting a catalog.
 void enrich_catalog_item(CatalogItem& item);
 std::wstring bilingual_effect_label(const std::wstring& english_name,
-                                    const std::wstring& translated_name);
+                                    const std::wstring& translated_name, bool explicit_translation = false);
 
 } // namespace xfx

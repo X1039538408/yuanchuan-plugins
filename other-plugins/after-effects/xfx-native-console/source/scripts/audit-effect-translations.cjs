@@ -23,17 +23,19 @@ function readDictionary(text) {
 }
 function family(effect) {
   // Only explicit brand signals; do not label every non-ADBE ID as third-party.
-  const label = effect.displayName;
-  const signals = `${label} ${effect.matchName} ${effect.category || ''}`;
+  const label = effect.displayName.trim();
+  const category = (effect.category || '').trim();
+  const signals = `${label} ${effect.matchName} ${category}`;
   if (/^S_/i.test(label) || /\bSapphire\b/i.test(signals)) return 'Sapphire';
   if (/^BCC\+/i.test(label)) return 'BCC+';
-  if (/^BCC(?:\s|$)/i.test(label) || /\bBoris(?:FX)?\b/i.test(signals)) return 'BCC / BorisFX';
-  if (/\bTrapcode\b/i.test(signals)) return 'Trapcode';
+  if (/^BCC(?:\s|$)/i.test(label) || /^BCC\b/i.test(category) || /\bBoris(?:FX)?\b/i.test(signals)) return 'BCC / BorisFX';
+  if (/\bTrapcode\b/i.test(signals) || /^tc[ _]/i.test(effect.matchName)) return 'Trapcode';
   if (/\bUniverse\b/i.test(signals) || /^uni[. ]/i.test(label)) return 'Universe';
   if (/\bMagic Bullet\b/i.test(signals)) return 'Magic Bullet';
   if (/\bTwixtor\b/i.test(signals)) return 'Twixtor';
   if (/\bReelSmart\b|\bRSMB\b/i.test(signals)) return 'ReelSmart / RSMB';
   if (/\bVideo Copilot\b|\bOptical Flares\b/i.test(signals)) return 'Video Copilot';
+  if (/^RG\b/.test(category)) return 'Red Giant / Maxon';
   if (/^ADBE\b/.test(effect.matchName) || /^CC\s/.test(label)) return 'Adobe / bundled (heuristic)';
   return 'Unclassified (needs review)';
 }

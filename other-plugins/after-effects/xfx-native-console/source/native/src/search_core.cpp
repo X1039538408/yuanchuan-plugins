@@ -6,9 +6,11 @@
 #include <limits>
 #include <string_view>
 #include <utility>
+#include <unordered_map>
 
 #include "data/pinyin_data.h"
 #include "data/effect_translations.h"
+#include "data/display_label_cleanups.h"
 
 namespace xfx {
 namespace {
@@ -199,50 +201,54 @@ void append_pinyin(CatalogItem& item, const std::wstring& value) {
     add_unique(item.pinyin_initial_variants, pinyin.chinese_initials);
 }
 
-bool ascii_key_equal(std::string_view left, std::string_view right) {
-    // Effect vendors occasionally return padded names or change only ASCII
-    // casing between AE releases. Compare a canonical presentation form so a
-    // translation remains available without changing the original identifier.
-    const auto canonical = [](std::string_view value) {
-        std::string result;
-        result.reserve(value.size());
-        size_t begin = 0, end = value.size();
-        const auto space = [](unsigned char ch) {
-            return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
-        };
-        while (begin < end && space(static_cast<unsigned char>(value[begin]))) ++begin;
-        while (end > begin && space(static_cast<unsigned char>(value[end - 1]))) --end;
-        bool pending_space = false;
-        for (size_t i = begin; i < end; ++i) {
-            const unsigned char ch = static_cast<unsigned char>(value[i]);
-            if (space(ch)) {
-                pending_space = !result.empty();
-                continue;
-            }
-            if (pending_space) result.push_back(' ');
-            pending_space = false;
-            const char folded = static_cast<char>(folded_latin(ch));
-            result.push_back(folded);
-        }
-        // Continuum labels use both BCC+Foo and BCC+ Foo. Only ignore the
-        // brand separator; preserve the plus and all word boundaries.
-        if (result.rfind("bcc+ ", 0) == 0) result.erase(4, 1);
-        return result;
+std::string canonical_effect_key(std::string_view value) {
+    std::string result;
+    result.reserve(value.size());
+    size_t begin = 0, end = value.size();
+    const auto space = [](unsigned char ch) {
+        return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
     };
-    return !left.empty() && canonical(left) == canonical(right);
+    while (begin < end && space(static_cast<unsigned char>(value[begin]))) ++begin;
+    while (end > begin && space(static_cast<unsigned char>(value[end - 1]))) --end;
+    bool pending_space = false;
+    for (size_t i = begin; i < end; ++i) {
+        const unsigned char ch = static_cast<unsigned char>(value[i]);
+        if (space(ch)) {
+            pending_space = !result.empty();
+            continue;
+        }
+        if (pending_space) result.push_back(' ');
+        pending_space = false;
+        result.push_back(static_cast<char>(folded_latin(ch)));
+    }
+    if (result.rfind("bcc+ ", 0) == 0) result.erase(4, 1);
+    return result;
 }
+
+struct TranslationIndex {
+    std::unordered_map<std::string, const search_data::EffectTranslation*> match;
+    std::unordered_map<std::string, const search_data::EffectTranslation*> english;
+    TranslationIndex() {
+        for (const auto& row : search_data::translations) {
+            // Preserve the old first-row-wins semantics and matchName before
+            // English fallback, without renormalizing the entire expanded
+            // dictionary for every item on initial scan/rebuild.
+            if (*row.match_name) match.emplace(canonical_effect_key(row.match_name), &row);
+            if (*row.english_name) english.emplace(canonical_effect_key(row.english_name), &row);
+        }
+    }
+};
 
 void apply_known_translation(CatalogItem& item) {
     if (item.item_type != L"effect") return;
-    const search_data::EffectTranslation* found = nullptr;
-    for (const auto& translation : search_data::translations) {
-        if (ascii_key_equal(item.match_name, translation.match_name)) { found = &translation; break; }
-    }
-    if (!found) {
-        for (const auto& translation : search_data::translations) {
-            if (ascii_key_equal(item.english_name, translation.english_name)) { found = &translation; break; }
-        }
-    }
+    static const TranslationIndex index;
+    const auto find = [](const auto& rows, const std::string& key) -> const search_data::EffectTranslation* {
+        if (key.empty()) return nullptr;
+        const auto found = rows.find(canonical_effect_key(key));
+        return found == rows.end() ? nullptr : found->second;
+    };
+    const auto* found = find(index.match, item.match_name);
+    if (!found) found = find(index.english, item.english_name);
     if (!found) return;
     if (item.translated_name.empty()) item.translated_name = found->chinese_name;
     const std::wstring_view aliases(found->aliases);
@@ -317,6 +323,20 @@ int score_item(const SearchEngine::IndexedItem& item, const std::wstring& query)
 
 void enrich_catalog_item(CatalogItem& item) {
     apply_known_translation(item);
+    // Repair only the exact previously shipped redundant labels. This also
+    // covers a legacy dictionary shadowing the updated defaults, without
+    // rewriting personal files or guessing at arbitrary user/brand names.
+    if (item.item_type == L"effect") for (const auto& rule : kDisplayLabelCleanups) {
+        const bool identity = *rule.match_name ?
+            canonical_effect_key(item.match_name) == canonical_effect_key(rule.match_name) :
+            (canonical_effect_key(item.english_name) == canonical_effect_key(rule.english_name) ||
+             normalize_wide(item.display_name) == normalize_wide(decode_utf8(rule.english_name)));
+        if (!identity || item.translated_name != rule.previous) continue;
+        if (std::find(item.aliases.begin(),item.aliases.end(),rule.previous)==item.aliases.end())
+            item.aliases.emplace_back(rule.previous);
+        item.translated_name=rule.replacement;
+        break;
+    }
     if (item.display_name.empty()) item.display_name = catalog_display_name(item);
     item.pinyin_full_variants.clear();
     item.pinyin_initial_variants.clear();
@@ -339,8 +359,12 @@ std::wstring catalog_display_name(const CatalogItem& item) {
     return L"Unnamed Item";
 }
 
-std::wstring bilingual_effect_label(const std::wstring& english_name, const std::wstring& translated_name) {
+std::wstring bilingual_effect_label(const std::wstring& english_name, const std::wstring& translated_name, bool explicit_translation) {
     if (english_name.empty()) return translated_name;
+    // A valid host-localized CJK name is already the display label. Keep
+    // translated synonyms indexed rather than appending a second Chinese name.
+    if (!explicit_translation && std::any_of(english_name.begin(),english_name.end(),[](wchar_t ch){return is_cjk(static_cast<char32_t>(ch));}))
+        return english_name;
     if (translated_name.empty() || normalize_wide(english_name) == normalize_wide(translated_name)) return english_name;
     return english_name + L"\uFF08" + translated_name + L"\uFF09";
 }

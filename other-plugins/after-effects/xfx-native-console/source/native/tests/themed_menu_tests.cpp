@@ -37,6 +37,7 @@ static void snapshot_menu(HMENU menu, Snapshot& result) {
 static void assert_restored(const Snapshot& before) {
     for (const auto& row : before.rows) {
         const auto now = item_info(row.menu, row.position);
+        if (now.fType != row.type || now.fState != row.state || now.dwItemData != row.data) std::cerr << "RESTORE DIAG pos=" << row.position << " type=" << now.fType << "/" << row.type << " state=" << now.fState << "/" << row.state << " data=" << now.dwItemData << "/" << row.data << '\n';
         require(now.fType == row.type && now.fState == row.state && now.wID == row.id && now.dwItemData == row.data &&
                 now.hSubMenu == row.submenu, "menu flags/state/data/submenus were not restored");
         require(item_text(row.menu, row.position) == row.text, "Chinese label/accelerator text was not restored");
@@ -213,11 +214,19 @@ static HMENU make_menu() {
     }
     return menu;
 }
+#include "menu_action_checks.h"
+
 int main() {
+    try { check_action_geometry(); } catch (const std::exception& error) {
+        std::cerr << "FAIL " << error.what() << '\n'; return 1;
+    }
     INITCOMMONCONTROLSEX common{sizeof(common), ICC_STANDARD_CLASSES}; InitCommonControlsEx(&common);
     WNDCLASSW type{}; type.lpfnWndProc = test_window; type.hInstance = GetModuleHandleW(nullptr); type.lpszClassName = L"XFXThemedMenuTestOwner";
     RegisterClassW(&type);
     int failed = 0;
+    try { action_tests::check_sessions(); } catch (const std::exception& error) {
+        ++failed; std::cerr << "FAIL action sessions " << error.what() << '\n';
+    }
     for (bool light : {false, true}) {
         TestState state; state.menu = make_menu();
         state.colors.surface = light ? RGB(245, 245, 245) : RGB(38, 38, 38);

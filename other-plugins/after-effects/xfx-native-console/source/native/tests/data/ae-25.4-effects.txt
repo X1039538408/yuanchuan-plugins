@@ -1,0 +1,1402 @@
+# Real AE 25.4x86 registered effects; exact IDs/display labels/categories. No generated expected translations.
+PEAF	AutoFill	Plugin Everything
+BAO_Boa	Boa	BAO
+BAO_Layer_Sculptor	Layer Sculptor	BAO
+PEDF	Digit Fiddler	Plugin Everything
+PEDX	Displacer Pro	Plugin Everything
+RWB Fast Bokeh	Fast Bokeh	Rowbyte
+One Chance Furikake	Furikake	One Chance
+AESweetsGlitch7in1	Glitch 7in1	AESweets
+irrealix loopFlow	loopFlow	irrealix
+Vimager ScaleUp	ScaleUp	Vimager
+PESS3	Shadow Studio 3	Plugin Everything
+ADBE TimeMachine	TimeMachine	风格化
+Videocopilot Twitch	Twitch	Video Copilot
+KNSW Unmult	UnMult	Knoll
+VIDEOCOPILOT VCReflect	VC Reflect	Video Copilot
+VIDEOCOPILOT VIBRANCE	VC Color Vibrance	Video Copilot
+PEDG	Deep Glow	Plugin Everything
+PEDG2	Deep Glow 2	Plugin Everything
+omino color extract	omino colorizer	omino
+omino_diffusion	omino diffusion	omino
+omino_halftone	omino halftone++	omino
+omino_kaleidoscope	omino kaleidoscope	omino
+omino_snake	omino snake	omino
+omino_sphere_map	omino sphere map	omino
+omino squares	omino squares	omino
+omino_test	omino test	omino
+GUTS BadTV	Bad TV	Rowbyte
+RWB DATA GLITCH	Data Glitch	Rowbyte
+RWB DOT PIXELS	Dot Pixels	Rowbyte
+GUTS SEPRGB	Separate RGB	Rowbyte
+RWB TV PIXEL	TVPixel	Rowbyte
+VIDEOCOPILOT LightSaber	Saber	Video Copilot
+VIDEOCOPILOT OpticalFlares	Optical Flares	Video Copilot
+CINEMA 4D Effect	Cineware	Cinema 4D
+Cryptomatte	Cryptomatte	3D 通道
+EXtractoR	EXtractoR	3D 通道
+IDentifier	IDentifier	3D 通道
+CC Ball Action	CC Ball Action	模拟
+CC Bender	CC Bender	扭曲
+CC Bend It	CC Bend It	扭曲
+CC Blobbylize	CC Blobbylize	扭曲
+CS BlockLoad	CC Block Load	风格化
+CC Bubbles	CC Bubbles	模拟
+CC Burn Film	CC Burn Film	风格化
+CS Color Neutralizer	CC Color Neutralizer	颜色校正
+CC Color Offset	CC Color Offset	颜色校正
+CS Composite	CC Composite	通道
+CC Composite	CC Composite (obsolete)	_Obsolete
+CS CrossBlur	CC Cross Blur	模糊和锐化
+CC Cylinder	CC Cylinder	透视
+CC Drizzle	CC Drizzle	模拟
+CC Environment	CC Environment	透视
+CC Flo Motion	CC Flo Motion	扭曲
+CC Force Motion Blur	CC Force Motion Blur	时间
+CC Glass	CC Glass	风格化
+CC Glass Wipe	CC Glass Wipe	过渡
+CC Glue Gun	CC Glue Gun	生成
+CC Griddler	CC Griddler	扭曲
+CC Grid Wipe	CC Grid Wipe	过渡
+CC Hair	CC Hair	模拟
+CS HexTile	CC HexTile	风格化
+CC Image Wipe	CC Image Wipe	过渡
+CC Jaws	CC Jaws	过渡
+CC Kaleida	CC Kaleida	风格化
+CS Kernel	CC Kernel	颜色校正
+CC Lens	CC Lens	扭曲
+CC Light Burst 2.5	CC Light Burst 2.5	生成
+CC Light Rays	CC Light Rays	生成
+CC Light Sweep	CC Light Sweep	生成
+CC Light Wipe	CC Light Wipe	过渡
+CS LineSweep	CC Line Sweep	过渡
+CC Mr. Mercury	CC Mr. Mercury	模拟
+CC Mr. Smoothie	CC Mr. Smoothie	风格化
+CC Overbrights	CC Overbrights	实用工具
+CC Page Turn	CC Page Turn	扭曲
+CC PS Classic	CC PS Classic (obsolete)	_Obsolete
+CC Particle Systems II	CC Particle Systems II	模拟
+CC PS LE Classic	CC PS LE Classic (obsolete)	_Obsolete
+CC Pixel Polly	CC Pixel Polly	模拟
+CC Plastic	CC Plastic	风格化
+CC Power Pin	CC Power Pin	扭曲
+CC Particle World	CC Particle World	模拟
+CC Radial Blur	CC Radial Blur	模糊和锐化
+CC Radial Fast Blur	CC Radial Fast Blur	模糊和锐化
+CC Radial ScaleWipe	CC Radial ScaleWipe	过渡
+CC Rain	CC Rain (obsolete)	_Obsolete
+CSRainfall	CC Rainfall	模拟
+CC RepeTile	CC RepeTile	风格化
+CC Ripple Pulse	CC Ripple Pulse	扭曲
+CC Scale Wipe	CC Scale Wipe	过渡
+CC Scatterize	CC Scatterize	模拟
+CC Simple Wire Removal	CC Simple Wire Removal	抠像
+CC Slant	CC Slant	扭曲
+CC Smear	CC Smear	扭曲
+CC Snow	CC Snow (obsolete)	_Obsolete
+CSSnowfall	CC Snowfall	模拟
+CC Sphere	CC Sphere	透视
+CC Split	CC Split	扭曲
+CC Split 2	CC Split 2	扭曲
+CC Spotlight	CC Spotlight	透视
+CC Star Burst	CC Star Burst	模拟
+CS Threads	CC Threads	生成
+CC Threshold	CC Threshold	风格化
+CC Threshold RGB	CC Threshold RGB	风格化
+CC Tiler	CC Tiler	扭曲
+CC Time Blend	CC Time Blend	_Obsolete
+CC Time Blend FX	CC Time Blend FX	_Obsolete
+CC Toner	CC Toner	颜色校正
+CC Twister	CC Twister	过渡
+CC Vector Blur	CC Vector Blur	模糊和锐化
+CS Vignette	CC Vignette	风格化
+CC WarpoMatic	CC WarpoMatic	过渡
+CC Wide Time	CC Wide Time	时间
+Keylight 906	Keylight (1.2)	抠像
+ISL MochaShapeImporter	mocha shape	过时
+mochaAECC	Mocha AE	Boris FX Mocha
+tc Echospace	Echospace	RG Motion Graphics
+tc Form	Form	RG Particles and 3D
+Geo	Geo	RG Particles and 3D
+tc Trapcode Horizon	Horizon	RG Particles and 3D
+tc Lux	Lux	RG Particles and 3D
+rg Mir	Mir 3	RG Particles and 3D
+tc Particular	Trapcode Particular	RG Particles and 3D
+tc Sound Keys	Sound Keys	RG Utilities
+tc Tao	Tao	RG Particles and 3D
+Red Giant GrowBounds	Grow Bounds	RG Utilities
+BCC_AMBIENTLIGHT	 BCC+Ambient Light	BCC Lights
+BCC_ATMOSPHERICGLOWDISSOLVE	 BCC+Atmospheric Glow Dissolve	BCC Transitions
+BCC_ATMOSPHERICGLOW	 BCC+Atmospheric Glow	BCC Film Style
+BCC_AUDIOVISUALIZER	 BCC+Audio Visualizer	BCC Time
+BCC33D Image Shatter	BCC 3D Image Shatter	BCC Perspective
+BCC6ThreeWayCC	BCC 3 Way Color Grade	BCC Color & Tone
+BCC3Composite	BCC Composite	BCC Key & Blend
+BCC3Alpha Pixel Noise	BCC Alpha Pixel Noise OBS	BCC Obsolete
+BCC3Alpha Process	BCC Alpha Process	BCC Key & Blend
+BCC3Alpha Spotlight	BCC Alpha Spotlight OBS	BCC Obsolete
+BCC3Artists Poster	BCC Artist's Poster	BCC Art Looks
+BCC Beat Reactor	BCC Beat Reactor	BCC Time
+BCC Beauty Studio	BCC Beauty Studio OBSOLETE	BCC Obsolete
+BCC Blobs Wipe	BCC Blobs Wipe	BCC Transitions
+BCC Blobs WipePrTr	BCC Blobs Wipe	_Obsolete
+BCC3Blur	BCC Blur	_Obsolete
+BCC VR Blur	BCC VR Blur	BCC VR
+BCC Blur Dissolve	BCC Blur Dissolve OBSOLETE	BCC Obsolete
+BCC Blur DissolvePrTr	BCC Blur Dissolve OBSOLETE	_Obsolete
+BCC3Boost Blend	BCC Boost Blend OBS	BCC Obsolete
+BCC3Brightness-Contrast	BCC Brightness-Contrast	BCC Color & Tone
+BCC Broadcast Safe	BCC Broadcast Safe	BCC Image Restoration
+BCC3Bulge	BCC Bulge	BCC Warp
+BCC3Brick	BCC Brick OBSOLETE	BCC Obsolete
+BCC3Bump Map	BCC Bump Map	BCC Art Looks
+BCC3Rock	BCC Rock OBSOLETE	BCC Obsolete
+BCC3Burnt Film	BCC Burnt Film	BCC Transitions
+BCC Burnt FilmPrTr	BCC Burnt Film	_Obsolete
+BCC Card Array	BCC Wild Cards	BCC Particles
+BCC3Cartooner	BCC Cartooner	BCC Art Looks
+BCC3Rays Cartoon	BCC Rays Cartoon OBSOLETE	BCC Obsolete
+BCC6Cartoon2Look	BCC Cartoon Look	BCC Art Looks
+BCC3Caustics	BCC Caustics	BCC Textures
+BCCChecker Wipe	BCC Checker Wipe	BCC Transitions
+BCCChecker WipePrTr	BCC Checker Wipe	_Obsolete
+BCC3Chroma Key	BCC Chroma Key	BCC Key & Blend
+BCC Chroma Key Studio	BCC Chroma Key Studio	BCC Key & Blend
+BCC3Cloth	BCC Cloth OBSOLETE	BCC Obsolete
+BCC3Clouds	BCC Clouds OBSOLETE	BCC Obsolete
+BCC3Color Balance	BCC Color Balance	BCC Color & Tone
+BCC4Color Choker	BCC Color Choker	BCC Stylize
+BCC3Color Correction	BCC Color Correction	BCC Color & Tone
+BCC3Colorize	BCC Colorize	BCC Color & Tone
+BCC3Colorize Glow	BCC Colorize Glow	BCC Stylize
+BCC Colorize Glow Dissolve	BCC Colorize Glow Dissolve	BCC Transitions
+BCC Colorize Glow DissolvePrTr	BCC Colorize Glow Dissolve	_Obsolete
+BCC3Color Match	BCC Color Match	BCC Color & Tone
+BCC3Color Palette	BCC Color Palette OBS	BCC Obsolete
+BCC3Comet	BCC Comet OBSOLETE	BCC Obsolete
+BCC3Composite Choker	BCC Composite Choker	BCC Key & Blend
+BCC Composite Dissolve	BCC Composite Dissolve	BCC Transitions
+BCC Composite DissolvePrTr	BCC Composite Dissolve	_Obsolete
+BCC3CornerPin	BCC Corner Pin OBS	BCC Obsolete
+BCC Corner Pin Studio	BCC Corner Pin Studio	BCC Match Move
+BCC3Correct Selected Color	BCC Correct Selected Color	BCC Color & Tone
+BCC Crash Zoom Dissolve	BCC Crash Zoom Dissolve OBSOLETE	BCC Obsolete
+BCC Crash Zoom DissolvePrTr	BCC Crash Zoom Dissolve OBSOLETE	_Obsolete
+BCC3Criss-Cross Wipe	BCC Criss-Cross Wipe	BCC Transitions
+BCC Criss-Cross WipePrTr	BCC Criss-Cross Wipe	_Obsolete
+BCC Cross Glitch	BCC Cross Glitch OBSOLETE	BCC Obsolete
+BCC Cross GlitchPrTr	BCC Cross Glitch OBSOLETE	_Obsolete
+BCC Cross Melt	BCC Cross Melt	BCC Transitions
+BCC Cross MeltPrTr	BCC Cross Melt	_Obsolete
+BCC Cross Zoom	BCC Cross Zoom OBSOLETE	BCC Obsolete
+BCC Cross ZoomPrTr	BCC Cross Zoom OBSOLETE	_Obsolete
+BCC3Cube	BCC Cube	BCC Perspective
+BCC Curl	BCC Curl	BCC Warp
+BCC Curl Dissolve	BCC Curl Dissolve	BCC Transitions
+BCC Curl DissolvePrTr	BCC Curl Dissolve	_Obsolete
+BCC3Cylinder	BCC Cylinder	BCC Perspective
+BCC Damaged TV Dissolve	BCC Damaged TV Dissolve	BCC Transitions
+BCC Damaged TV DissolvePrTr	BCC Damaged TV Dissolve	_Obsolete
+BCC4Damaged TV	BCC Damaged TV	BCC Stylize
+BCC3DeGrain	BCC DeGrain OBS	BCC Obsolete
+BCC3Deinterlace	BCC Deinterlace OBSOLETE	BCC Obsolete
+BCC3DeNoise	BCC DeNoise OBS	BCC Obsolete
+BCC3Directional Blur	BCC Directional Blur OBSOLETE	BCC Obsolete
+BCC3Displacement Map	BCC Displacement Map OBSOLETE	BCC Obsolete
+BCC Dropout Fixer	BCC Dropout Fixer	BCC Image Restoration
+BCC3Drop Shadow	BCC Drop Shadow	BCC Stylize
+BCC3Dust and Scratches	BCC Dust and Scratches	BCC Image Restoration
+BCC3DVE	BCC DVE OBSOLETE	BCC Obsolete
+BCC3DVE Basic	BCC DVE Basic OBSOLETE	BCC Obsolete
+BCC6DV Fixer	BCC DV Fixer OBSOLETE	BCC Obsolete
+BCC Edge Cleaner	BCC Edge Cleaner OBSOLETE	BCC Obsolete
+BCC Edge Grunge	BCC Edge Grunge	BCC Stylize
+BCC3Edge Lighting	BCC Edge Lighting	BCC Lights
+BCC3Emboss	BCC Emboss	BCC Stylize
+ScriptEP	BCC Extruded EPS	BCC 3D Objects
+ScriptSP	BCC Extruded Spline	BCC 3D Objects
+ScriptET	BCC Extruded Text	BCC 3D Objects
+BCC3Pyramid Blur	BCC Pyramid Blur OBSOLETE	BCC Obsolete
+BCC Fast Film Glow	BCC Fast Film Glow OBSOLETE	BCC Obsolete
+BCC Fast Film Glow Dissolve	BCC Fast Film Glow Dissolve OBSOLETE	BCC Obsolete
+BCC Fast Film Glow DissolvePrTr	BCC Fast Film Glow Dissolve OBSOLETE	_Obsolete
+BCC Fast Film Process	BCC Fast Film Process OBSOLETE	BCC Obsolete
+BCC3Fast Flipper	BCC Fast Flipper	BCC Perspective
+BCC Fast Lens Blur	BCC Fast Lens Blur OBSOLETE	BCC Obsolete
+BCC3Film Damage	BCC Film Damage OBSOLETE	BCC Obsolete
+BCC3Ultra Glow	BCC Film Glow OBS	BCC Obsolete
+BCC Film Glow Dissolve	BCC Film Glow Dissolve OBS	BCC Obsolete
+BCC Film Glow DissolvePrTr	BCC Film Glow Dissolve OBS	_Obsolete
+BCC3Film Grain	BCC Film Grain OBSOLETE	BCC Obsolete
+BCC3Film Process	BCC Film Process OBS	BCC Obsolete
+BCC3Fire	BCC Fire OBS	BCC Obsolete
+BCC3Flicker Fixer	BCC Flicker Fixer	BCC Image Restoration
+BCCFlutter	BCC Flutter Cut OBSOLETE	BCC Obsolete
+BCCFlutterPrTr	BCC Flutter Cut OBSOLETE	_Obsolete
+BCC3Fractal Noise	BCC Fractal Noise OBSOLETE	BCC Obsolete
+BCCFXBrowser	BCC FX Browser	BCC Browser
+BCC3Gaussian Blur	BCC Gaussian Blur OBSOLETE	BCC Obsolete
+BCC3Glare	BCC Glare OBSOLETE	BCC Obsolete
+BCC 3D Extruded Image Shatter	BCC 3D Extruded Image Shatter	BCC Perspective
+BCC3Glint	BCC Glint OBSOLETE	BCC Obsolete
+BCC3Glitter	BCC Glitter OBSOLETE	BCC Obsolete
+BCC3Glow	BCC Glow OBS	BCC Obsolete
+BCC3Glow Alpha Edges	BCC Glow Alpha Edges	BCC Stylize
+BCC3Glow Matte	BCC Glow Matte OBS	BCC Obsolete
+BCC3Granite	BCC Granite OBSOLETE	BCC Obsolete
+BCC Grid Wipe	BCC Grid Wipe	BCC Transitions
+BCC Grid WipePrTr	BCC Grid Wipe	_Obsolete
+BCC Grunge	BCC Grunge	BCC Stylize
+BCC Halftone	BCC Halftone	BCC Art Looks
+BCC3Hue-Sat-Lightness	BCC Hue-Sat-Lightness	BCC Color & Tone
+BCC3Invert Solarize	BCC Invert Solarize	BCC Color & Tone
+BCC3Jitter	BCC Jitter	BCC Time
+BCC3Jitter Basic	BCC Jitter Basic	BCC Time
+BCC Kaleida Dissolve	BCC Kaleida Dissolve	BCC Transitions
+BCC Kaleida DissolvePrTr	BCC Kaleida Dissolve	_Obsolete
+BCC Laser Beam	BCC Laser Beam	BCC Lights
+ScriptLD	BCC Layer Deformer	BCC 3D Objects
+BCC4LED	BCC LED OBSOLETE	BCC Obsolete
+BCC6LensBlur	BCC Lens Blur OBS	BCC Obsolete
+BCC Lens Blur Dissolve	BCC Lens Blur Dissolve	BCC Transitions
+BCC Lens Blur DissolvePrTr	BCC Lens Blur Dissolve	_Obsolete
+BCC Lens Correction	BCC Lens Correction	BCC Image Restoration
+BCC Lens Distortion Wipe	BCC Lens Distortion Wipe	BCC Transitions
+BCC Lens Distortion WipePrTr	BCC Lens Distortion Wipe	_Obsolete
+BCC3Lens Flare Adv	BCC Lens Flare Adv OBS	BCC Obsolete
+BCC3Lens Flare 3D	BCC Lens Flare 3D	BCC Lights
+BCC Lens Flare Dissolve	BCC Lens Flare Dissolve	BCC Transitions
+BCC Lens Flare DissolvePrTr	BCC Lens Flare Dissolve	_Obsolete
+BCC Lens Flare Round	BCC Lens Flare Round	BCC Transitions
+BCC Lens Flare RoundPrTr	BCC Lens Flare Round	_Obsolete
+BCC Lens Flare Spiked	BCC Lens Flare Spiked	BCC Transitions
+BCC Lens Flare SpikedPrTr	BCC Lens Flare Spiked	_Obsolete
+BCC Lens Flash	BCC Lens Flash	BCC Transitions
+BCC Lens FlashPrTr	BCC Lens Flash	_Obsolete
+BCC6LensShape	BCC Lens Shape	BCC Blur
+BCC6LensTransition	BCC Lens Transition OBS	BCC Obsolete
+BCC LensTransitionPrTr	BCC Lens Transition OBS	_Obsolete
+BCC3Levels Gamma	BCC Levels Gamma	BCC Color & Tone
+BCC Light Leaks	BCC Light Leaks OBSOLETE	BCC Obsolete
+BCCLightLeakDslv	BCC Light Leaks Dissolve OBSOLETE	BCC Obsolete
+BCCLightLeakDslvPrTr	BCC Light Leaks Dissolve OBSOLETE	_Obsolete
+BCC3Light Matte	BCC Light Matte OBS	BCC Obsolete
+BCC3Lightning	BCC Lightning	BCC Lights
+BCC3Light Sweep	BCC Light Sweep	BCC Lights
+BCC Light Wipe	BCC Light Wipe	BCC Transitions
+BCC Light WipePrTr	BCC Light Wipe	_Obsolete
+BCC3Light Wrap	BCC Light Wrap OBSOLETE	BCC Obsolete
+BCC3Light Zoom	BCC Light Zoom OBS	BCC Obsolete
+BCC3Linear Color Key	BCC Linear Color Key OBSOLETE	BCC Obsolete
+BCC3Linear Luma Key	BCC Linear Luma Key OBSOLETE	BCC Obsolete
+BCC3Linear Wipe	BCC Linear Wipe OBSOLETE	BCC Obsolete
+BCC Linear WipePrTr	BCC Linear Wipe OBSOLETE	_Obsolete
+BCC3Looper	BCC Looper	BCC Time
+BCC Magic Sharp	BCC Magic Sharp OBSOLETE	BCC Obsolete
+BCC3Make Alpha Key	BCC Make Alpha Key	BCC Key & Blend
+BCC3Match Grain	BCC Match Grain	BCC Film Style
+BCC3MatchMove	BCC Match Move	BCC Match Move
+BCC3Matte Choker	BCC Matte Choker	BCC Key & Blend
+BCC3Matte Cleanup	BCC Matte Cleanup	BCC Key & Blend
+BCC3Median	BCC Median	BCC Art Looks
+BCC3Misalignment	BCC Misalignment	BCC Stylize
+BCC3Mixed Colors	BCC Mixed Colors	BCC Textures
+BCC4Morph	BCC Morph	BCC Warp
+Boris3Pixelate	BCC Mosaic OBSOLETE	BCC Obsolete
+BCC3Motion Blur	BCC Motion Blur OBSOLETE	BCC Obsolete
+BCC3MotionKey	BCC Motion Key OBSOLETE	BCC Obsolete
+BCC3Multi Shadow	BCC Multi Shadow	BCC Stylize
+BCC3Multi Stretch Wipe	BCC Multi Stretch Wipe	BCC Transitions
+BCC Multi Stretch WipePrTr	BCC Multi Stretch Wipe	_Obsolete
+BCC3Multi Stripe Wipe	BCC Multi Stripe Wipe	BCC Transitions
+BCC Multi Stripe WipePrTr	BCC Multi Stripe Wipe	_Obsolete
+BCC3MultiTone Mix	BCC MultiTone Mix	BCC Color & Tone
+BCC3Noise Map	BCC Noise Map OBS	BCC Obsolete
+BCC4Noise Map 2	BCC Noise Map 2	BCC Textures
+BCC6Noise Reduction	BCC Noise Reduction OBSOLETE	BCC Obsolete
+BCC3Optical Flow	BCC Optical Flow OBSOLETE	BCC Obsolete
+BCC Organic Strands	BCC Organic Strands	BCC Particles
+BCC3Page Turn	BCC Page Turn	BCC Perspective
+BCC Pan and Zoom	BCC Pan and Zoom	BCC Perspective
+BCC Particle Array 3D	BCC Particle Array 3D	BCC Particles
+BCC Particle Emitter 3D	BCC Particle Emitter 3D	BCC Particles
+BCC Particle Illusion	BCC Particle Illusion	BCC Particles
+BCC PI Dissolve	BCC Particle Illusion Dissolve	BCC Transitions
+BCC PI DissolvePrTr	BCC Particle Illusion Dissolve	_Obsolete
+BCC3Particle System	BCC Particle System OBSOLETE	BCC Obsolete
+BCC Pin Art 3D	BCC Pin Art 3D	BCC Particles
+BCC3Pixel Chooser	BCC Pixel Chooser OBSOLETE	BCC Obsolete
+BCC6Pixel Fixer	BCC Pixel Fixer	BCC Image Restoration
+BCC3Polar Displacement	BCC Polar Displacement OBSOLETE	BCC Obsolete
+BCC3Posterize	BCC Posterize	BCC Art Looks
+BCC3Posterize Time	BCC Posterize Time	BCC Time
+BCC3Premult	BCC Premult	BCC Key & Blend
+BCC Primatte Studio	BCC Primatte Studio OBSOLETE	BCC Obsolete
+BCC4Prism	BCC Prism OBSOLETE	BCC Obsolete
+BCC Prism Dissolve	BCC Prism Dissolve OBSOLETE	BCC Obsolete
+BCC Prism DissolvePrTr	BCC Prism Dissolve OBSOLETE	_Obsolete
+BCC3Rays Puffy	BCC Rays Puffy	BCC Lights
+BCC3Radial Blur	BCC Radial Blur OBSOLETE	BCC Obsolete
+BCC3Rays Radiant Spotlight	BCC Rays Radiant Spotlight OBSOLETE	BCC Obsolete
+BCC3Radial Wipe	BCC Radial Wipe OBSOLETE	BCC Obsolete
+BCC Radial WipePrTr	BCC Radial Wipe OBSOLETE	_Obsolete
+BCC3Rays Radiant Edges	BCC Rays Radiant Edges	BCC Lights
+BCC3Rain	BCC Rain	BCC Particles
+BCC3Rays	BCC Rays OBSOLETE	BCC Obsolete
+BCC Rays Dissolve	BCC Rays Dissolve OBSOLETE	BCC Obsolete
+BCC Rays DissolvePrTr	BCC Rays Dissolve OBSOLETE	_Obsolete
+BCC3Rectangular Wipe	BCC Rectangular Wipe OBSOLETE	BCC Obsolete
+BCC Rectangular WipePrTr	BCC Rectangular Wipe OBSOLETE	_Obsolete
+BCC Reflection	BCC Reflection	BCC Stylize
+BCC Reframer	BCC Reframer	BCC Image Restoration
+BCC Remover	BCC Remover	BCC Image Restoration
+BCC VR Reorient	BCC VR Reorient	BCC VR
+BCC3Reptilian	BCC Reptilian OBSOLETE	BCC Obsolete
+BCC3Reverse Spotlight	BCC Reverse Spotlight	BCC Lights
+BCC3RGB Blend	BCC RGB Blend	BCC Key & Blend
+BCC RGB Blur Dissolve	BCC RGB Blur Dissolve OBSOLETE	BCC Obsolete
+BCC RGB Blur DissolvePrTr	BCC RGB Blur Dissolve OBSOLETE	_Obsolete
+BCC RGB Dspl Dissolve	BCC RGB Displacement Dissolve	BCC Transitions
+BCC RGB Dspl DissolvePrTr	BCC RGB Displacement Dissolve	_Obsolete
+BCC3RGB Edges	BCC RGB Edges	BCC Stylize
+BCC3RGB Pixel Noise	BCC RGB Pixel Noise	BCC Stylize
+BCC Ribbon Wipe	BCC Ribbon Wipe	BCC Transitions
+BCC Ribbon WipePrTr	BCC Ribbon Wipe	_Obsolete
+BCC3Rays Ring	BCC Rays Ring OBSOLETE	BCC Obsolete
+BCC Rings Wipe	BCC Rings Wipe	BCC Transitions
+BCC Rings WipePrTr	BCC Rings Wipe	_Obsolete
+BCC3Ripple	BCC Ripple OBSOLETE	BCC Obsolete
+BCC Ripple Dissolve	BCC Ripple Dissolve OBSOLETE	BCC Obsolete
+BCC Ripple DissolvePrTr	BCC Ripple Dissolve OBSOLETE	_Obsolete
+BCC3Rays Ripply	BCC Rays Ripply OBSOLETE	BCC Obsolete
+BCC3Rough Glow	BCC Rough Glow OBS	BCC Obsolete
+BCC3Safe Colors	BCC Safe Colors OBS	BCC Obsolete
+BCC4Scanline	BCC Scanline OBSOLETE	BCC Obsolete
+BCC3Scatterize	BCC Scatterize	BCC Stylize
+BCC3Sequencer	BCC Sequencer OBS	BCC Obsolete
+BCC Cast Shadow	BCC Cast Shadow	BCC Stylize
+BCC3Lens Flare	BCC Lens Flare OBS	BCC Obsolete
+BCC6Pencil Sketch	BCC Pencil Sketch	BCC Art Looks
+BCC6Smooth Tone	BCC Smooth Tone OBS	BCC Obsolete
+BCC3Snow	BCC Snow	BCC Particles
+BCC3Sparks	BCC Sparks OBSOLETE	BCC Obsolete
+BCC3Sphere	BCC Sphere	BCC Perspective
+BCC3Sphere Transition	BCC Sphere Transition	BCC Perspective
+BCC Spill Remover	BCC Spill Remover OBSOLETE	BCC Obsolete
+BCC Spin Blur Dissolve	BCC Spin Blur Dissolve OBSOLETE	BCC Obsolete
+BCC Spin Blur DissolvePrTr	BCC Spin Blur Dissolve OBSOLETE	_Obsolete
+BCC3Spiral Blur	BCC Spiral Blur OBSOLETE	BCC Obsolete
+BCC3Spotlight	BCC Spotlight	BCC Lights
+BCC3Spray Paint Noise	BCC Spray Paint Noise	BCC Art Looks
+BCC3Stabilizer	BCC Optical Stabilizer	BCC Image Restoration
+BCC3Stage Light	BCC Stage Light	BCC Lights
+BCC3Star Matte	BCC Star Matte OBS	BCC Obsolete
+BCC3Stars	BCC Stars OBSOLETE	BCC Obsolete
+BCC3Steel Plate	BCC Steel Plate OBSOLETE	BCC Obsolete
+BCC3Rays Streaky	BCC Rays Streaky OBSOLETE	BCC Obsolete
+BCC3Super Blend	BCC Super Blend OBS	BCC Obsolete
+BCC6Swish Pan	BCC Swish Pan OBSOLETE	BCC Obsolete
+BCC Swish PanPrTr	BCC Swish Pan OBSOLETE	_Obsolete
+BCC3Temporal Blur	BCC Temporal Blur	BCC Time
+BCC3Rays Textured	BCC Rays Textured OBSOLETE	BCC Obsolete
+BCC3Textured Wipe	BCC Textured Wipe OBSOLETE	BCC Obsolete
+BCC Textured WipePrTr	BCC Textured Wipe OBSOLETE	_Obsolete
+BCC6Charcoal Sketch	BCC Charcoal Sketch	BCC Art Looks
+BCC4Tile Mosaic	BCC Tile Mosaic	BCC Art Looks
+BCC Tile Wipe	BCC Tile Wipe	BCC Transitions
+BCC Tile WipePrTr	BCC Tile Wipe	_Obsolete
+BCC3Time Displacement	BCC Time Displacement	BCC Time
+BCCTS	BCC Title Studio	BCC 3D Objects
+BCC3Trails	BCC Trails	BCC Time
+BCC3Trails Basic	BCC Trails Basic	BCC Time
+BCC3Tritone	BCC Tritone	BCC Color & Tone
+BCC Tritone Dissolve	BCC Tritone Dissolve	BCC Transitions
+BCC Tritone DissolvePrTr	BCC Tritone Dissolve	_Obsolete
+BCC4Turbulence	BCC Turbulence	BCC Warp
+BCC3Twirl	BCC Twirl	BCC Warp
+BCC Twister	BCC Twister	BCC Transitions
+BCC TwisterPrTr	BCC Twister	_Obsolete
+BCC32D Particles	BCC 2D Particles	BCC Particles
+BCC Two Strip Color	BCC Two Strip Color OBSOLETE	BCC Obsolete
+BCC3Two Way Key	BCC Two Way Key OBSOLETE	BCC Obsolete
+ScriptTO	BCC Type On Text	BCC 3D Objects
+BCC3Unsharp Mask	BCC Unsharp Mask	BCC Blur
+BCC UpRez	BCC UpRez OBSOLETE	BCC Obsolete
+BCC Vector Blur Dissolve	BCC Vector Blur Dissolve	BCC Transitions
+BCC Vector Blur DissolvePrTr	BCC Vector Blur Dissolve	_Obsolete
+BCC3Vector Displacement	BCC Vector Displacement OBSOLETE	BCC Obsolete
+BCC3Veined Marble	BCC Veined Marble OBSOLETE	BCC Obsolete
+BCC3Velocity Remap	BCC Velocity Remap OBSOLETE	BCC Obsolete
+BCC Video Glitch	BCC Video Glitch OBSOLETE	BCC Obsolete
+BCC4Video Morph	BCC Video Morph	BCC Warp
+BCC6Videoscope	BCC Videoscope	BCC Color & Tone
+BCCVignette	BCC Vignette OBSOLETE	BCC Obsolete
+BCCVignette Wipe	BCC Vignette Wipe OBSOLETE	BCC Obsolete
+BCCVignette WipePrTr	BCC Vignette Wipe OBSOLETE	_Obsolete
+BCC VR Insert	BCC VR Insert	BCC VR
+BCC VR Flicker Fixer	BCC VR Flicker Fixer	BCC VR
+BCC VR Sharpen	BCC VR Sharpen	BCC VR
+BCC4Warp	BCC Warp	BCC Warp
+BCC6Water Color	BCC Water Color	BCC Art Looks
+BCC Water Waves Dissolve	BCC Water Waves Dissolve	BCC Transitions
+BCC Water Waves DissolvePrTr	BCC Water Waves Dissolve	_Obsolete
+BCC3Wave	BCC Wave	BCC Warp
+BCC3Weave	BCC Weave OBSOLETE	BCC Obsolete
+BCC3Rays Wedge	BCC Rays Wedge OBSOLETE	BCC Obsolete
+BCC3Wire Remover	BCC Wire Remover	BCC Image Restoration
+Boris3WitnessProtection	BCC WitnessProtection OBSOLETE	BCC Obsolete
+BCC3Wood Grain	BCC Wood Grain OBSOLETE	BCC Obsolete
+BCC3Wooden Planks	BCC Wooden Planks OBSOLETE	BCC Obsolete
+BCC3Z-Blur	BCC Z-Blur	BCC Blur
+BCC3Z Space I	BCC Z Space I OBS	BCC Obsolete
+BCC3Z Space II	BCC Z Space II OBS	BCC Obsolete
+BCC3Z Space III	BCC Z Space III OBS	BCC Obsolete
+BCC_BEAUTYSTUDIO	 BCC+Beauty Studio	BCC Image Restoration
+BCC_BLACKANDWHITE	 BCC+Black and White	BCC Color & Tone
+BCC_BLEACHBYPASS	 BCC+Bleach Bypass	BCC Film Style
+BCC_BLURDISSOLVE	 BCC+Blur Dissolve	BCC Transitions
+BCC_BLUR	 BCC+Blur	BCC Blur
+BCC_BORDERS	 BCC+Borders	BCC Art Looks
+BCC_CAMERASHAKEDISSOLVE	 BCC+Camera Shake Dissolve	BCC Transitions
+BCC_CAMERASHAKE	 BCC+Camera Shake	BCC Lens
+BCC_CENTERSPOT	 BCC+Center Spot	BCC Optical Diffusion
+BCC_CHANNELBLURDISSOLVE	 BCC+Channel Blur Dissolve	BCC Transitions
+BCC_CHANNELYUVBLUR	 BCC+Channel Blur YUV	BCC Blur
+BCC_CHANNELBLUR	 BCC+Channel Blur	BCC Blur
+BCC_CHROMABANDS	 BCC+Chroma Bands	BCC Lights
+BCC_CHROMATICABERRATION	 BCC+Chromatic Aberration	BCC Lens
+BCC_COLORGRADIENT	 BCC+Color Gradient	BCC Grads & Tints
+BCC_COLORINFRARED	 BCC+Color Infrared	BCC Art Looks
+BCC_COLORLINK	 BCC+Color Link	BCC Color & Tone
+BCC_COLORPASTE	 BCC+Color Paste	BCC Key & Blend
+BCC_COLORSHADOW	 BCC+Color Shadow	BCC Art Looks
+BCC_COLORSPOT	 BCC+Color Spot	BCC Grads & Tints
+BCC_COLORIZEGRADIENT	 BCC+Colorize Gradient	BCC Grads & Tints
+BCC_COMPOSITE	 BCC+Composite	BCC Key & Blend
+BCC_CRASHZOOMDISSOLVE	 BCC+Crash Zoom Dissolve	BCC Transitions
+BCC_CROSSPROCESSING	 BCC+Cross Processing	BCC Film Style
+BCC_CROSSZOOMDISSOLVE	 BCC+Cross Zoom Dissolve	BCC Transitions
+BCC_DAYFORNIGHT	 BCC+Day for Night	BCC Film Style
+BCC_DEBAND	 BCC+DeBand	BCC Image Restoration
+BCC_DEBLOCK	 BCC+DeBlock	BCC Image Restoration
+BCC_DEFOG	 BCC+DeFog	BCC Color & Tone
+BCC_DEFRINGE	 BCC+DeFringe	BCC Lens
+BCC_MLDEINTERLACE	 BCC+Deinterlace ML	BCC Image Restoration
+BCC_MLDENOISE	 BCC+DeNoise ML	BCC Image Restoration
+BCC_MLDEPTHESTIMATION	 BCC+Depth Map ML	BCC Key & Blend
+BCC_DEPTHOFFIELD	 BCC+Depth of Field	BCC Optical Diffusion
+BCC_MLDEPTHWIPE	 BCC+Depth Wipe ML	BCC Transitions
+BCC_DETAIL	 BCC+Detail	BCC Blur
+BCC_DEVELOP	 BCC+Develop	BCC Color & Tone
+BCC_DIFFUSION	 BCC+Diffusion	BCC Optical Diffusion
+BCC_DIRECTIONALBLURDISSOLVE	 BCC+Directional Blur Dissolve	BCC Transitions
+BCC_DIRECTIONALBLUR	 BCC+Directional Blur	BCC Blur
+BCC_DISPLACEMENTDISSOLVE	 BCC+Displacement Dissolve	BCC Transitions
+BCC_DISPLACEMENT	 BCC+Displacement Map	BCC Warp
+BCC_DISSOLVE	 BCC+Dissolve	BCC Transitions
+BCC_DOUBLEFOG	 BCC+Double Fog	BCC Optical Diffusion
+BCC_DUALGRADIENT	 BCC+Dual Gradient	BCC Grads & Tints
+BCC_EDGECLEANER	 BCC+Edge Cleaner	BCC Key & Blend
+BCC_EDGECOMPOSITE	 BCC+Edge Composite	BCC Key & Blend
+BCC_ENHANCING	 BCC+Enhancing	BCC Color & Tone
+BCC_EYELIGHT	 BCC+Eye Light	BCC Lights
+BCC_FSTOP	 BCC+F-Stop	BCC Color & Tone
+BCC_MLFACESEGMENTATION	 BCC+Face ML	BCC Key & Blend
+BCC_FILMGLOWDISSOLVE	 BCC+Film Glow Dissolve	BCC Transitions
+BCC_FILMGLOW	 BCC+Film Glow	BCC Film Style
+BCC_FILMGRUNGE	 BCC+Film Grunge	BCC Film Style
+BCC_FILMROLL	 BCC+Film Roll	BCC Transitions
+BCC_FILMSTOCKS	 BCC+Film Stocks	BCC Film Style
+BCC_FLASHING	 BCC+Flashing	BCC Film Style
+BCC_FLUORESCENT	 BCC+Fluorescent	BCC Color & Tone
+BCC_FLUTTERCUT	 BCC+Flutter Cut	BCC Transitions
+BCC_FOG	 BCC+Fog	BCC Optical Diffusion
+BCC_MLFRAMEFIXER	 BCC+Frame Fixer ML	BCC Image Restoration
+BCC_FROST	 BCC+Frost	BCC Optical Diffusion
+BCC_GELS	 BCC+Gels	BCC Grads & Tints
+BCC_GLOWDARKS	 BCC+Glow Darks	BCC Lights
+BCC_GLOWEDGES	 BCC+Glow Edges	BCC Lights
+BCC_GLOW	 BCC+Glow	BCC Lights
+BCC_GRADE	 BCC+Grade	BCC Color & Tone
+BCC_GRAIN	 BCC+Grain	BCC Film Style
+BCC_HALO	 BCC+Halo	BCC Optical Diffusion
+BCC_HARRISSHUTTER	 BCC+Harris Shutter	BCC Art Looks
+BCC_HAZE	 BCC+Haze	BCC Color & Tone
+BCC_HIGHCONTRAST	 BCC+High Contrast	BCC Color & Tone
+BCC_HOLDOUTCOMPOSITE	 BCC+Holdout Composite	BCC Key & Blend
+BCC_ICEHALOS	 BCC+Ice Halos	BCC Lights
+BCC_INFRARED	 BCC+Infrared	BCC Art Looks
+BCC_MLJUMPCUT	 BCC+Jump Cut Fixer ML	BCC Transitions
+BCC_KELVIN	 BCC+Kelvin	BCC Color & Tone
+BCC_KEYLIGHT	 BCC+Key Light	BCC Lights
+BCC_LENSBLUR	 BCC+Lens Blur	BCC Blur
+BCC_LENSDISTORTION	 BCC+Lens Distortion	BCC Lens
+BCC_LENSFLAREDISSOLVE	 BCC+Lens Flare Dissolve	BCC Transitions
+BCC_LENSFLARE	 BCC+Lens Flare	BCC Lights
+BCC_LICENSEPLATEML	 BCC+License Plate ML	BCC Match Move
+BCC_LIGHTFLICKER	 BCC+Light Flicker	BCC Film Style
+BCC_LIGHTLEAKSDISSOLVE	 BCC+Light Leaks Dissolve	BCC Transitions
+BCC_LIGHTLEAKS	 BCC+Light Leaks	BCC Lights
+BCC_LIGHTWRAP	 BCC+Light Wrap	BCC Key & Blend
+BCC_LIGHT	 BCC+Light	BCC Lights
+BCC_LINEARCOLORKEY	 BCC+Linear Color Key	BCC Key & Blend
+BCC_LINEARLUMAKEY	 BCC+Linear Luma Key	BCC Key & Blend
+BCC_LINEARWIPE	 BCC+Linear Wipe	BCC Transitions
+BCC_LOOKS	 BCC+Looks	BCC Film Style
+BCC_LOWCONTRAST	 BCC+Low Contrast	BCC Color & Tone
+BCC_MAGICSHARP	 BCC+Magic Sharp	BCC Image Restoration
+BCC_MATHCOMPOSITE	 BCC+Math Composite	BCC Key & Blend
+BCC_MLMATTEREFINE	 BCC+Matte Refine ML	BCC Key & Blend
+BCC_MIST	 BCC+Mist	BCC Optical Diffusion
+BCC_MOSAICDISSOLVE	 BCC+Mosaic Dissolve	BCC Transitions
+BCC_MOSAIC	 BCC+Mosaic	BCC Stylize
+BCC_MOTIONBLURML	 BCC+Motion Blur ML	BCC Blur
+BCC_MULTISTARDISSOLVE	 BCC+Multi-Star Dissolve	BCC Transitions
+BCC_MULTISTAR	 BCC+Multi-Star	BCC Lights
+BCC_NDGRADIENT	 BCC+ND Gradient	BCC Grads & Tints
+BCC_NET	 BCC+Net	BCC Optical Diffusion
+BCC_NIGHTVISION	 BCC+Night Vision	BCC Art Looks
+BCC_NONADDITIVEMIX	 BCC+Non-Additive Mix	BCC Key & Blend
+BCC_OPTICALDISSOLVE	 BCC+Optical Dissolve	BCC Key & Blend
+BCC_ORBSDISSOLVE	 BCC+Orbs Dissolve	BCC Transitions
+BCC_ORBS	 BCC+Orbs	BCC Film Style
+BCC_OVEREXPOSE	 BCC+Overexpose	BCC Lights
+BCC_PHOTOGRAPHIC	 BCC+Photographic	BCC Grads & Tints
+BCC_PIXELCHOOSER	 BCC+Pixel Chooser	BCC Key & Blend
+BCC_POLARDISPLACEMENT	 BCC+Polar Displacement	BCC Warp
+BCC_POLARWARP	 BCC+Polar Warp	BCC Warp
+BCC_POLARIZER	 BCC+Polarizer	BCC Color & Tone
+BCC_PRIMATTESTUDIO	 BCC+Primatte Studio	BCC Key & Blend
+BCC_PRISMDISSOLVE	 BCC+Prism Dissolve	BCC Transitions
+BCC_PRISMBLUR	 BCC+Prism	BCC Stylize
+BCC_RACKFOCUSDISSOLVE	 BCC+Rack Focus Dissolve	BCC Transitions
+BCC_RACKFOCUS	 BCC+Rack Focus	BCC Optical Diffusion
+BCC_RADIALBLUR	 BCC+Radial Blur	BCC Blur
+BCC_RADIALEXPOSURE	 BCC+Radial Exposure	BCC Lens
+BCC_RADIALTINT	 BCC+Radial Tint	BCC Grads & Tints
+BCC_RADIALWIPE	 BCC+Radial Wipe	BCC Transitions
+BCC_RAYSDISSOLVE	 BCC+Rays Dissolve	BCC Transitions
+BCC_RAYS	 BCC+Rays	BCC Lights
+BCC_RECTANGULARWIPE	 BCC+Rectangular Wipe	BCC Transitions
+BCC_REFLECTOR	 BCC+Reflector	BCC Lights
+BCC_RELIGHT	 BCC+ReLight	BCC Lights
+BCC_MLRETIMER	 BCC+Retimer ML	BCC Time
+BCC_RIPPLEDISSOLVE	 BCC+Ripple Dissolve	BCC Transitions
+BCC_RIPPLE	 BCC+Ripple	BCC Warp
+BCC_SCANLINE	 BCC+Scanline	BCC Stylize
+BCC_SELECTIVESATURATION	 BCC+Selective Saturation	BCC Color & Tone
+BCC_SEPIA	 BCC+Sepia	BCC Grads & Tints
+BCC_SHADOWSHIGHLIGHTS	 BCC+Shadows/Highlights	BCC Color & Tone
+BCC_SILK	 BCC+Silk	BCC Optical Diffusion
+BCC_SKINTONE	 BCC+Skin Tone	BCC Grads & Tints
+BCC_SMEARBLUR	 BCC+Smear Blur	BCC Blur
+BCC_SMOKEANDFOGDISSOLVE	 BCC+Smoke and Fog Dissolve	BCC Transitions
+BCC_SMOKEANDFOG	 BCC+Smoke and Fog	BCC Film Style
+BCC_SMOKEWIPE	 BCC+Smoke Wipe	BCC Transitions
+BCC_SPILLREMOVER	 BCC+Spill Remover	BCC Key & Blend
+BCC_SPINBLURDISSOLVE	 BCC+Spin Blur Dissolve	BCC Transitions
+BCC_SPLITFIELD	 BCC+Split Field	BCC Optical Diffusion
+BCC_SPLITTONE	 BCC+Split Tone	BCC Grads & Tints
+BCC_STMAP	 BCC+ST Map	BCC Warp
+BCC_STREAKS	 BCC+Streaks	BCC Lights
+BCC_SUNSET	 BCC+Sunset	BCC Grads & Tints
+BCC_SUPERLED	 BCC+Super LED	BCC Stylize
+BCC_SWISHGLOW	 BCC+Swish Glow	BCC Transitions
+BCC_SWISH	 BCC+Swish Pan	BCC Transitions
+BCC_SWISHPRISM	 BCC+Swish Prism	BCC Transitions
+BCC_SWISHWARP	 BCC+Swish Warp	BCC Transitions
+BCC_TEXTUREWIPE	 BCC+Texture Wipe	BCC Transitions
+BCC_TEXTURES	 BCC+Textures	BCC Textures
+BCC_THREESTRIP	 BCC+Three Strip	BCC Film Style
+BCC_TINT	 BCC+Tint	BCC Grads & Tints
+BCC_TRANSFORM	 BCC+Transform	BCC Perspective
+BCC_TWOSTRIP	 BCC+Two Strip	BCC Film Style
+BCC_TWOWAYKEY	 BCC+Two Way Key	BCC Key & Blend
+BCC_UPRESML	 BCC+UpRes ML	BCC Image Restoration
+BCC_VECTORDISPLACEMENT	 BCC+Vector Displacement	BCC Warp
+BCC_VIDEOGLITCHDISSOLVE	 BCC+Video Glitch Dissolve	BCC Transitions
+BCC_VIDEOGLITCH	 BCC+Video Glitch	BCC Stylize
+BCC_VIGNETTEWIPE	 BCC+Vignette Wipe	BCC Transitions
+BCC_VIGNETTE	 BCC+Vignette	BCC Film Style
+BCC_WIDEANGLELENS	 BCC+Wide Angle Lens	BCC Lens
+BCC_WITNESSPROTECTIONML	 BCC+Witness Protection ML	BCC Match Move
+BCC_XRAY	 BCC+X-Ray	BCC Art Looks
+RG_MB_ParamCurve_AE	Parametric Curve	RG Color
+RG MB COLORISTA IV	Colorista V	RG Color
+RG Cosmo_II	Cosmo II	RG Color
+RG Denoiser3	Denoiser III	RG Color
+Magic_Bullet_Mojo_II	Mojo II	RG Color
+Magic_Bullet_Renoiser	Renoiser	RG Color
+Magic_Bullet_Suite_Magic_Bullet	Film	RG Color
+MB LookSuite3	Magic Bullet Looks	RG Color
+Universe_Blur_Blur_Premium	uni.Blur	RG Blurs and Glows
+Universe_Blur_Box_Bokeh	uni.Bokeh	RG Blurs and Glows
+Universe_Compound_Blur_Premium	uni.Compound Blur	RG Blurs and Glows
+Universe_Blur_Spot_Blur	uni.Spot Blur	RG Blurs and Glows
+Universe_CrumplePop_Finisher	uni.Finisher	RG Color
+Universe_CrumplePop_Fisheye_Fix	uni.Fisheye Fixer	RG Utilities
+Universe_CrumplePop_Grain16	uni.Grain16	RG Color
+Universe_CrumplePop_OverLight	uni.OverLight	RG Stylize
+Universe_CrumplePop_ShrinkRay	uni.ShrinkRay	RG Stylize
+Universe_Distort_Camera_Shake_P	uni.Camera Shake	RG Utilities
+Universe_Distort_Chromatic_Aber	uni.Chromatic Aberration	RG Distortions
+Universe_Distort_Heatwave	uni.Heatwave	RG Distortions
+Universe_Distort_Picture_in_Pic	uni.Picture in Picture	RG Utilities
+Universe_Distort_Prism_Displace	uni.Prism Displacement	RG Distortions
+Universe_Distort_RGB_Separation	uni.RGB Separation	RG Distortions
+Universe_Generators_Custom_Dith	uni.Custom Dither	RG Generators
+Universe_Generators_Fractal_Bac	uni.Fractal Background	RG Generators
+Universe_Generators_Gradient_Ra	uni.Gradient Ramp	RG Generators
+Universe_Generators_Soft_Gradie	uni.Soft Gradient Background	RG Generators
+Universe_Generators_Spectralici	uni.Spectralicious	RG Generators
+Universe_Glow_Chromatic_Glow	uni.Chromatic Glow	RG Blurs and Glows
+Universe_Glow_Edge_Glow_Premium	uni.Edge Glow	RG Blurs and Glows
+Universe_Glow_Glimmer	uni.Glimmer	RG Blurs and Glows
+Universe_Glow_Glow	uni.Glow	RG Blurs and Glows
+Universe_Glow_Glo_Fi_Premium	uni.Glo Fi	RG Blurs and Glows
+Universe_Glow_Point_Zoom	uni.Point Zoom	RG Blurs and Glows
+RG_UNI_Glow_Quantum	uni.Quantum	RG Blurs and Glows
+Universe_M_G_Array_Gun	uni.Array Gun	RG Motion Graphics
+Universe_Visualizations_HUD_Com	uni.HUD Components	RG Motion Graphics
+Universe_Motion_Graphics_Draw_P	uni.Line	RG Motion Graphics
+Universe_M_G_Progresso	uni.Progresso	RG Motion Graphics
+RG_UNI_M_G_Reframe	uni.Reframe	RG Motion Graphics
+Universe_Generators_TurNoise	uni.Turbulence Noise	RG Generators
+RG_UNI_Stylize_Analog	uni.Analog	RG Stylize
+Universe_Stylize_Carousel	uni.Carousel	RG Stylize
+RG_UNI_Chromatown	uni.ChromaTown	RG Stylize
+RG_UNI_Stylize_Electrify	uni.Electrify	RG Stylize
+Universe_Stylize_Error_Diffuse_	uni.Error Diffuse Dither	RG Stylize
+Universe_Stylize_Glitch	uni.Glitch	RG Stylize
+Universe_Stylize_Halftone_Dithe	uni.Halftone Dither	RG Stylize
+Universe_Distort_Holomatrix	uni.Holomatrix II	RG Stylize
+Universe_Knoll_Light_Factory_EZ	uni.Knoll Light Factory EZ	RG Stylize
+Universe_Misfire_Premium	uni.MisFire	RG Stylize
+RG_UNI_Stylize_Multitone	uni.Multitone	RG Stylize
+Universe_Stylize_Noir_Moderne	uni.Noir	RG Stylize
+Universe_Stylize_Ordered_Dither	uni.Ordered Dither	RG Stylize
+Universe_CrumplePop_RetroGrade	uni.RetroGrade	RG Stylize
+Universe_Stylize_Sketchify	uni.Sketchify	RG Stylize
+Universe_Stylize_Symbol_Mapper	uni.Symbol Mapper	RG Motion Graphics
+Universe_Stylize_Texturize	uni.Texturize	RG Stylize
+MX_UNI_Stylize_Texturize_Motion	uni.Texturize Motion	RG Stylize
+Universe_Stylize_Threshold_Dith	uni.Threshold Dither	RG Stylize
+Universe_Stylize_VHS	uni.VHS	RG Stylize
+Universe_Text_AV_Club	uni.AV Club	RG Stylize
+Universe_Text_Ecto	uni.Ecto	RG Stylize
+Universe_Text_Glo_Fi_II	uni.Glo Fi II	RG Blurs and Glows
+Universe_Text_Hacker_Text	uni.Hacker Text	RG Text
+Universe_Text_Long_Shadow	uni.Long Shadow	RG Stylize
+Universe_Text_Luster	uni.Luster	RG Stylize
+Universe_Text_Numbers	uni.Numbers	RG Text
+Universe_Text_Screen_Text	uni.Screen Text	RG Text
+Universe_Text_Text_Tile	uni.Text Tile	RG Text
+Universe_Utilities_Title_Motion	uni.Title Motion	RG Text
+Universe_Text_Type_Cast	uni.Type Cast	RG Text
+Universe_Text_Type_On	uni.Type On	RG Text
+RG_UNI_Text_Typographic	uni.Typographic	RG Text
+Universe_Transitions_Blinds	uni.Blinds	RG Transitions
+Universe_Transitions_Bokeh	uni.Bokeh Transition	RG Transitions
+Universe_Transitions_Camera_Sha	uni.Camera Shake Transition	RG Transitions
+Universe_Transitions_Carousel_T	uni.Carousel Transition	RG Transitions
+Universe_Transitions_Channel_Bl	uni.Channel Blur	RG Transitions
+Universe_Transitions_Channel_Su	uni.Channel Surf	RG Transitions
+Universe_Transitions_Clock_Wipe	uni.Clock Wipe	RG Transitions
+Universe_Transitions_Color_Mosa	uni.Color Mosaic Transition	RG Transitions
+Universe_Transitions_Color_Stri	uni.Color Stripe	RG Transitions
+Universe_Transitions_Cube	uni.Cube	RG Transitions
+Universe_Transitions_Diamond_Wa	uni.Diamond Wave	RG Transitions
+Universe_Transitions_Dolly_Fade	uni.Dolly Fade	RG Transitions
+Universe_Exposure_Blur_Premium	uni.Exposure Blur	RG Transitions
+Universe_Transitions_Film_Trans	uni.Film Transition	RG Transitions
+Universe_Transitions_Flicker_Cu	uni.Flicker Cut	RG Transitions
+Universe_Transitions_Fold	uni.Fold	RG Transitions
+Universe_Transitions_Glitch_Tra	uni.Glitch Transition	RG Transitions
+Universe_Transitions_HalfLight	uni.HalfLight	RG Transitions
+Universe_Transitions_Inside_Cub	uni.Inside Cube	RG Transitions
+Universe_Transitions_Knoll_Ligh	uni.Knoll Light Transition	RG Transitions
+Universe_Transitions_Linear_Wip	uni.Linear Wipe	RG Transitions
+Universe_Transitions_RetroGrade	uni.RetroGrade Transition	RG Transitions
+Universe_Transitions_Rubics_Cub	uni.Rubix Cube	RG Transitions
+Universe_Transitions_Shape_Wipe	uni.Shape Wipe	RG Transitions
+Universe_Transitions_Slide	uni.Slide	RG Transitions
+Universe_Soft_Edge_Wipe_Premium	uni.Soft Edge Wipe	RG Transitions
+Universe_Transitions_Spectralic	uni.Spectralicious Transition	RG Transitions
+RG_UNI_Transition_Stretch	uni.Stretch	RG Transitions
+Universe_Swish_Pan_Premium	uni.Swish Pan	RG Transitions
+Universe_Transitions_Triangle_W	uni.Triangle Wave	RG Transitions
+Universe_Transitions_Turbulence	uni.Turbulence Transition	RG Transitions
+Universe_Transitions_Unfold	uni.Unfold	RG Transitions
+Universe_Transitions_VHS_Transi	uni.VHS Transition	RG Transitions
+RG_UNI_Transition_Warp	uni.Warp	RG Transitions
+Universe_Utilities_Logo_Motion	uni.Logo Motion	RG Motion Graphics
+RG_UNI_Utilities_Modes	uni.Modes	RG Utilities
+Universe_Utilities_Palettes	uni.Palettes	RG Utilities
+RG_UNI_Utilities_Socialize	uni.Socialize	RG Utilities
+Universe_Utilities_Unmult_Premi	uni.Unmult	RG Utilities
+rgBang	Bang	RG VFX
+RG_VFX_ChromaDisp_AE	Chromatic Displacement	RG Distortions
+RG_VFX_Depth_Generator_AE	Depth Generator	RG VFX
+RG_KingPin_Tracker	King Pin Tracker	RG VFX
+RG_Lens_Distortion	Lens Distortion Matcher	RG VFX
+MX_Lens_Flare	Real Lens Flares	RG VFX
+RG_VFX_OpticalGlow_AE	Optical Glow	RG Blurs and Glows
+Photron Primatte6	Primatte Keyer 6	RG VFX
+rg.vfx.reflection	Reflection	RG VFX
+rg.vfx.shadow	Shadow	RG VFX
+RG_VFX_SpotClone_Tracker_AE	Spot Clone Tracker	RG VFX
+RG_VFX_Supernova_AE	Supercomp	RG VFX
+S_ChannelSwitcher	S_ChannelSwitcher	Sapphire Adjust
+S_ClampChroma	S_ClampChroma	Sapphire Adjust
+S_DuoTone	S_DuoTone	Sapphire Adjust
+S_Gamma	S_Gamma	Sapphire Adjust
+S_Hotspots	S_Hotspots	Sapphire Adjust
+S_HueSatBright	S_HueSatBright	Sapphire Adjust
+S_Invert	S_Invert	Sapphire Adjust
+S_Monochrome	S_Monochrome	Sapphire Adjust
+S_OCIOTransform	S_OCIOTransform	Sapphire Adjust
+S_QuadTone	S_QuadTone	Sapphire Adjust
+S_ShowBadColors	S_ShowBadColors	Sapphire Adjust
+S_Threshold	S_Threshold	Sapphire Adjust
+S_Tint	S_Tint	Sapphire Adjust
+S_TriTone	S_TriTone	Sapphire Adjust
+S_Beauty	S_Beauty	Sapphire Blur+Sharpen
+S_Blur	S_Blur	Sapphire Blur+Sharpen
+S_BlurChannels	S_BlurChannels	Sapphire Blur+Sharpen
+S_BlurChroma	S_BlurChroma	Sapphire Blur+Sharpen
+S_BlurDirectional	S_BlurDirectional	Sapphire Blur+Sharpen
+S_BlurMoCurves	S_BlurMoCurves	Sapphire Blur+Sharpen
+S_BlurMotion	S_BlurMotion	Sapphire Blur+Sharpen
+S_Convolve	S_Convolve	Sapphire Blur+Sharpen
+S_ConvolveComp	S_ConvolveComp	Sapphire Blur+Sharpen
+S_Deband	S_Deband	Sapphire Blur+Sharpen
+S_DefocusPrism	S_DefocusPrism	Sapphire Blur+Sharpen
+S_EdgeAwareBlur	S_EdgeAwareBlur	Sapphire Blur+Sharpen
+S_EdgeBlur	S_EdgeBlur	Sapphire Blur+Sharpen
+S_FreeLens	S_FreeLens	Sapphire Blur+Sharpen
+S_GrainRemove	S_GrainRemove	Sapphire Blur+Sharpen
+S_Median	S_Median	Sapphire Blur+Sharpen
+S_RackDefocus	S_RackDefocus	Sapphire Blur+Sharpen
+S_RackDfComp	S_RackDfComp	Sapphire Blur+Sharpen
+S_Sharpen	S_Sharpen	Sapphire Blur+Sharpen
+S_SoftFocus	S_SoftFocus	Sapphire Blur+Sharpen
+S_ZBlur	S_ZBlur	Sapphire Blur+Sharpen
+S_ZConvolve	S_ZConvolve	Sapphire Blur+Sharpen
+S_ZDefocus	S_ZDefocus	Sapphire Blur+Sharpen
+S_Effect	S_Effect	Sapphire Builder
+S_Transition	S_Transition	Sapphire Builder
+S_EdgeFlash	S_EdgeFlash	Sapphire Composite
+S_Layer	S_Layer	Sapphire Composite
+S_MathOps	S_MathOps	Sapphire Composite
+S_MatteOps	S_MatteOps	Sapphire Composite
+S_MatteOpsComp	S_MatteOpsComp	Sapphire Composite
+S_ZComp	S_ZComp	Sapphire Composite
+S_Distort	S_Distort	Sapphire Distort
+S_DistortBlur	S_DistortBlur	Sapphire Distort
+S_DistortChroma	S_DistortChroma	Sapphire Distort
+S_DistortRGB	S_DistortRGB	Sapphire Distort
+S_InfiniteZoom	S_InfiniteZoom	Sapphire Distort
+S_ParallaxStrips	S_ParallaxStrips	Sapphire Distort
+S_Shake	S_Shake	Sapphire Distort
+S_StretchFrameEdges	S_StretchFrameEdges	Sapphire Distort
+S_WarpBubble	S_WarpBubble	Sapphire Distort
+S_WarpBubble2	S_WarpBubble2	Sapphire Distort
+S_WarpChroma	S_WarpChroma	Sapphire Distort
+S_WarpCornerPin	S_WarpCornerPin	Sapphire Distort
+S_WarpDrops	S_WarpDrops	Sapphire Distort
+S_WarpFishEye	S_WarpFishEye	Sapphire Distort
+S_WarpMagnify	S_WarpMagnify	Sapphire Distort
+S_WarpPerspective	S_WarpPerspective	Sapphire Distort
+S_WarpPolar	S_WarpPolar	Sapphire Distort
+S_WarpPuddle	S_WarpPuddle	Sapphire Distort
+S_WarpPuff	S_WarpPuff	Sapphire Distort
+S_WarpRepeat	S_WarpRepeat	Sapphire Distort
+S_WarpTransform	S_WarpTransform	Sapphire Distort
+S_WarpVortex	S_WarpVortex	Sapphire Distort
+S_WarpWaves	S_WarpWaves	Sapphire Distort
+S_WarpWaves2	S_WarpWaves2	Sapphire Distort
+S_BokehLights	S_BokehLights	Sapphire Lighting
+S_DropShadow	S_DropShadow	Sapphire Lighting
+S_EdgeRays	S_EdgeRays	Sapphire Lighting
+S_Flashbulbs	S_Flashbulbs	Sapphire Lighting
+S_Glare	S_Glare	Sapphire Lighting
+S_Glint	S_Glint	Sapphire Lighting
+S_GlintRainbow	S_GlintRainbow	Sapphire Lighting
+S_Glow	S_Glow	Sapphire Lighting
+S_GlowAura	S_GlowAura	Sapphire Lighting
+S_GlowDarks	S_GlowDarks	Sapphire Lighting
+S_GlowDist	S_GlowDist	Sapphire Lighting
+S_GlowEdges	S_GlowEdges	Sapphire Lighting
+S_GlowNoise	S_GlowNoise	Sapphire Lighting
+S_GlowOrthicon	S_GlowOrthicon	Sapphire Lighting
+S_GlowRainbow	S_GlowRainbow	Sapphire Lighting
+S_GlowRings	S_GlowRings	Sapphire Lighting
+S_LensFlare	S_LensFlare	Sapphire Lighting
+S_LensFlareAutoTrack	S_LensFlareAutoTrack	Sapphire Lighting
+S_Light3D	S_Light3D	Sapphire Lighting
+S_LightLeak	S_LightLeak	Sapphire Lighting
+S_Rays	S_Rays	Sapphire Lighting
+S_SpotLight	S_SpotLight	Sapphire Lighting
+S_Streaks	S_Streaks	Sapphire Lighting
+S_UltraGlow	S_UltraGlow	Sapphire Lighting
+S_ZGlow	S_ZGlow	Sapphire Lighting
+S_Aurora	S_Aurora	Sapphire Render
+S_Caustics	S_Caustics	Sapphire Render
+S_Clouds	S_Clouds	Sapphire Render
+S_CloudsColorSmooth	S_CloudsColorSmooth	Sapphire Render
+S_CloudsMultColor	S_CloudsMultColor	Sapphire Render
+S_CloudsPerspective	S_CloudsPerspective	Sapphire Render
+S_CloudsPsyko	S_CloudsPsyko	Sapphire Render
+S_CloudsVortex	S_CloudsVortex	Sapphire Render
+S_Dust	S_Dust	Sapphire Render
+S_Gradient	S_Gradient	Sapphire Render
+S_GradientMulti	S_GradientMulti	Sapphire Render
+S_GradientRadial	S_GradientRadial	Sapphire Render
+S_Grid	S_Grid	Sapphire Render
+S_Grunge	S_Grunge	Sapphire Render
+S_LaserBeam	S_LaserBeam	Sapphire Render
+S_Luna	S_Luna	Sapphire Render
+S_MuzzleFlash	S_MuzzleFlash	Sapphire Render
+S_NightSky	S_NightSky	Sapphire Render
+S_Shape	S_Shape	Sapphire Render
+S_Sparkles	S_Sparkles	Sapphire Render
+S_SparklesColor	S_SparklesColor	Sapphire Render
+S_TextureCells	S_TextureCells	Sapphire Render
+S_TextureChromaSpiral	S_TextureChromaSpiral	Sapphire Render
+S_TextureFlux	S_TextureFlux	Sapphire Render
+S_TextureFolded	S_TextureFolded	Sapphire Render
+S_TextureLoops	S_TextureLoops	Sapphire Render
+S_TextureMicro	S_TextureMicro	Sapphire Render
+S_TextureMoire	S_TextureMoire	Sapphire Render
+S_TextureNeurons	S_TextureNeurons	Sapphire Render
+S_TextureNoiseEmboss	S_TextureNoiseEmboss	Sapphire Render
+S_TextureNoisePaint	S_TextureNoisePaint	Sapphire Render
+S_TexturePlasma	S_TexturePlasma	Sapphire Render
+S_TextureSpots	S_TextureSpots	Sapphire Render
+S_TextureTiles	S_TextureTiles	Sapphire Render
+S_TextureWeave	S_TextureWeave	Sapphire Render
+S_UltraZap	S_UltraZap	Sapphire Render
+S_Zap	S_Zap	Sapphire Render
+S_ZapFrom	S_ZapFrom	Sapphire Render
+S_ZapTo	S_ZapTo	Sapphire Render
+S_AutoPaint	S_AutoPaint	Sapphire Stylize
+S_BandPass	S_BandPass	Sapphire Stylize
+S_BleachBypass	S_BleachBypass	Sapphire Stylize
+S_Brush	S_Brush	Sapphire Stylize
+S_Cartoon	S_Cartoon	Sapphire Stylize
+S_CartoonPaint	S_CartoonPaint	Sapphire Stylize
+S_ColorFuse	S_ColorFuse	Sapphire Stylize
+S_Crosshatch	S_Crosshatch	Sapphire Stylize
+S_Diffuse	S_Diffuse	Sapphire Stylize
+S_DigitalDamage	S_DigitalDamage	Sapphire Stylize
+S_DogVision	S_DogVision	Sapphire Stylize
+S_EdgeColorize	S_EdgeColorize	Sapphire Stylize
+S_EdgeDetect	S_EdgeDetect	Sapphire Stylize
+S_EdgeDetectDouble	S_EdgeDetectDouble	Sapphire Stylize
+S_EdgesInDirection	S_EdgesInDirection	Sapphire Stylize
+S_Emboss	S_Emboss	Sapphire Stylize
+S_EmbossDistort	S_EmbossDistort	Sapphire Stylize
+S_EmbossGlass	S_EmbossGlass	Sapphire Stylize
+S_EmbossShiny	S_EmbossShiny	Sapphire Stylize
+S_Etching	S_Etching	Sapphire Stylize
+S_FilmDamage	S_FilmDamage	Sapphire Stylize
+S_FilmEffect	S_FilmEffect	Sapphire Stylize
+S_FlysEyeCircles	S_FlysEyeCircles	Sapphire Stylize
+S_FlysEyeHex	S_FlysEyeHex	Sapphire Stylize
+S_FlysEyeRect	S_FlysEyeRect	Sapphire Stylize
+S_Grain	S_Grain	Sapphire Stylize
+S_GrainStatic	S_GrainStatic	Sapphire Stylize
+S_HalfTone	S_HalfTone	Sapphire Stylize
+S_HalfToneColor	S_HalfToneColor	Sapphire Stylize
+S_HalfToneRings	S_HalfToneRings	Sapphire Stylize
+S_JpegDamage	S_JpegDamage	Sapphire Stylize
+S_Kaleido	S_Kaleido	Sapphire Stylize
+S_KaleidoPolar	S_KaleidoPolar	Sapphire Stylize
+S_KaleidoRadial	S_KaleidoRadial	Sapphire Stylize
+S_Mosaic	S_Mosaic	Sapphire Stylize
+S_PixelMosh	S_PixelMosh	Sapphire Stylize
+S_PixelSort	S_PixelSort	Sapphire Stylize
+S_Posterize	S_Posterize	Sapphire Stylize
+S_PrismLens	S_PrismLens	Sapphire Stylize
+S_PseudoColor	S_PseudoColor	Sapphire Stylize
+S_PsykoBlobs	S_PsykoBlobs	Sapphire Stylize
+S_PsykoStripes	S_PsykoStripes	Sapphire Stylize
+S_RomanTile	S_RomanTile	Sapphire Stylize
+S_ScanLines	S_ScanLines	Sapphire Stylize
+S_ScanLinesMono	S_ScanLinesMono	Sapphire Stylize
+S_Sketch	S_Sketch	Sapphire Stylize
+S_Solarize	S_Solarize	Sapphire Stylize
+S_StripSlide	S_StripSlide	Sapphire Stylize
+S_TileScramble	S_TileScramble	Sapphire Stylize
+S_TVDamage	S_TVDamage	Sapphire Stylize
+S_UltraGrain	S_UltraGrain	Sapphire Stylize
+S_VHSDamage	S_VHSDamage	Sapphire Stylize
+S_Vignette	S_Vignette	Sapphire Stylize
+S_VintageColor2Strip	S_VintageColor2Strip	Sapphire Stylize
+S_VintageColor3Strip	S_VintageColor3Strip	Sapphire Stylize
+S_Zebrafy	S_Zebrafy	Sapphire Stylize
+S_ZebrafyColor	S_ZebrafyColor	Sapphire Stylize
+S_ZFogExponential	S_ZFogExponential	Sapphire Stylize
+S_ZFogLinear	S_ZFogLinear	Sapphire Stylize
+S_CutToDissolve	S_CutToDissolve	Sapphire Time
+S_Feedback	S_Feedback	Sapphire Time
+S_FeedbackBubble	S_FeedbackBubble	Sapphire Time
+S_FeedbackDistort	S_FeedbackDistort	Sapphire Time
+S_FieldRemove	S_FieldRemove	Sapphire Time
+S_Flicker	S_Flicker	Sapphire Time
+S_FlickerMatch	S_FlickerMatch	Sapphire Time
+S_FlickerMatchColor	S_FlickerMatchColor	Sapphire Time
+S_FlickerMatchMatte	S_FlickerMatchMatte	Sapphire Time
+S_FlickerMchMatteColor	S_FlickerMchMatteColor	Sapphire Time
+S_FlickerRemove	S_FlickerRemove	Sapphire Time
+S_FlickerRemoveColor	S_FlickerRemoveColor	Sapphire Time
+S_FlickerRemoveMatte	S_FlickerRemoveMatte	Sapphire Time
+S_FlickerRmMatteColor	S_FlickerRmMatteColor	Sapphire Time
+S_FreezeFrame	S_FreezeFrame	Sapphire Time
+S_GetFrame	S_GetFrame	Sapphire Time
+S_JitterFrames	S_JitterFrames	Sapphire Time
+S_MotionDetect	S_MotionDetect	Sapphire Time
+S_NearestColor	S_NearestColor	Sapphire Time
+S_RandomEdits	S_RandomEdits	Sapphire Time
+S_RepairFrames	S_RepairFrames	Sapphire Time
+S_Retime	S_Retime	Sapphire Time
+S_ReverseClip	S_ReverseClip	Sapphire Time
+S_ReverseEdits	S_ReverseEdits	Sapphire Time
+S_TimeAverage	S_TimeAverage	Sapphire Time
+S_TimeDisplace	S_TimeDisplace	Sapphire Time
+S_TimeSlice	S_TimeSlice	Sapphire Time
+S_TimeWarpRGB	S_TimeWarpRGB	Sapphire Time
+S_Trails	S_Trails	Sapphire Time
+S_TrailsDiffuse	S_TrailsDiffuse	Sapphire Time
+S_CardFlip	S_CardFlip	Sapphire Transitions
+S_Dissolve	S_Dissolve	Sapphire Transitions
+S_DissolveAutoPaint	S_DissolveAutoPaint	Sapphire Transitions
+S_DissolveBlur	S_DissolveBlur	Sapphire Transitions
+S_DissolveBubble	S_DissolveBubble	Sapphire Transitions
+S_DissolveDefocus	S_DissolveDefocus	Sapphire Transitions
+S_DissolveDiffuse	S_DissolveDiffuse	Sapphire Transitions
+S_DissolveDigitalDamage	S_DissolveDigitalDamage	Sapphire Transitions
+S_DissolveDistort	S_DissolveDistort	Sapphire Transitions
+S_DissolveEdgeRays	S_DissolveEdgeRays	Sapphire Transitions
+S_DissolveFilm	S_DissolveFilm	Sapphire Transitions
+S_DissolveFlashbulbs	S_DissolveFlashbulbs	Sapphire Transitions
+S_DissolveGlare	S_DissolveGlare	Sapphire Transitions
+S_DissolveGlint	S_DissolveGlint	Sapphire Transitions
+S_DissolveGlintRainbow	S_DissolveGlintRainbow	Sapphire Transitions
+S_DissolveGlow	S_DissolveGlow	Sapphire Transitions
+S_DissolveLensFlare	S_DissolveLensFlare	Sapphire Transitions
+S_DissolveLightLeak	S_DissolveLightLeak	Sapphire Transitions
+S_DissolveLuma	S_DissolveLuma	Sapphire Transitions
+S_DissolvePixelMosh	S_DissolvePixelMosh	Sapphire Transitions
+S_DissolvePixelSort	S_DissolvePixelSort	Sapphire Transitions
+S_DissolvePuddle	S_DissolvePuddle	Sapphire Transitions
+S_DissolveRays	S_DissolveRays	Sapphire Transitions
+S_DissolveShake	S_DissolveShake	Sapphire Transitions
+S_DissolveSpeckle	S_DissolveSpeckle	Sapphire Transitions
+S_DissolveStatic	S_DissolveStatic	Sapphire Transitions
+S_DissolveTiles	S_DissolveTiles	Sapphire Transitions
+S_DissolveUltraGlow	S_DissolveUltraGlow	Sapphire Transitions
+S_DissolveVortex	S_DissolveVortex	Sapphire Transitions
+S_DissolveWaves	S_DissolveWaves	Sapphire Transitions
+S_DissolveZap	S_DissolveZap	Sapphire Transitions
+S_FilmRoll	S_FilmRoll	Sapphire Transitions
+S_FlutterCut	S_FlutterCut	Sapphire Transitions
+S_HyperPull	S_HyperPull	Sapphire Transitions
+S_HyperPush	S_HyperPush	Sapphire Transitions
+S_ParallaxStripsTransition	S_ParallaxStripsTransition	Sapphire Transitions
+S_StripSlideTransition	S_StripSlideTransition	Sapphire Transitions
+S_Swish3D	S_Swish3D	Sapphire Transitions
+S_SwishPan	S_SwishPan	Sapphire Transitions
+S_TVChannelChange	S_TVChannelChange	Sapphire Transitions
+S_WhipLash	S_WhipLash	Sapphire Transitions
+S_WipeBlobs	S_WipeBlobs	Sapphire Transitions
+S_WipeBubble	S_WipeBubble	Sapphire Transitions
+S_WipeCells	S_WipeCells	Sapphire Transitions
+S_WipeChecker	S_WipeChecker	Sapphire Transitions
+S_WipeCircle	S_WipeCircle	Sapphire Transitions
+S_WipeClock	S_WipeClock	Sapphire Transitions
+S_WipeClouds	S_WipeClouds	Sapphire Transitions
+S_WipeDiffuse	S_WipeDiffuse	Sapphire Transitions
+S_WipeDots	S_WipeDots	Sapphire Transitions
+S_WipeDoubleWedge	S_WipeDoubleWedge	Sapphire Transitions
+S_WipeFlux	S_WipeFlux	Sapphire Transitions
+S_WipeFourWedges	S_WipeFourWedges	Sapphire Transitions
+S_WipeLine	S_WipeLine	Sapphire Transitions
+S_WipeMoire	S_WipeMoire	Sapphire Transitions
+S_WipePixelate	S_WipePixelate	Sapphire Transitions
+S_WipePlasma	S_WipePlasma	Sapphire Transitions
+S_WipePointalize	S_WipePointalize	Sapphire Transitions
+S_WipeRectangle	S_WipeRectangle	Sapphire Transitions
+S_WipeRings	S_WipeRings	Sapphire Transitions
+S_WipeStar	S_WipeStar	Sapphire Transitions
+S_WipeStripes	S_WipeStripes	Sapphire Transitions
+S_WipeTiles	S_WipeTiles	Sapphire Transitions
+S_WipeWeave	S_WipeWeave	Sapphire Transitions
+S_WipeWedge	S_WipeWedge	Sapphire Transitions
+tc 3DStrokePath	3D Stroke	RG Motion Graphics
+tc Shine	Shine	RG Blurs and Glows
+tc Starglow	Starglow	RG Blurs and Glows
+Create Motion Vectors 3.x	Motion Vectors: Create	RE:Vision Plug-ins
+Twixtor 4 Vectors In	Twixtor Pro, Vectors In	RE:Vision Plug-ins
+Twixtor 45	Twixtor Pro	RE:Vision Plug-ins
+Twixtor 45 Lite	Twixtor	RE:Vision Plug-ins
+ADBE 3D Tracker	3D 摄像机跟踪器	透视
+ADBE 3D Glasses2	3D 眼镜	透视
+ADBE 3D Glasses	3D 眼镜（旧版）	_Obsolete
+VISINF Grain Implant	添加颗粒	杂色和颗粒
+ADBE Alpha Levels2	Alpha 色阶	_Obsolete
+ADBE Alpha Levels3	Alpha 色阶	_Obsolete
+ADBE Apply Color LUT2	应用颜色 LUT	实用工具
+ADBE Apply Color LUT	应用颜色 LUT	_Obsolete
+ADBE Arithmetic	算术	通道
+ADBE AudSpect	音频频谱	生成
+ADBE AudWave	音频波形	生成
+ADBE Aud BT	低音和高音	音频
+ADBE Aud Delay	延迟	音频
+ADBE Aud_Flange	变调与合声	音频
+ADBE Aud HiLo	高通/低通	音频
+ADBE Aud Stereo Mixer	立体声混合器	音频
+ADBE Aud Modulator	调制器	音频
+ADBE Param EQ	参数均衡	音频
+ADBE Aud Reverb	混响	音频
+ADBE Aud Reverse	倒放	音频
+ADBE Aud Tone	音调	音频
+ADBE AutoColor	自动颜色	颜色校正
+ADBE AutoContrast	自动对比度	颜色校正
+ADBE AutoLevels	自动色阶	颜色校正
+ADBE AUX CHANNEL EXTRACT	3D 通道提取	3D 通道
+ADBE Brightness & Contrast	亮度和对比度	_Obsolete
+ADBE Basic 3D	基本 3D	过时
+ADBE Basic Text2	基本文字	过时
+ADBE Laser	光束	生成
+ADBE Bevel Alpha	斜面 Alpha	透视
+ADBE Bevel Edges	边缘斜面	透视
+ADBE BEZMESH	贝塞尔曲线变形	扭曲
+ADBE Bilateral	双向模糊	模糊和锐化
+ADBE Blend	混合	通道
+ADBE Block Dissolve	块溶解	过渡
+ADBE Box Blur2	快速方框模糊	模糊和锐化
+ADBE Box Blur	方框模糊	_Obsolete
+ADBE Broadcast Colors	广播颜色	颜色校正
+ADBE Brush Strokes	画笔描边	风格化
+ADBE Bulge	凸出	扭曲
+ADBE Calculations	计算	通道
+ADBE WRPMESH	变形	扭曲
+APC CardDanceCam	卡片动画	模拟
+APC CardWipeCam	卡片擦除	过渡
+ADBE Cartoonify	卡通	风格化
+APC Caustics	焦散	模拟
+ADBE Cell Pattern	单元格图案	生成
+ADBE Change To Color	更改为颜色	颜色校正
+ADBE Change Color	更改颜色	颜色校正
+ADBE Channel Combiner	通道合成器	通道
+ADBE Channel Blur	通道模糊	模糊和锐化
+ADBE CHANNEL MIXER	通道混合器	颜色校正
+ADBE Checkerboard	棋盘	生成
+ADBE Cineon Converter	Cineon 转换器	_Obsolete
+ADBE Cineon Converter2	Cineon 转换器	实用工具
+ADBE Circle	圆形	生成
+APC Colorama	色光	颜色校正
+ADBE Color Link	颜色链接	颜色校正
+ADBE 4ColorGradient	四色渐变	生成
+ADBE Color Balance	颜色平衡	_Obsolete
+ADBE Color Balance 2	颜色平衡	颜色校正
+ADBE Color Difference Key	颜色差值键	抠像
+ADBE Color Emboss	彩色浮雕	风格化
+ADBE Color Balance (HLS)	颜色平衡 (HLS)	颜色校正
+ADBE Color Key	颜色键	过时
+ADBE Color Range	颜色范围	抠像
+ADBE Compound Arithmetic	复合运算	通道
+ADBE Compound Blur	复合模糊	模糊和锐化
+ADBE Corner Pin	边角定位	扭曲
+ADBE CurvesCustom	曲线	颜色校正
+ADBE CameraShakeDeblur	摄像机抖动去模糊	模糊和锐化
+ADBE Deflicker	颜色稳定器	颜色校正
+ADBE DEPTH FIELD	场深度	3D 通道
+ADBE DEPTH MATTE	深度遮罩	3D 通道
+ADBE Difference Matte2	差值遮罩	抠像
+ADBE Difference	时差	时间
+ADBE Motion Blur	定向模糊	模糊和锐化
+ADBE Displacement Map	置换图	扭曲
+ADBE Drop Shadow	投影	透视
+ADBE Dust & Scratches	蒙尘与划痕	杂色和颗粒
+ADBE Echo	残影	时间
+ADBE ELLIPSE	椭圆	生成
+ADBE Emboss	浮雕	风格化
+ADBE Equalize	色调均化	颜色校正
+ADBE Compander	HDR 压缩扩展器	实用工具
+ADBE Exposure2	曝光度	颜色校正
+ADBE Exposure	曝光度	_Obsolete
+ADBE Checkbox Control	复选框控制	表达式控制
+ADBE Slider Control	滑块控制	表达式控制
+ADBE Layer Control	图层控制	表达式控制
+ADBE Color Control	颜色控制	表达式控制
+ADBE Point3D Control	3D 点控制	表达式控制
+ADBE Point Control	点控制	表达式控制
+ADBE Angle Control	角度控制	表达式控制
+ADBE Dropdown Control	下拉菜单控件	表达式控制
+ADBE Extract	提取	抠像
+ADBE Eyedropper Fill	吸管填充	生成
+ADBE Fast Blur	快速模糊（旧版）	_Obsolete
+ADBE Reduce Interlace Flicker	减少交错闪烁	过时
+ADBE Fill	填充	生成
+ADBE Find Edges	查找边缘	风格化
+APC Foam	泡沫	模拟
+ADBE FOG_3D	雾 3D	3D 通道
+ADBE Fractal	分形	生成
+ADBE Fractal Noise	分形杂色	杂色和颗粒
+ADBE Gaussian Blur	高斯模糊（旧版）	过时
+ADBE Gaussian Blur 2	高斯模糊	模糊和锐化
+ADBE Glo2	发光	风格化
+ADBE Gamma/Pedestal/Gain2	灰度系数/基值/增益	颜色校正
+ADBE Gradient Wipe	渐变擦除	过渡
+ADBE Grid	网格	生成
+ADBE GROW BOUNDS	范围扩散	实用工具
+ADBE HUE SATURATION	色相/饱和度	颜色校正
+ADBE ID MATTE	ID 遮罩	3D 通道
+ADBE ATG Extract	内部/外部键	抠像
+ADBE Invert	反转	通道
+ADBE IRIS_WIPE	光圈擦除	过渡
+ADBE KeyCleaner	Key Cleaner	抠像
+ADBE Leave Color	保留颜色	颜色校正
+ADBE Lens Flare	镜头光晕	生成
+ADBE Easy Levels	色阶	_Obsolete
+ADBE Easy Levels2	色阶	颜色校正
+ADBE Pro Levels2	色阶（单独控件）	颜色校正
+ADBE Pro Levels	色阶（单独控件）	_Obsolete
+ADBE Lightning	闪光	过时
+ADBE Lightning 2	高级闪电	生成
+ADBE Linear Color Key2	线性颜色键	抠像
+ADBE Linear Wipe	线性擦除	过渡
+ADBE LIQUIFY	液化	扭曲
+ADBE Luma Key	亮度键	过时
+ADBE Lumetri	Lumetri 颜色	颜色校正
+ADBE Magnify	放大	扭曲
+VISINF Grain Duplication	匹配颗粒	杂色和颗粒
+ADBE Matte Choker	遮罩阻塞工具	遮罩
+ADBE Median	中间值（旧版）	杂色和颗粒
+ADBE Minimax	最小/最大	通道
+ADBE Mirror	镜像	扭曲
+ADBE Mosaic	马赛克	风格化
+ADBE MESH WARP	网格变形	扭曲
+ADBE Noise2	杂色	杂色和颗粒
+ADBE Noise	杂色	_Obsolete
+ADBE Noise Alpha2	杂色 Alpha	杂色和颗粒
+ADBE Noise Alpha	杂色 Alpha	_Obsolete
+ADBE Noise HLS	杂色 HLS	_Obsolete
+ADBE Noise HLS2	杂色 HLS	杂色和颗粒
+ADBE Noise HLS Auto2	杂色 HLS 自动	杂色和颗粒
+ADBE Noise HLS Auto	杂色 HLS 自动	_Obsolete
+ADBE Numbers2	编号	文本
+ADBE OCIO CDL Transform	OCIO CDL 变换	颜色校正
+ADBE OCIO Color Space Transform	OCIO 颜色空间变换	颜色校正
+ADBE OCIO Display Transform	OCIO 显示变换	颜色校正
+ADBE OCIO FILE Transform	OCIO 文件转换	颜色校正
+ADBE OCIO Look Transform	OCIO 外观变换	颜色校正
+ADBE Offset	偏移	扭曲
+ADBE Optics Compensation	光学补偿	扭曲
+ADBE Paint Bucket	油漆桶	生成
+ADBE Playgnd	粒子运动场	模拟
+ADBE Path Text	路径文本	过时
+ADBE Photo Filter	照片滤镜	_Obsolete
+ADBE Polar Coordinates	极坐标	扭曲
+ADBE Posterize	色调分离	风格化
+ADBE Posterize Time	抽帧	时间
+ADBE ProfileToProfile	颜色配置文件转换器	实用工具
+ADBE HDR ToneMap	HDR 高光压缩	实用工具
+ADBE PhotoFilterPS	照片滤镜	颜色校正
+ADBE SelectiveColor	可选颜色	颜色校正
+ADBE Vibrance	自然饱和度	颜色校正
+ADBE Brightness & Contrast 2	亮度和对比度	颜色校正
+ADBE PS Median	中间值	杂色和颗粒
+ADBE Black&White	黑色和白色	颜色校正
+ADBE PSL Bevel Emboss	Photoshop 斜面和浮雕	_Obsolete
+ADBE PSL Drop Shadow	Photoshop 投影	_Obsolete
+ADBE PSL Inner Glow	Photoshop 内发光	_Obsolete
+ADBE PSL Inner Shadow	Photoshop 内阴影	_Obsolete
+ADBE PSL Outer Glow	Photoshop 外发光	_Obsolete
+ADBE PSL Solid Fill	Photoshop 纯色填充	_Obsolete
+ADBE PS Arbitrary Map	PS 任意映射	颜色校正
+ADBE Radial Shadow	径向阴影	透视
+ADBE Radial Blur	径向模糊	模糊和锐化
+ADBE Radial Wipe	径向擦除	过渡
+APC Radio Waves	无线电波	生成
+ADBE Ramp	梯度渐变	生成
+VISINF Grain Removal	移除颗粒	杂色和颗粒
+ADBE RESHAPE	改变形状	扭曲
+ADBE Ripple	波纹	扭曲
+ADBE OFMotionBlur	像素运动模糊	时间
+ADBE Rolling Shutter	果冻效应修复	扭曲
+ADBE Timewarp	时间扭曲	时间
+ADBE Roughen Edges	毛边	风格化
+ADBE Scatter	散布	风格化
+ADBE Scribble Fill	涂写	生成
+ADBE Set Channels	设置通道	通道
+ADBE Set Matte3	设置遮罩	通道
+ADBE Set Matte2	设置遮罩	_Obsolete
+ADBE ShadowHighlight	阴影/高光	颜色校正
+ADBE Camera Lens Blur	摄像机镜头模糊	模糊和锐化
+ADBE Sharpen	锐化	模糊和锐化
+APC Shatter	碎片	模拟
+ADBE Shift Channels	转换通道	通道
+ADBE Simple Choker	简单阻塞工具	遮罩
+ADBE Smart Blur	智能模糊	模糊和锐化
+ADBE SCHMEAR	漩涡条纹	扭曲
+ADBE Solid Composite	固态层合成	通道
+ADBE Spherize	球面化	扭曲
+ADBE Spill Suppressor	溢出抑制	过时
+ADBE Spill2	Advanced Spill Suppressor	抠像
+ADBE SubspaceStabilizer	变形稳定器	扭曲
+ADBE Strobe	闪光灯	风格化
+ADBE Stroke	描边	生成
+ADBE Texturize	纹理化	风格化
+ADBE Three-Way Color Corrector	三向颜色校正器	_Obsolete
+ADBE Threshold	阈值	_Obsolete
+ADBE Threshold2	阈值	风格化
+ADBE Tile	动态拼贴	风格化
+ADBE Timecode	时间码	文本
+ADBE Time Displacement	时间置换	时间
+ADBE Tint	色调	颜色校正
+ADBE Geometry	变换	_Obsolete
+ADBE Geometry2	变换	扭曲
+ADBE Tritone	三色调	颜色校正
+ADBE Turbulent Displace	湍流置换	扭曲
+ADBE AIF Perlin Noise 3D	湍流杂色	杂色和颗粒
+ADBE Twirl	旋转扭曲	扭曲
+ADBE Remove Color Matting	移除颜色遮罩	通道
+ADBE Unsharp Mask2	钝化蒙版	模糊和锐化
+ADBE Unsharp Mask	钝化蒙版	_Obsolete
+ADBE Upscale	保留细节放大	扭曲
+ADBE Vector Paint	矢量绘画	_Obsolete
+APC Vegas	勾画	生成
+ADBE Venetian Blinds	百叶窗	过渡
+ADBE DigitalVideoLimiter	视频限幅器	颜色校正
+Mettle SkyBox Chromatic Aberrat	VR 色差	沉浸式视频
+Mettle SkyBox Color Gradients	VR 颜色渐变	沉浸式视频
+Mettle SkyBox Converter	VR 转换器	沉浸式视频
+Mettle SkyBox Denoise	VR 降噪	沉浸式视频
+Mettle SkyBox Digital Glitch	VR 数字故障	沉浸式视频
+Mettle SkyBox Fractal Noise	VR 分形杂色	沉浸式视频
+Mettle SkyBox Blur	VR 模糊	沉浸式视频
+Mettle SkyBox Glow	VR 发光	沉浸式视频
+Mettle SkyBox Project 2D	VR 平面到球面	沉浸式视频
+Mettle SkyBox Rotate Sphere	VR 旋转球面	沉浸式视频
+Mettle SkyBox Sharpen	VR 锐化	沉浸式视频
+Mettle SkyBox Viewer	VR 球面到平面	沉浸式视频
+APC Wave World	波形环境	模拟
+ADBE Wave Warp	波形变形	扭曲
+ADBE Write-on	写入	生成
+ADBE Samurai	Roto 笔刷和调整边缘	_Obsolete
+ADBE Paint	绘画	_Obsolete
+ADBE FreePin3	操控	_Obsolete
+ADBE RefineRBMatte	调整实边遮罩	遮罩
+ADBE RefineMatte	调整遮罩	_Obsolete
+ADBE RefineMatte2	调整柔和遮罩	遮罩
+ADBE Color Swirl	彩色旋绕	
+ADBE Getting Jiggy	开始活跃	
+ADBE Separate XYZ Position	分离 XYZ 位置	
+ADBE Separate XYZ Scale	分离 XYZ 比例	
+ADBE CM InsetVideoFramed	插入视频 - 加框	
+ADBE CM InsetVideoTorn	插入视频 - 撕边	
+ADBE CM MoodLightAmorph	情绪照明 - 无定形	
+ADBE CM MoodLightDigital	情绪照明 - 数字化	
+ADBE CM MoodLightStreaks	情绪照明 - 窄条光线	
+ADBE CM CrackedTiles	碎砖块拼贴	
+ADBE CM LightLeaksMarkers	漏光 - 图层标记	
+ADBE CM LightLeaksRandom	漏光 - 随机	
+ADBE CM OpacityFlashMarkers	不透明闪烁 - 图层标记	
+ADBE CM OpacityFlashRandom	不透明闪烁 - 随机	
+ADBE CM CropEdges	裁切边缘	
+ADBE CM AutoscrollHorizontal	自动滚动 - 水平	
+ADBE CM AutoscrollVertical	自动滚动 - 垂直	
+ADBE CM Throw	随时间漂移	
+ADBE CM FadeInOutFrames	淡入淡出（帧）	
+ADBE CM FadeInOutmsec	淡入淡出（毫秒）	
+ADBE CM Spin	随时间旋转	
+ADBE CM ScaleBounceMarkers	缩放回弹 - 图层标记	
+ADBE CM ScaleBounceRandom	缩放回弹 - 随机	
+ADBE CM WiggleGelatin	摆动 - 凝结	
+ADBE CM WigglePosition	摆动 - 位置	
+ADBE CM WiggleRotation	摆动 - 旋转	
+ADBE CM WiggleScale	摆动 - 缩放	
+ADBE CM WiggleShear	摆动 - 修剪	
+ADBE CM Wigglerama	摆动的罗摩	
+ADBE CM DissolveUnmelt	溶解 - 凝固	
+ADBE CM Zoom2DSpin	缩放 - 2D 旋转	
+ADBE CM Zoom3DTumble	缩放 - 3D 翻滚	
+ADBE CM ZoomWobble	缩放 - 摇摆	
+ADBE CM ZoomBubble	缩放 - 气泡	
+ADBE CM ZoomSpiral	缩放 - 螺旋	
+ADBE CM SlideVariable	滑动 - 变量	
+ADBE CM FlyToInset	飞动嵌入	
+ADBE CM CornerReveal	边角显示	
+ADBE CM GridWipe	网格擦除	
+ADBE CM TransComplete	过渡主控	
+ADBE CM TransStretch	伸缩主控	
+ADBE CM TransDissolve	溶解主控	
+ADBE CM TransFade	淡入淡出主控	
+ADBE CM TransFadeMask	蒙版淡化控制	
+ADBE CM TransWipe	擦除主控	
+ADBE CM TransWipeFeath	擦除主控	
+ADBE CM TransCard	卡片擦除主控	
+ADBE CM TransSlide	滑动主控	
+ADBE CM TransCorner	伸缩主控（边角）	
+ADBE CM TransDirection	伸缩主控（边缘）	
+ADBE CM TransIris	光圈擦除主控	
+ADBE CM TransRadial	径向擦除主控	
+ADBE DE Jiggle	微动	
+ADBE DE Jiggle At Marker	微动（标记）	
+ADBE DE Jiggle On Beat	微动（节拍）	
+ADBE DE Jiggle Random	微动（随机）	
+ADBE DE Pulse	脉冲	
+ADBE DE Pulse At Marker	脉冲（标记）	
+ADBE DE Pulse On Beat	脉冲（节拍）	
+ADBE DE Pulse Random	脉冲（随机）	
+ADBE DE Bounce	回弹	
+ADBE DE Bounce At Marker	回弹（标记）	
+ADBE DE Bounce On Beat	回弹（节拍）	
+ADBE DE Bounce Random	回弹（随机）	
+ADBE DE Opacity Pulse	不透明脉冲	
+ADBE DE Opacity Pulse At Marker	不透明脉冲（标记）	
+ADBE DE Opacity Pulse On Beat	不透明脉冲（节拍）	
+ADBE DE Opacity Pulse Random	不透明脉冲（随机）	
+ADBE DE Oscillate	振动	
+ADBE DE Oscillate At Marker	振动（标记）	
+ADBE DE Oscillate On Beat	振动（节拍）	
+ADBE DE Oscillate Random	振动（随机）	
+ADBE DE Pendulum	钟摆	
+ADBE DE Pendulum At Marker	钟摆（标记）	
+ADBE DE Pendulum On Beat	钟摆（节拍）	
+ADBE DE Pendulum Random	钟摆（随机）	
+ADBE DE Swarm	云集	
+ADBE DE Follow	跟随	
+ADBE DE Orbit	轨道	
+ADBE DE Orbit 3D	轨道 3D	
+ADBE DE Random Motion 1D	随机运动 1D	
+ADBE DE Random Motion	随机运动	
+ADBE DE Random Rotation	随机旋转	
+ADBE DE Random Rotation 3D	随机旋转 3D	
+ADBE DE Random Opacity	随机不透明度	
+ADBE DE Random Scale	随机缩放	
+ADBE DE Random Fill Color	随机填充颜色	
+ADBE DE Z Spring	Z 反弹	
+ADBE DE Z Spring At Marker	Z 反弹（标记）	
+ADBE DE Wobble Bounce	摇摆回弹	
+ADBE DE Wobble Bounce At Marker	摇摆回弹（标记）	
+ADBE DE Wobble Bounce On Beat	摇摆回弹（节拍）	
+ADBE DE Wobble Bounce Random	摇摆回弹（随机）	
+ADBE CM Animated Shape Control	动画形状控制	
+ADBE CM Animated Shape 2	追踪控制	
+ADBE CM Animated Shape 3	动画形状控制	
+ADBE Sample Image	采样图像	
+ADBE Stereo 3D Controls	立体 3D 控件	
+Pseudo/ADBE Animal Head66	脸部跟踪点	
+Pseudo/ADBE Animal Head14	脸部测量值	
+Pseudo/ADBE Trace Path	追踪路径	
+Pseudo/ADBE Pattern Template	图案模板	
+Pseudo/ADBE Counter Controls	Counter Controls	
+Pseudo/ADBE Currency Controls	货币控件	
+Pseudo/ADBE Percentage Controls	百分比控件	
+Pseudo/ADBE Timer Controls	定时器控件	
+Pseudo/ADBE 2D Text Box	2D 文本框	
+Pseudo/MHAC PrCtrl NWX 10		

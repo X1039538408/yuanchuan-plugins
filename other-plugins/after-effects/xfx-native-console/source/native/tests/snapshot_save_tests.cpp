@@ -61,6 +61,20 @@ static void reset_save() {
     default_filename.clear(); dialog_title.clear(); rendered_path.clear();
 }
 int wmain() {
+    std::cout << std::unitbuf; std::cerr << std::unitbuf;
+    std::cout << "STAGE snapshot fixture setup\n";
+    // Plugin entry initializes GDI+ before any BusyFeedback/LoadingSurface. This
+    // fixture bypasses entry, so it must establish the same process prerequisite.
+    struct GraphicsRuntime {
+        ULONG_PTR token = 0;
+        Gdiplus::Status status;
+        GraphicsRuntime() {
+            Gdiplus::GdiplusStartupInput input;
+            status = Gdiplus::GdiplusStartup(&token, &input, nullptr);
+        }
+        ~GraphicsRuntime() { if (token) Gdiplus::GdiplusShutdown(token); }
+    } graphics;
+    if (graphics.status != Gdiplus::Ok) { std::cerr << "FAIL fixture GDI+ startup\n"; return 1; }
     const auto directory = fs::temp_directory_path() / (L"xfx-snapshot-save-" + std::to_wstring(GetCurrentProcessId()));
     fs::create_directories(directory);
     g_test_settings_path = directory / L"profile" / L"settings.ini";
@@ -72,6 +86,7 @@ int wmain() {
     chosen_path = directory / L"手工重命名.png";
     int exit_code = 0;
     try {
+        std::cout << "STAGE cancelled Save As\n";
         reset_save();
         const auto cancelled = dispatch_bridge_request({1, xfx::BridgeCommand::Capture, -1});
         require_save(dialog_calls == 1, "capture command did not open Save As");
@@ -85,6 +100,7 @@ int wmain() {
             "cancelled Save As created files or a gallery folder");
         std::cout << "PASS cancelled Save As has the comp default and creates no snapshot\n";
 
+        std::cout << "STAGE confirmed Save As\n";
         reset_save(); accept_dialog = true; g_state->settings.full_resolution_screenshots = false;
         const auto saved = dispatch_bridge_request({2, xfx::BridgeCommand::Capture, -1});
         require_save(saved.succeeded && saved.count == 1 && dialog_calls == 1 && render_calls == 1,
@@ -96,12 +112,14 @@ int wmain() {
         require_save(g_state->modal_depth == 0, "snapshot leaked its modal guard");
         std::cout << "PASS snapshot saves directly to the chosen Unicode filename\n";
 
+        std::cout << "STAGE missing composition\n";
         reset_save(); valid_comp = false;
         const auto unavailable = dispatch_bridge_request({3, xfx::BridgeCommand::Capture, -1});
         require_save(!unavailable.succeeded && dialog_calls == 0 && render_calls == 0,
             "missing composition opened Save As or rendered");
         std::cout << "PASS missing composition is reported before Save As\n";
 
+        std::cout << "STAGE renderer failure\n";
         reset_save(); accept_dialog = true; render_succeeds = false;
         const auto failed = dispatch_bridge_request({4, xfx::BridgeCommand::Capture, -1});
         require_save(!failed.succeeded && failed.count == 0 && render_calls == 1 &&
@@ -112,6 +130,7 @@ int wmain() {
         previous.close();
         std::cout << "PASS render failure preserves the previous file and reports failure\n";
 
+        std::cout << "STAGE native capture button\n";
         reset_save();
         window_proc(g_state->window, WM_COMMAND, kCaptureId, 0);
         require_save(dialog_calls == 1 && render_calls == 0, "native capture button bypassed Save As");
@@ -119,6 +138,7 @@ int wmain() {
         require_save(!removed.succeeded && !IsWindow(g_state->gallery_window), "removed gallery can still open");
         std::cout << "PASS native capture button shares Save As and gallery is unavailable\n";
 
+        std::cout << "STAGE temporary frame export\n";
         reset_save(); accept_dialog = true;
         export_current_frame(); // The renderer boundary writes a non-image, so export fails safely.
         require_save(render_calls == 1 && rendered_path.parent_path() != capture_directory(),
@@ -128,6 +148,7 @@ int wmain() {
     } catch (const std::exception& error) {
         std::cerr << "FAIL " << error.what() << '\n'; exit_code = 1;
     }
+    std::cout << "STAGE snapshot fixture cleanup\n";
     DestroyWindow(g_state->window); delete g_state; g_state = nullptr;
     if (!fs::equivalent(directory.parent_path(), fs::temp_directory_path())) {
         std::cerr << "FAIL test cleanup escaped temp\n";

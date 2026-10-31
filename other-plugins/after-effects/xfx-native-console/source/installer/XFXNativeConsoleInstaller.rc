@@ -19,8 +19,8 @@ IDR_XFX_PANEL RCDATA "XFX 中文控制台.jsx"
 #endif
 
 1 VERSIONINFO
-FILEVERSION 1,0,19,0
-PRODUCTVERSION 1,0,19,0
+FILEVERSION 1,0,25,0
+PRODUCTVERSION 1,0,25,0
 FILEOS VOS_NT_WINDOWS32
 FILETYPE VFT_APP
 BEGIN
@@ -29,8 +29,8 @@ BEGIN
     BLOCK "080404B0"
     BEGIN
       VALUE "ProductName", "效果控制台"
-      VALUE "ProductVersion", "1.0.19"
-      VALUE "FileVersion", "1.0.19.0"
+      VALUE "ProductVersion", "1.0.25"
+      VALUE "FileVersion", "1.0.25.0"
 #ifdef XFX_UNINSTALLER
       VALUE "FileDescription", "效果控制台一键卸载"
 #else

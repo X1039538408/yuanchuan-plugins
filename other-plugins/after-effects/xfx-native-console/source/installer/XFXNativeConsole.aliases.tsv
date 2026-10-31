@@ -1,4 +1,4 @@
-﻿# matchName<TAB>englishName<TAB>chineseName<TAB>pinyinFull<TAB>pinyinInitials<TAB>aliases
+# matchName<TAB>englishName<TAB>chineseName<TAB>pinyinFull<TAB>pinyinInitials<TAB>aliases
 ADBE Gaussian Blur 2	Gaussian Blur	高斯模糊	gaosimohu	gsmh	高斯|gaussian
 ADBE Box Blur2	Fast Box Blur	快速方框模糊	kuaisufangkuangmohu	ksfkmh	快速模糊
 ADBE Sharpen	Sharpen	锐化	ruihua	rh
@@ -130,7 +130,7 @@ ADBE Camera Lens Blur	Camera Lens Blur	摄像机镜头模糊			镜头模糊|景�
 	Radio Waves	无线电波			电波
 	Scribble	涂写			涂鸦
 	Stroke	描边
-	Vegas	Vegas 描边			维加斯
+	Vegas	描边			维加斯|Vegas 描边
 	Write-on	书写			手写动画
 	Add Grain	添加颗粒			胶片颗粒
 	Dust & Scratches	灰尘与划痕
@@ -268,22 +268,22 @@ CC Hair	CC Hair	CC 毛发			头发
 	BCC Color Match	BCC 颜色匹配
 	BCC Corner Pin	BCC 边角定位			四角定位
 	BCC Particle Illusion	BCC 粒子幻境			粒子
-	Particular	Trapcode Particular 粒子			粒子系统|特效粒子
-	Form	Trapcode Form 粒子阵列			粒子阵列
-	Shine	Trapcode Shine 放射光			体积光|放射光
-	Starglow	Trapcode Starglow 星光			星形发光
-	3D Stroke	Trapcode 3D Stroke 三维描边			三维线条
-	Sound Keys	Trapcode Sound Keys 音频驱动			音乐驱动
-	Twixtor	Twixtor 变速补帧			慢动作|补帧
-	Twixtor Pro	Twixtor Pro 变速补帧			慢动作|补帧
-	RSMB	RSMB 运动模糊			智能运动模糊
-	RSMB Pro	RSMB Pro 运动模糊			智能运动模糊
-	ReelSmart Motion Blur	ReelSmart Motion Blur 运动模糊			RSMB
-	Optical Flares	Optical Flares 光学光斑			镜头光斑|光晕
-	Saber	Saber 光剑			能量光束|激光
-	Element	Element 三维模型			Element 3D|三维物体
-	Heat Distortion	Heat Distortion 热扭曲			热浪|热变形
-	Deep Glow	Deep Glow 深度发光			辉光
+	Particular	粒子			粒子系统|特效粒子|Trapcode Particular 粒子
+	Form	粒子阵列			粒子阵列|Trapcode Form 粒子阵列
+	Shine	放射光			体积光|放射光|Trapcode Shine 放射光
+	Starglow	星光			星形发光|Trapcode Starglow 星光
+	3D Stroke	三维描边			三维线条|Trapcode 3D Stroke 三维描边
+	Sound Keys	音频驱动			音乐驱动|Trapcode Sound Keys 音频驱动
+	Twixtor	变速补帧			慢动作|补帧|Twixtor 变速补帧
+	Twixtor Pro	变速补帧			慢动作|补帧|Twixtor Pro 变速补帧
+	RSMB	运动模糊			智能运动模糊|RSMB 运动模糊
+	RSMB Pro	运动模糊			智能运动模糊|RSMB Pro 运动模糊
+	ReelSmart Motion Blur	运动模糊			RSMB|ReelSmart Motion Blur 运动模糊
+	Optical Flares	光学光斑			镜头光斑|光晕|Optical Flares 光学光斑
+	Saber	光剑			能量光束|激光|Saber 光剑
+	Element	三维模型			Element 3D|三维物体|Element 三维模型
+	Heat Distortion	热扭曲			热浪|热变形|Heat Distortion 热扭曲
+	Deep Glow	深度发光			辉光|Deep Glow 深度发光
 # Current Cycore effects confirmed by PiPL identities and the CycoreFX HD manual.
 # Pinyin is generated offline; these descriptions are search labels, not vendor UI claims.
 CC Bubbles	CC Bubbles	CC 气泡			气泡
@@ -306,8 +306,8 @@ CC Tiler	CC Tiler	CC 平铺			平铺
 	Angle Control	角度控制
 	Dropdown Menu Control	下拉菜单控件
 # Preserve OpenEXR product names; Adobe Chinese names are searchable aliases.
-EXtractoR	EXtractoR	EXtractoR			提取器
-IDentifier	IDentifier	IDentifier			标识符
+EXtractoR	EXtractoR	多通道图像提取			提取器|多通道提取|通道提取器|EXtractoR 多通道图像提取
+IDentifier	IDentifier	对象编号遮罩提取			标识符|对象编号|编号遮罩|IDentifier 对象编号遮罩提取
 # Stable current Cycore identities. The original CC identities above remain compatible.
 # Identical English names intentionally share the same translation and aliases.
 CS BlockLoad	CC Block Load	CC 块加载
@@ -670,3 +670,909 @@ CC Time Blend	CC Time Blend	CC 时间混合（旧版）			时间混合
 CC Time Blend FX	CC Time Blend FX	CC 时间混合 FX（旧版）			时间混合 FX
 ISL MochaShapeImporter	mocha shape	mocha 形状导入（旧版）			形状导入|mocha 形状
 Pseudo/ADBE Counter Controls	Counter Controls	计数器控件			计数器
+
+# Actual AE 25.4x86 registered effects: curated nonofficial Chinese labels; IDs unchanged.
+S_ChannelSwitcher		Sapphire 通道重映射			通道切换
+S_ClampChroma		Sapphire 色度限幅			限制色度
+S_DuoTone		Sapphire 双色调映射			双色着色
+S_Gamma		Sapphire 伽马校正			伽玛
+S_HueSatBright		Sapphire 色相饱和度与亮度			色相调整
+S_Invert		Sapphire 颜色反相			反色
+S_Monochrome		Sapphire 单色转换			黑白
+S_OCIOTransform		Sapphire OCIO 色彩空间转换			OpenColorIO
+S_QuadTone		Sapphire 四色调映射			四色着色
+S_ShowBadColors		Sapphire 超范围颜色警示			非法颜色显示
+S_Threshold		Sapphire 阈值分色			二值化
+S_Tint		Sapphire 色彩染色			着色
+S_TriTone		Sapphire 三色调映射			三色着色
+S_Beauty		Sapphire 人像美肤			磨皮
+S_BlurChannels		Sapphire 分通道模糊			通道柔化
+S_BlurChroma		Sapphire 色度模糊			色彩柔化
+S_Convolve		Sapphire 卷积光斑模糊			卷积滤镜
+S_ConvolveComp		Sapphire 卷积光斑合成			卷积合成版
+S_Deband		Sapphire 去色带			渐变断层修复
+S_DefocusPrism		Sapphire 棱镜色散失焦			色散散焦
+S_EdgeAwareBlur		Sapphire 保留边缘模糊			保边柔化
+S_EdgeBlur		Sapphire 边缘柔化			轮廓模糊
+S_FreeLens		Sapphire FreeLens 离机镜头失焦			自由移轴
+S_GrainRemove		Sapphire 去除颗粒			颗粒降噪
+S_Median		Sapphire 中值滤波			中值降噪
+S_RackDefocus		Sapphire 焦点转移失焦			拉焦
+S_RackDfComp		Sapphire 焦点转移合成			拉焦合成版
+S_Sharpen		Sapphire 图像锐化			清晰度增强
+S_SoftFocus		Sapphire 柔焦光晕			柔光镜
+S_ZBlur		Sapphire Z 深度模糊			深度图模糊
+S_ZConvolve		Sapphire Z 深度卷积模糊			深度光斑
+S_ZDefocus		Sapphire Z 深度失焦			深度景深
+S_Effect		Sapphire 特效构建器			自定义效果组合
+S_Transition		Sapphire 转场构建器			自定义转场组合
+S_EdgeFlash		Sapphire 边缘闪光合成			轮廓闪光
+S_Layer		Sapphire 图层混合合成			叠层
+S_MathOps		Sapphire 图像数学运算			像素算术
+S_MatteOps		Sapphire 遮罩形态运算			遮罩扩张收缩
+S_MatteOpsComp		Sapphire 遮罩形态运算合成			遮罩运算合成版
+S_ZComp		Sapphire Z 深度合成			深度遮挡合成
+S_DistortBlur		Sapphire 扭曲模糊			变形柔化
+S_DistortChroma		Sapphire 色度扭曲			色彩变形
+S_DistortRGB		Sapphire RGB 通道扭曲			红绿蓝分离变形
+S_InfiniteZoom		Sapphire 无限递归缩放			无限放大
+S_ParallaxStrips		Sapphire 视差条带错位			条带视差
+S_StretchFrameEdges		Sapphire 画面边缘拉伸			边框延展
+S_WarpPolar		Sapphire 极坐标变形			极坐标扭曲
+S_WarpPuddle		Sapphire 水洼波纹变形			水面扰动
+S_WarpPuff		Sapphire 鼓胀变形			膨胀扭曲
+S_WarpRepeat		Sapphire 重复映射变形			平铺扭曲
+S_WarpTransform		Sapphire 几何变换变形			变换扭曲
+S_WarpVortex		Sapphire 漩涡变形			旋涡扭曲
+S_WarpWaves		Sapphire 波浪变形			波形扭曲
+S_WarpWaves2		Sapphire 波浪变形 2			双波形扭曲
+S_BokehLights		Sapphire 散景光斑			虚化灯光
+S_Flashbulbs		Sapphire 闪光灯群			闪光灯泡
+S_Glare		Sapphire 强光眩光			眩光
+S_Glint		Sapphire 星芒闪光			星形高光
+S_GlintRainbow		Sapphire 彩虹星芒			光谱星形高光
+S_GlowAura		Sapphire 辉光光环			灵气光晕
+S_GlowDist		Sapphire 距离衰减辉光			距离辉光
+S_GlowNoise		Sapphire 噪波辉光			噪声光晕
+S_GlowOrthicon		Sapphire Orthicon 摄像管辉光			老式电视光晕
+S_GlowRainbow		Sapphire 彩虹辉光			光谱光晕
+S_Light3D		Sapphire 3D 灯光照明			三维布光
+S_LightLeak		Sapphire 镜头漏光			胶片漏光
+S_SpotLight		Sapphire 聚光灯照明			聚光照射
+S_Streaks		Sapphire 条状光芒			光线拖芒
+S_ZGlow		Sapphire Z 深度辉光			深度光晕
+S_Aurora		Sapphire 极光生成			北极光
+S_Caustics		Sapphire 焦散光纹			水光折射
+S_Clouds		Sapphire 云雾生成			分形云层
+S_CloudsColorSmooth		Sapphire 平滑彩色云雾			柔和彩云
+S_CloudsMultColor		Sapphire 多色云雾			多彩云层
+S_CloudsPerspective		Sapphire 透视云层			纵深云雾
+S_CloudsPsyko		Sapphire 迷幻云雾			幻彩云层
+S_CloudsVortex		Sapphire 漩涡云雾			旋涡云层
+S_Dust		Sapphire 飘浮尘埃			灰尘粒子
+S_Gradient		Sapphire 线性渐变生成			渐变填充
+S_GradientMulti		Sapphire 多色渐变生成			多段渐变
+S_GradientRadial		Sapphire 径向渐变生成			放射渐变
+S_Grid		Sapphire 网格生成			栅格线
+S_Grunge		Sapphire 脏污做旧纹理			污渍
+S_LaserBeam		Sapphire 激光束生成			镭射光束
+S_Luna		Sapphire Luna 月球生成			月亮
+S_MuzzleFlash		Sapphire 枪口焰生成			枪口闪光
+S_NightSky		Sapphire 夜空星野			星空
+S_Shape		Sapphire 几何形状生成			图形生成
+S_Sparkles		Sapphire 闪烁星点			星光粒子
+S_SparklesColor		Sapphire 彩色闪烁星点			彩色星光粒子
+S_TextureCells		Sapphire 细胞状纹理			蜂窝纹理
+S_TextureChromaSpiral		Sapphire 彩色螺旋纹理			色度螺旋
+S_TextureFlux		Sapphire 流动扰变纹理			流变纹理
+S_TextureFolded		Sapphire 折叠褶皱纹理			折纹
+S_TextureLoops		Sapphire 环状回路纹理			环线纹理
+S_TextureMicro		Sapphire 微观细纹			微粒纹理
+S_TextureMoire		Sapphire 摩尔干涉纹理			摩尔纹
+S_TextureNeurons		Sapphire 神经元网状纹理			神经网络纹理
+S_TextureNoiseEmboss		Sapphire 噪波浮雕纹理			噪声压纹
+S_TextureNoisePaint		Sapphire 噪波涂绘纹理			噪声绘画
+S_TexturePlasma		Sapphire 等离子流纹理			电浆纹理
+S_TextureSpots		Sapphire 斑点纹理			点状纹理
+S_TextureTiles		Sapphire 瓷砖拼贴纹理			平铺砖纹
+S_TextureWeave		Sapphire 编织纹理			织物纹理
+S_UltraZap		Sapphire UltraZap 增强闪电			超级电弧
+S_Zap		Sapphire 闪电电弧			闪电生成
+S_ZapFrom		Sapphire 从轮廓放射闪电			起点轮廓电弧
+S_ZapTo		Sapphire 向轮廓汇聚闪电			终点轮廓电弧
+S_AutoPaint		Sapphire 自动绘画			自动油画
+S_BandPass		Sapphire 带通滤波			频段提取
+S_BleachBypass		Sapphire 胶片留银冲印			跳漂
+S_Brush		Sapphire 画笔笔触			笔刷描绘
+S_Cartoon		Sapphire 卡通描边			卡通化
+S_CartoonPaint		Sapphire 卡通涂绘			卡通绘画
+S_ColorFuse		Sapphire ColorFuse 色彩融合			调色融合
+S_Crosshatch		Sapphire 交叉排线素描			交叉线描
+S_Diffuse		Sapphire 像素扩散			散点化
+S_DigitalDamage		Sapphire 数字信号故障			数码损坏
+S_DogVision		Sapphire 犬类视觉模拟			狗眼视角
+S_EdgeColorize		Sapphire 边缘着色			彩色轮廓
+S_EdgeDetect		Sapphire 边缘检测			轮廓提取
+S_EdgeDetectDouble		Sapphire 双重边缘检测			双线轮廓
+S_EdgesInDirection		Sapphire 定向边缘检测			方向轮廓
+S_Emboss		Sapphire 浮雕压印			浮雕
+S_EmbossDistort		Sapphire 扭曲浮雕			变形压纹
+S_EmbossGlass		Sapphire 玻璃浮雕			玻璃压纹
+S_EmbossShiny		Sapphire 亮面浮雕			高光压纹
+S_Etching		Sapphire 蚀刻版画			雕版线条
+S_FilmEffect		Sapphire 胶片质感模拟			电影胶片
+S_FlysEyeCircles		Sapphire 圆形复眼折射			圆形多镜像
+S_FlysEyeHex		Sapphire 六角复眼折射			蜂巢多镜像
+S_FlysEyeRect		Sapphire 矩形复眼折射			矩形多镜像
+S_GrainStatic		Sapphire 静电颗粒噪点			雪花颗粒
+S_HalfTone		Sapphire 半调网点			黑白印刷网点
+S_HalfToneColor		Sapphire 彩色半调网点			彩色印刷网点
+S_HalfToneRings		Sapphire 环形半调网纹			圆环网点
+S_JpegDamage		Sapphire JPEG 压缩损坏			压缩伪影
+S_Kaleido		Sapphire 万花筒镜像			万花镜
+S_KaleidoPolar		Sapphire 极坐标万花筒			极坐标镜像
+S_KaleidoRadial		Sapphire 放射万花筒			径向镜像
+S_Mosaic		Sapphire 马赛克拼块			像素块
+S_PixelMosh		Sapphire PixelMosh 像素错帧拖影			数据错帧
+S_PixelSort		Sapphire PixelSort 像素排序			像素拉丝
+S_Posterize		Sapphire 色阶分层			色调分离
+S_PrismLens		Sapphire PrismLens 棱镜镜头			棱镜折射
+S_PseudoColor		Sapphire 伪彩色映射			假色
+S_PsykoBlobs		Sapphire 迷幻色团			幻彩斑块
+S_PsykoStripes		Sapphire 迷幻条纹			幻彩条带
+S_RomanTile		Sapphire 罗马镶嵌砖画			古典马赛克
+S_ScanLines		Sapphire 电视扫描线			扫描纹
+S_ScanLinesMono		Sapphire 单色电视扫描线			黑白扫描纹
+S_Sketch		Sapphire 铅笔素描			手绘线稿
+S_Solarize		Sapphire 中途曝光反转			曝光反相
+S_StripSlide		Sapphire 条带滑移			分条错位
+S_TileScramble		Sapphire 拼块随机打乱			乱序拼图
+S_TVDamage		Sapphire 电视信号损坏			电视干扰
+S_UltraGrain		Sapphire UltraGrain 增强胶片颗粒			超级颗粒
+S_VHSDamage		Sapphire VHS 录像带损坏			磁带故障
+S_Vignette		Sapphire 镜头暗角			晕影
+S_VintageColor2Strip		Sapphire 复古 2 色带彩色工艺			双色胶片
+S_VintageColor3Strip		Sapphire 复古 3 色带彩色工艺			三色胶片
+S_Zebrafy		Sapphire 黑白斑马纹			斑马条纹
+S_ZebrafyColor		Sapphire 彩色斑马纹			彩色斑马条纹
+S_ZFogExponential		Sapphire Z 深度指数雾			指数距离雾
+S_ZFogLinear		Sapphire Z 深度线性雾			线性距离雾
+S_CutToDissolve		Sapphire 硬切转叠化			切点柔化
+S_Feedback		Sapphire 反馈叠影			递归残影
+S_FeedbackBubble		Sapphire 气泡反馈叠影			气泡递归残影
+S_FeedbackDistort		Sapphire 扭曲反馈叠影			变形递归残影
+S_FieldRemove		Sapphire 去除隔行场			去交错
+S_FlickerMatch		Sapphire 亮度闪烁匹配			闪烁同步
+S_FlickerMatchColor		Sapphire 色彩闪烁匹配			颜色闪烁同步
+S_FlickerMatchMatte		Sapphire 亮度闪烁匹配遮罩版			遮罩闪烁同步
+S_FlickerMchMatteColor		Sapphire 色彩闪烁匹配遮罩版			遮罩颜色闪烁同步
+S_FlickerRemoveColor		Sapphire 去除色彩闪烁			颜色去闪
+S_FlickerRemoveMatte		Sapphire 去除亮度闪烁遮罩版			遮罩亮度去闪
+S_FlickerRmMatteColor		Sapphire 去除色彩闪烁遮罩版			遮罩颜色去闪
+S_FreezeFrame		Sapphire 画面定格			冻结帧
+S_GetFrame		Sapphire 提取指定帧			取帧
+S_JitterFrames		Sapphire 随机抖动帧序			时间跳帧
+S_MotionDetect		Sapphire 运动检测			运动区域提取
+S_NearestColor		Sapphire 时域近色选取			邻近颜色
+S_RandomEdits		Sapphire 随机剪辑重排			随机切片
+S_RepairFrames		Sapphire 损坏帧修复			坏帧修补
+S_Retime		Sapphire 时间重映射			变速
+S_ReverseClip		Sapphire 片段倒放			反向播放
+S_ReverseEdits		Sapphire 分镜片段内倒放			逐段倒放
+S_TimeAverage		Sapphire 多帧时间平均			帧均值
+S_TimeDisplace		Sapphire 时间置换			时间偏移贴图
+S_TimeSlice		Sapphire 时间切片			时域切片
+S_TimeWarpRGB		Sapphire RGB 分通道时间扭曲			彩色时间错位
+S_Trails		Sapphire 运动拖尾			残影轨迹
+S_TrailsDiffuse		Sapphire 扩散运动拖尾			弥散残影
+S_CardFlip		Sapphire 卡片翻转转场			翻牌
+S_Dissolve		Sapphire 交叉叠化转场			溶解过渡
+S_DissolveAutoPaint		Sapphire 自动绘画叠化转场			绘画溶解
+S_DissolveBlur		Sapphire 模糊叠化转场			柔化溶解
+S_DissolveBubble		Sapphire 气泡叠化转场			气泡溶解
+S_DissolveDefocus		Sapphire 失焦叠化转场			散焦溶解
+S_DissolveDiffuse		Sapphire 像素扩散叠化转场			扩散溶解
+S_DissolveDigitalDamage		Sapphire 数字故障叠化转场			数码损坏过渡
+S_DissolveDistort		Sapphire 扭曲叠化转场			变形溶解
+S_DissolveEdgeRays		Sapphire 边缘光束叠化转场			轮廓射线过渡
+S_DissolveFilm		Sapphire 胶片叠化转场			胶片溶解
+S_DissolveFlashbulbs		Sapphire 闪光灯群叠化转场			闪光灯过渡
+S_DissolveGlare		Sapphire 眩光叠化转场			强光过渡
+S_DissolveGlint		Sapphire 星芒叠化转场			星形闪光过渡
+S_DissolveGlintRainbow		Sapphire 彩虹星芒叠化转场			光谱星芒过渡
+S_DissolveLensFlare		Sapphire 镜头光晕叠化转场			镜头耀斑过渡
+S_DissolveLightLeak		Sapphire 漏光叠化转场			胶片漏光过渡
+S_DissolveLuma		Sapphire 亮度叠化转场			明暗溶解
+S_DissolvePixelMosh		Sapphire PixelMosh 像素错帧叠化转场			错帧拖影过渡
+S_DissolvePixelSort		Sapphire PixelSort 像素排序叠化转场			像素拉丝过渡
+S_DissolvePuddle		Sapphire 水洼波纹叠化转场			水波溶解
+S_DissolveRays		Sapphire 放射光束叠化转场			射线溶解
+S_DissolveSpeckle		Sapphire 散斑叠化转场			斑点溶解
+S_DissolveStatic		Sapphire 静电雪花叠化转场			噪点溶解
+S_DissolveTiles		Sapphire 拼块叠化转场			块状溶解
+S_DissolveUltraGlow		Sapphire UltraGlow 增强辉光叠化转场			超级辉光过渡
+S_DissolveVortex		Sapphire 漩涡叠化转场			旋涡溶解
+S_DissolveWaves		Sapphire 波浪叠化转场			波形溶解
+S_DissolveZap		Sapphire 闪电叠化转场			电弧溶解
+S_FilmRoll		Sapphire 胶片卷动转场			胶片滚动
+S_FlutterCut		Sapphire 闪切交替转场			快速交叉切换
+S_HyperPull		Sapphire 极速拉远转场			缩退过渡
+S_HyperPush		Sapphire 极速推进转场			冲入过渡
+S_ParallaxStripsTransition		Sapphire 视差条带转场			分条视差过渡
+S_StripSlideTransition		Sapphire 条带滑移转场			分条滑动过渡
+S_Swish3D		Sapphire 3D 快速甩动转场			三维甩镜
+S_SwishPan		Sapphire 快速摇摄转场			横向甩镜
+S_TVChannelChange		Sapphire 电视换台转场			换频道
+S_WhipLash		Sapphire 鞭甩回弹转场			甩动回弹
+S_WipeBlobs		Sapphire 团块擦除转场			色团划变
+S_WipeCells		Sapphire 细胞状擦除转场			蜂窝划变
+S_WipeChecker		Sapphire 棋盘格擦除转场			棋格划变
+S_WipeClock		Sapphire 时钟扫针擦除转场			钟形划变
+S_WipeClouds		Sapphire 云雾擦除转场			云层划变
+S_WipeDiffuse		Sapphire 扩散擦除转场			弥散划变
+S_WipeDots		Sapphire 圆点擦除转场			点阵划变
+S_WipeDoubleWedge		Sapphire 双楔形擦除转场			双扇形划变
+S_WipeFlux		Sapphire 流动扰变擦除转场			流变划变
+S_WipeFourWedges		Sapphire 四楔形擦除转场			四扇形划变
+S_WipeLine		Sapphire 直线擦除转场			线性划变
+S_WipeMoire		Sapphire 摩尔纹擦除转场			干涉纹划变
+S_WipePixelate		Sapphire 像素化擦除转场			马赛克划变
+S_WipePlasma		Sapphire 等离子流擦除转场			电浆划变
+S_WipePointalize		Sapphire 点彩擦除转场			点绘划变
+S_WipeRectangle		Sapphire 矩形擦除转场			方框划变
+S_WipeRings		Sapphire 圆环擦除转场			环形划变
+S_WipeStripes		Sapphire 条纹擦除转场			条带划变
+S_WipeTiles		Sapphire 拼砖擦除转场			砖块划变
+S_WipeWeave		Sapphire 编织擦除转场			织纹划变
+S_WipeWedge		Sapphire 楔形擦除转场			扇形划变
+mochaAECC		平面跟踪与遮罩			平面追踪|动态遮罩|Mocha AE 平面跟踪与遮罩
+BCC_AMBIENTLIGHT		BCC+ 环境光			环境照明
+BCC_ATMOSPHERICGLOWDISSOLVE		BCC+ 氛围辉光溶解			氛围光转场
+BCC_ATMOSPHERICGLOW		BCC+ 氛围辉光			氛围发光
+BCC_AUDIOVISUALIZER		BCC+ 音频可视化			音频频谱|音乐可视化
+BCC33D Image Shatter		BCC 3D 图像破碎			三维图像碎裂
+BCC6ThreeWayCC		BCC 三向调色			三路调色|阴影中间调高光
+BCC3Composite		BCC 图像合成			图层混合
+BCC3Alpha Pixel Noise		BCC Alpha 像素噪点（已弃用）			透明通道噪点|旧版
+BCC3Alpha Process		BCC Alpha 通道处理			透明通道处理
+BCC3Alpha Spotlight		BCC Alpha 聚光灯（已弃用）			透明通道聚光|旧版
+BCC3Artists Poster		BCC 艺术海报			海报画风
+BCC Beat Reactor		BCC 音频节拍驱动			节拍响应|音乐驱动
+BCC Beauty Studio		BCC 美颜工作室（已弃用）			人像磨皮|旧版
+BCC Blobs Wipe		BCC 团块擦除			斑块转场
+BCC VR Blur		BCC VR 全景模糊			虚拟现实模糊|全景虚化
+BCC Blur Dissolve		BCC 模糊溶解（已弃用）			模糊转场|旧版
+BCC3Boost Blend		BCC 增强混合（已弃用）			混合增强|旧版
+BCC3Brightness-Contrast		BCC 亮度与对比度			明暗对比
+BCC Broadcast Safe		BCC 广播安全限幅			广播色域限制|播出安全
+BCC3Bulge		BCC 鼓胀变形			凸起变形
+BCC3Brick		BCC 砖墙纹理（已弃用）			砖块纹理|旧版
+BCC3Bump Map		BCC 凹凸贴图			表面凹凸
+BCC3Rock		BCC 岩石纹理（已弃用）			岩块材质|旧版
+BCC3Burnt Film		BCC 胶片烧灼			燃烧胶片转场
+BCC Card Array		BCC 卡片阵列			卡片粒子|狂野卡片
+BCC3Cartooner		BCC 卡通化			漫画化
+BCC3Rays Cartoon		BCC 卡通光束（已弃用）			漫画光线|旧版
+BCC6Cartoon2Look		BCC 卡通风格			卡通外观
+BCC3Caustics		BCC 焦散纹理			水光焦散
+BCCChecker Wipe		BCC 棋盘格擦除			棋盘转场
+BCC3Chroma Key		BCC 色度抠像			色度键|蓝绿幕抠像
+BCC Chroma Key Studio		BCC 色度抠像工作室			色度键工作室|绿幕合成
+BCC3Cloth		BCC 布料纹理（已弃用）			织物材质|旧版
+BCC3Clouds		BCC 云彩纹理（已弃用）			云层生成|旧版
+BCC4Color Choker		BCC 色彩收缩			色彩边界收缩
+BCC3Colorize		BCC 着色			彩色化|颜色映射
+BCC3Colorize Glow		BCC 着色辉光			彩色发光
+BCC Colorize Glow Dissolve		BCC 着色辉光溶解			彩色发光转场
+BCC3Color Palette		BCC 调色板（已弃用）			色板|旧版
+BCC3Comet		BCC 彗星拖尾（已弃用）			彗星光迹|旧版
+BCC3Composite Choker		BCC 合成遮罩收缩			合成边缘收缩
+BCC Composite Dissolve		BCC 合成溶解			合成混合转场
+BCC3CornerPin		BCC 边角定位（已弃用）			四角定位|旧版
+BCC Corner Pin Studio		BCC 边角定位工作室			四角跟踪|透视贴合
+BCC3Correct Selected Color		BCC 所选颜色校正			选色校正|局部调色
+BCC Crash Zoom Dissolve		BCC 急速变焦溶解（已弃用）			猛推变焦转场|旧版
+BCC3Criss-Cross Wipe		BCC 纵横交错擦除			交叉格纹转场
+BCC Cross Glitch		BCC 交叉故障转场（已弃用）			交叠故障|旧版
+BCC Cross Melt		BCC 交叉熔化转场			交叠融化
+BCC Cross Zoom		BCC 交叉变焦转场（已弃用）			交叠缩放|旧版
+BCC3Cube		BCC 立方体映射			六面体
+BCC Curl		BCC 卷曲变形			卷边
+BCC Curl Dissolve		BCC 卷曲溶解			卷边转场
+BCC3Cylinder		BCC 圆柱体映射			柱面包裹
+BCC Damaged TV Dissolve		BCC 电视损坏溶解			坏电视转场
+BCC4Damaged TV		BCC 电视损坏			电视干扰|坏电视
+BCC3DeGrain		BCC 去除颗粒（已弃用）			胶片去颗粒|旧版
+BCC3Deinterlace		BCC 去隔行（已弃用）			反交错|去交错|旧版
+BCC3DeNoise		BCC 去噪（已弃用）			噪点清除|旧版
+BCC3Directional Blur		BCC 方向模糊（已弃用）			定向虚化|旧版
+BCC3Displacement Map		BCC 置换贴图（已弃用）			位移贴图|旧版
+BCC Dropout Fixer		BCC 信号丢失修复			磁带掉磁修复|视频掉线修复
+BCC3Dust and Scratches		BCC 灰尘与划痕去除			除尘去划痕
+BCC3DVE		BCC DVE 数字视频变换（已弃用）			视频空间变换|旧版
+BCC3DVE Basic		BCC DVE 基础数字视频变换（已弃用）			基础视频变换|旧版
+BCC6DV Fixer		BCC DV 画质修复（已弃用）			数字录像修复|旧版
+BCC Edge Cleaner		BCC 边缘清理（已弃用）			边缘修复|旧版
+BCC Edge Grunge		BCC 边缘脏污做旧			破损边框
+BCC3Edge Lighting		BCC 边缘照明			轮廓打光
+BCC3Emboss		BCC 浮雕			压纹
+ScriptEP		BCC EPS 三维挤出			矢量图形挤出|立体矢量
+ScriptSP		BCC 样条三维挤出			曲线挤出|立体样条
+ScriptET		BCC 文字三维挤出			立体文字|挤出文字
+BCC3Pyramid Blur		BCC 金字塔模糊（已弃用）			金字塔虚化|旧版
+BCC Fast Film Glow		BCC 快速胶片辉光（已弃用）			快速胶片发光|旧版
+BCC Fast Film Glow Dissolve		BCC 快速胶片辉光溶解（已弃用）			快速胶片发光转场|旧版
+BCC Fast Film Process		BCC 快速胶片冲印（已弃用）			快速胶片处理|旧版
+BCC3Fast Flipper		BCC 快速翻转			画面翻面
+BCC Fast Lens Blur		BCC 快速镜头模糊（已弃用）			快速镜头虚化|旧版
+BCC3Film Damage		BCC 胶片损伤（已弃用）			老胶片破损|旧版
+BCC3Ultra Glow		BCC 胶片辉光（已弃用）			胶片发光|旧版
+BCC Film Glow Dissolve		BCC 胶片辉光溶解（已弃用）			胶片发光转场|旧版
+BCC3Film Grain		BCC 胶片颗粒（已弃用）			胶片质感颗粒|旧版
+BCC3Film Process		BCC 胶片冲印（已弃用）			胶片处理|旧版
+BCC3Fire		BCC 火焰生成（已弃用）			火焰纹理|旧版
+BCCFlutter		BCC 颤动切换（已弃用）			闪切转场|旧版
+BCC3Fractal Noise		BCC 分形噪波（已弃用）			分形噪声|旧版
+BCCFXBrowser		BCC 特效浏览器			预设浏览器
+BCC3Gaussian Blur		BCC 高斯模糊（已弃用）			高斯虚化|旧版
+BCC3Glare		BCC 眩光（已弃用）			强光炫目|旧版
+BCC 3D Extruded Image Shatter		BCC 3D 挤出图像破碎			三维厚片碎裂
+BCC3Glint		BCC 星芒闪光（已弃用）			星形闪光|旧版
+BCC3Glitter		BCC 闪烁光点（已弃用）			亮片闪烁|旧版
+BCC3Glow		BCC 辉光（已弃用）			发光|旧版
+BCC3Glow Alpha Edges		BCC Alpha 边缘辉光			透明通道边缘发光
+BCC3Glow Matte		BCC 辉光遮罩（已弃用）			发光遮罩|旧版
+BCC3Granite		BCC 花岗岩纹理（已弃用）			花岗石材质|旧版
+BCC Grid Wipe		BCC 网格擦除			网格转场
+BCC Grunge		BCC 脏污做旧			污渍破损|粗粝质感
+BCC Halftone		BCC 半色调网点			印刷网点
+BCC3Hue-Sat-Lightness		BCC 色相、饱和度与明度			色相饱和度|明度调整
+BCC3Invert Solarize		BCC 反相与中途曝光			负片|中途曝光
+BCC3Jitter		BCC 随机抖动			画面抖动
+BCC3Jitter Basic		BCC 基础随机抖动			基础画面抖动
+BCC Kaleida Dissolve		BCC 万花筒溶解			万花筒转场
+BCC Laser Beam		BCC 激光光束			镭射光束
+ScriptLD		BCC 三维图层变形			图层变形器
+BCC4LED		BCC LED 点阵屏（已弃用）			发光二极管屏幕|旧版
+BCC6LensBlur		BCC 镜头模糊（已弃用）			镜头虚化|旧版
+BCC Lens Blur Dissolve		BCC 镜头模糊溶解			镜头虚化转场
+BCC Lens Correction		BCC 镜头校正			镜头畸变修正
+BCC Lens Distortion Wipe		BCC 镜头畸变擦除			镜头扭曲转场
+BCC3Lens Flare Adv		BCC 高级镜头光晕（已弃用）			高级镜头耀斑|旧版
+BCC Lens Flare Dissolve		BCC 镜头光晕溶解			镜头耀斑转场
+BCC Lens Flare Round		BCC 圆形镜头光晕			圆形耀斑转场
+BCC Lens Flare Spiked		BCC 尖芒镜头光晕			尖刺耀斑转场
+BCC Lens Flash		BCC 镜头闪光转场			镜头闪白
+BCC6LensShape		BCC 光圈形状模糊			镜头形状|光圈散景
+BCC6LensTransition		BCC 镜头过渡（已弃用）			镜头转场|旧版
+BCC3Levels Gamma		BCC 色阶与伽马			灰度系数|色阶调整
+BCC Light Leaks		BCC 漏光（已弃用）			胶片漏光|旧版
+BCCLightLeakDslv		BCC 漏光溶解（已弃用）			胶片漏光转场|旧版
+BCC3Light Matte		BCC 光照遮罩（已弃用）			灯光遮罩|旧版
+BCC3Lightning		BCC 闪电			电弧
+BCC3Light Sweep		BCC 扫光			光线扫过
+BCC Light Wipe		BCC 光线擦除			扫光转场
+BCC3Light Wrap		BCC 光线包裹（已弃用）			光包裹|环境光融合|旧版
+BCC3Light Zoom		BCC 光线缩放（已弃用）			变焦光线|旧版
+BCC3Linear Color Key		BCC 线性色彩抠像（已弃用）			线性颜色键|旧版
+BCC3Linear Luma Key		BCC 线性亮度抠像（已弃用）			线性亮度键|旧版
+BCC3Linear Wipe		BCC 线性擦除（已弃用）			直线转场|旧版
+BCC3Looper		BCC 循环播放			时间循环
+BCC Magic Sharp		BCC 精细锐化（已弃用）			魔法锐化|旧版
+BCC3Make Alpha Key		BCC 生成 Alpha 抠像遮罩			生成透明通道|创建透明键
+BCC3Match Grain		BCC 颗粒匹配			胶片颗粒匹配
+BCC3MatchMove		BCC 运动匹配			运动跟踪合成
+BCC3Matte Choker		BCC 遮罩收缩			蒙版收缩|遮罩边缘调整
+BCC3Matte Cleanup		BCC 遮罩清理			蒙版清理|抠像清理
+BCC3Median		BCC 中值滤波			中值平滑
+BCC3Misalignment		BCC 色彩通道错位			通道偏移|套色偏差
+BCC3Mixed Colors		BCC 混色纹理			混合色彩
+BCC4Morph		BCC 形态渐变			变形融合
+Boris3Pixelate		BCC 马赛克（已弃用）			像素化|旧版
+BCC3Motion Blur		BCC 运动模糊（已弃用）			动态模糊|旧版
+BCC3MotionKey		BCC 运动抠像（已弃用）			运动键|旧版
+BCC3Multi Shadow		BCC 多重阴影			多重投影
+BCC3Multi Stretch Wipe		BCC 多重拉伸擦除			多段拉伸转场
+BCC3Multi Stripe Wipe		BCC 多条纹擦除			条带转场
+BCC3MultiTone Mix		BCC 多色调混合			多调色混合
+BCC3Noise Map		BCC 噪波贴图（已弃用）			噪声纹理|旧版
+BCC4Noise Map 2		BCC 噪波贴图 2			二代噪声纹理
+BCC6Noise Reduction		BCC 噪声抑制（已弃用）			降噪|旧版
+BCC3Optical Flow		BCC 光流处理（已弃用）			光流补帧|旧版
+BCC Organic Strands		BCC 有机丝缕			有机线条|丝状粒子
+BCC3Page Turn		BCC 翻页			卷页
+BCC Pan and Zoom		BCC 平移与缩放			图片推拉摇移
+BCC Particle Array 3D		BCC 3D 粒子阵列			三维粒子网格
+BCC Particle Emitter 3D		BCC 3D 粒子发射器			三维粒子发射
+BCC PI Dissolve		BCC Particle Illusion 粒子溶解			粒子幻象转场
+BCC3Particle System		BCC 粒子系统（已弃用）			粒子生成器|旧版
+BCC Pin Art 3D		BCC 3D 针雕			三维针阵浮雕
+BCC3Pixel Chooser		BCC 像素选择器（已弃用）			像素区域选择|旧版
+BCC6Pixel Fixer		BCC 坏点修复			坏像素修复
+BCC3Polar Displacement		BCC 极坐标置换（已弃用）			极坐标位移|旧版
+BCC3Posterize		BCC 色调分离			色阶量化
+BCC3Posterize Time		BCC 时间抽帧			时间量化|降低帧率
+BCC3Premult		BCC Alpha 预乘处理			预乘透明通道
+BCC Primatte Studio		BCC Primatte 抠像工作室（已弃用）			高质量色键抠像|旧版
+BCC4Prism		BCC 棱镜分光（已弃用）			棱镜色散|旧版
+BCC Prism Dissolve		BCC 棱镜溶解（已弃用）			棱镜分光转场|旧版
+BCC3Rays Puffy		BCC 蓬松光束			柔厚光束
+BCC3Radial Blur		BCC 径向模糊（已弃用）			径向虚化|旧版
+BCC3Rays Radiant Spotlight		BCC 放射聚光光束（已弃用）			辐射聚光|旧版
+BCC3Radial Wipe		BCC 径向擦除（已弃用）			扇形转场|旧版
+BCC3Rays Radiant Edges		BCC 边缘放射光束			轮廓辐射光
+BCC3Rain		BCC 降雨粒子			雨滴|下雨
+BCC3Rays		BCC 放射光束（已弃用）			光芒|旧版
+BCC Rays Dissolve		BCC 光束溶解（已弃用）			放射光转场|旧版
+BCC3Rectangular Wipe		BCC 矩形擦除（已弃用）			方框转场|旧版
+BCC Reflection		BCC 倒影			镜面反射
+BCC Reframer		BCC 画幅重构			重新取景|画框重整
+BCC Remover		BCC 对象移除			物体移除|画面修补
+BCC VR Reorient		BCC VR 全景重定向			全景朝向调整|虚拟现实视角
+BCC3Reptilian		BCC 爬行动物鳞纹（已弃用）			爬虫皮纹|旧版
+BCC3Reverse Spotlight		BCC 反向聚光灯			反向聚光照明
+BCC3RGB Blend		BCC RGB 通道混合			红绿蓝混合
+BCC RGB Blur Dissolve		BCC RGB 通道模糊溶解（已弃用）			分色模糊转场|旧版
+BCC RGB Dspl Dissolve		BCC RGB 通道置换溶解			分色位移转场
+BCC3RGB Edges		BCC RGB 彩色边缘			红绿蓝轮廓
+BCC3RGB Pixel Noise		BCC RGB 像素噪点			彩色像素噪声
+BCC Ribbon Wipe		BCC 丝带擦除			飘带转场
+BCC3Rays Ring		BCC 环形光束（已弃用）			环状光芒|旧版
+BCC Rings Wipe		BCC 圆环擦除			环形转场
+BCC3Ripple		BCC 涟漪（已弃用）			水波变形|旧版
+BCC Ripple Dissolve		BCC 涟漪溶解（已弃用）			水波转场|旧版
+BCC3Rays Ripply		BCC 波纹光束（已弃用）			涟漪光芒|旧版
+BCC3Rough Glow		BCC 粗糙辉光（已弃用）			粗粝发光|旧版
+BCC3Safe Colors		BCC 安全色限制（已弃用）			广播安全色|旧版
+BCC4Scanline		BCC 扫描线（已弃用）			电视扫描纹|旧版
+BCC3Scatterize		BCC 像素散射			像素打散
+BCC3Sequencer		BCC 时序重排（已弃用）			序列编排|旧版
+BCC Cast Shadow		BCC 投射阴影			落影
+BCC3Lens Flare		BCC 镜头光晕（已弃用）			镜头耀斑|旧版
+BCC6Pencil Sketch		BCC 铅笔素描			铅笔画
+BCC6Smooth Tone		BCC 色调平滑（已弃用）			平滑肤色|旧版
+BCC3Snow		BCC 飘雪粒子			雪花|下雪
+BCC3Sparks		BCC 火花粒子（已弃用）			飞溅火星|旧版
+BCC3Sphere		BCC 球体映射			球面包裹
+BCC3Sphere Transition		BCC 球体转场			球面过渡
+BCC Spill Remover		BCC 溢色去除（已弃用）			绿边去除|去溢色|旧版
+BCC Spin Blur Dissolve		BCC 旋转模糊溶解（已弃用）			旋转虚化转场|旧版
+BCC3Spiral Blur		BCC 螺旋模糊（已弃用）			螺旋虚化|旧版
+BCC3Spotlight		BCC 聚光灯			聚光照明
+BCC3Spray Paint Noise		BCC 喷漆噪点			喷绘颗粒
+BCC3Stabilizer		BCC 光学稳定器			光学防抖|画面稳定
+BCC3Stage Light		BCC 舞台灯光			舞台照明
+BCC3Star Matte		BCC 星形遮罩（旧版）			BCC Star Matte OBS
+BCC3Stars		BCC 星星图案（旧版）			BCC Stars OBSOLETE
+BCC3Steel Plate		BCC 钢板纹理（旧版）			BCC Steel Plate OBSOLETE
+BCC3Rays Streaky		BCC 条纹光束（旧版）			BCC Rays Streaky OBSOLETE
+BCC3Super Blend		BCC 超级混合（旧版）			BCC Super Blend OBS
+BCC6Swish Pan		BCC 快速甩镜转场（旧版）			BCC Swish Pan OBSOLETE
+BCC3Temporal Blur		BCC 时间累积模糊			BCC Temporal Blur
+BCC3Rays Textured		BCC 纹理光束（旧版）			BCC Rays Textured OBSOLETE
+BCC3Textured Wipe		BCC 纹理擦除转场（旧版）			BCC Textured Wipe OBSOLETE
+BCC6Charcoal Sketch		BCC 炭笔素描			BCC Charcoal Sketch
+BCC4Tile Mosaic		BCC 瓷砖马赛克			BCC Tile Mosaic
+BCC Tile Wipe		BCC 瓦片擦除转场			BCC Tile Wipe
+BCC3Time Displacement		BCC 时间置换			BCC Time Displacement
+BCCTS		BCC 三维字幕工作室			BCC Title Studio|Title Studio
+BCC3Trails		BCC 动态拖影			BCC Trails
+BCC3Trails Basic		BCC 基础动态拖影			BCC Trails Basic
+BCC3Tritone		BCC 三色调映射			BCC Tritone
+BCC Tritone Dissolve		BCC 三色调叠化转场			BCC Tritone Dissolve
+BCC4Turbulence		BCC 湍流扭曲			BCC Turbulence
+BCC3Twirl		BCC 旋涡扭曲			BCC Twirl
+BCC Twister		BCC 扭转转场			BCC Twister
+BCC32D Particles		BCC 2D 平面粒子			BCC 2D Particles
+BCC Two Strip Color		BCC 双色胶片色彩（旧版）			BCC Two Strip Color OBSOLETE
+BCC3Two Way Key		BCC 双向抠像（旧版）			BCC Two Way Key OBSOLETE
+ScriptTO		BCC 逐字显现文字			BCC Type On Text
+BCC3Unsharp Mask		BCC 反差遮罩锐化			BCC Unsharp Mask|USM锐化
+BCC UpRez		BCC 分辨率放大（旧版）			BCC UpRez OBSOLETE
+BCC Vector Blur Dissolve		BCC 矢量模糊叠化转场			BCC Vector Blur Dissolve
+BCC3Vector Displacement		BCC 矢量置换（旧版）			BCC Vector Displacement OBSOLETE
+BCC3Veined Marble		BCC 脉纹大理石（旧版）			BCC Veined Marble OBSOLETE
+BCC3Velocity Remap		BCC 速度重映射（旧版）			BCC Velocity Remap OBSOLETE
+BCC Video Glitch		BCC 视频故障（旧版）			BCC Video Glitch OBSOLETE
+BCC4Video Morph		BCC 视频形态渐变			BCC Video Morph
+BCC6Videoscope		BCC 视频信号示波器			BCC Videoscope
+BCCVignette		BCC 暗角（旧版）			BCC Vignette OBSOLETE
+BCCVignette Wipe		BCC 暗角擦除转场（旧版）			BCC Vignette Wipe OBSOLETE
+BCC VR Insert		BCC VR 全景画面嵌入			BCC VR Insert
+BCC VR Flicker Fixer		BCC VR 全景闪烁修复			BCC VR Flicker Fixer
+BCC VR Sharpen		BCC VR 全景锐化			BCC VR Sharpen
+BCC4Warp		BCC 样条曲线变形			BCC Warp
+BCC6Water Color		BCC 水彩画			BCC Water Color
+BCC Water Waves Dissolve		BCC 水波叠化转场			BCC Water Waves Dissolve
+BCC3Wave		BCC 波浪变形			BCC Wave
+BCC3Weave		BCC 编织纹理（旧版）			BCC Weave OBSOLETE
+BCC3Rays Wedge		BCC 楔形光束（旧版）			BCC Rays Wedge OBSOLETE
+BCC3Wire Remover		BCC 吊线移除			BCC Wire Remover|威亚擦除
+Boris3WitnessProtection		BCC 隐私遮挡（旧版）			BCC WitnessProtection OBSOLETE
+BCC3Wood Grain		BCC 木纹（旧版）			BCC Wood Grain OBSOLETE
+BCC3Wooden Planks		BCC 木板拼接纹理（旧版）			BCC Wooden Planks OBSOLETE
+BCC3Z-Blur		BCC Z 深度模糊			BCC Z-Blur
+BCC3Z Space I		BCC Z 轴空间变换 I（旧版）			BCC Z Space I OBS
+BCC3Z Space II		BCC Z 轴空间变换 II（旧版）			BCC Z Space II OBS
+BCC3Z Space III		BCC Z 轴空间变换 III（旧版）			BCC Z Space III OBS
+BCC_BEAUTYSTUDIO		BCC+ 人像美肤工作室			BCC+Beauty Studio
+BCC_BLACKANDWHITE		BCC+ 黑白影调			BCC+Black and White
+BCC_BLEACHBYPASS		BCC+ 胶片漂白旁路			BCC+Bleach Bypass|跳漂|留银
+BCC_BLURDISSOLVE		BCC+ 模糊叠化转场			BCC+Blur Dissolve
+BCC_BLUR		BCC+ 模糊			BCC+Blur
+BCC_BORDERS		BCC+ 艺术边框			BCC+Borders
+BCC_CAMERASHAKEDISSOLVE		BCC+ 相机抖动叠化转场			BCC+Camera Shake Dissolve
+BCC_CAMERASHAKE		BCC+ 相机抖动			BCC+Camera Shake
+BCC_CENTERSPOT		BCC+ 中心清晰柔焦			BCC+Center Spot
+BCC_CHANNELBLURDISSOLVE		BCC+ 通道模糊叠化转场			BCC+Channel Blur Dissolve
+BCC_CHANNELYUVBLUR		BCC+ YUV 通道模糊			BCC+Channel Blur YUV
+BCC_CHANNELBLUR		BCC+ 通道模糊			BCC+Channel Blur
+BCC_CHROMABANDS		BCC+ 彩色光带			BCC+Chroma Bands
+BCC_CHROMATICABERRATION		BCC+ 镜头色差			BCC+Chromatic Aberration|色散
+BCC_COLORGRADIENT		BCC+ 色彩渐变			BCC+Color Gradient
+BCC_COLORINFRARED		BCC+ 彩色红外成像			BCC+Color Infrared
+BCC_COLORLINK		BCC+ 色彩关联			BCC+Color Link
+BCC_COLORPASTE		BCC+ 颜色粘贴合成			BCC+Color Paste
+BCC_COLORSHADOW		BCC+ 彩色投影			BCC+Color Shadow
+BCC_COLORSPOT		BCC+ 局部色彩滤镜			BCC+Color Spot
+BCC_COLORIZEGRADIENT		BCC+ 渐变着色映射			BCC+Colorize Gradient
+BCC_COMPOSITE		BCC+ 图层合成			BCC+Composite
+BCC_CRASHZOOMDISSOLVE		BCC+ 急速推近叠化转场			BCC+Crash Zoom Dissolve
+BCC_CROSSPROCESSING		BCC+ 胶片交叉冲洗			BCC+Cross Processing|交叉冲印
+BCC_CROSSZOOMDISSOLVE		BCC+ 交叉变焦叠化转场			BCC+Cross Zoom Dissolve
+BCC_DAYFORNIGHT		BCC+ 日景转夜景			BCC+Day for Night|日拍夜
+BCC_DEBAND		BCC+ 色阶断层消除			BCC+DeBand|去色带
+BCC_DEBLOCK		BCC+ 压缩块伪影消除			BCC+DeBlock
+BCC_DEFOG		BCC+ 去雾			BCC+DeFog
+BCC_DEFRINGE		BCC+ 边缘色边消除			BCC+DeFringe|去紫边
+BCC_MLDEINTERLACE		BCC+ 反交错 ML			BCC+Deinterlace ML|机器学习去隔行
+BCC_MLDENOISE		BCC+ 降噪 ML			BCC+DeNoise ML|机器学习降噪
+BCC_MLDEPTHESTIMATION		BCC+ 深度图估算 ML			BCC+Depth Map ML
+BCC_DEPTHOFFIELD		BCC+ 景深虚化			BCC+Depth of Field
+BCC_DETAIL		BCC+ 细节增强			BCC+Detail
+BCC_DEVELOP		BCC+ 显影调色			BCC+Develop
+BCC_DIFFUSION		BCC+ 漫射柔光			BCC+Diffusion
+BCC_DIRECTIONALBLURDISSOLVE		BCC+ 方向模糊叠化转场			BCC+Directional Blur Dissolve
+BCC_DIRECTIONALBLUR		BCC+ 方向模糊			BCC+Directional Blur
+BCC_DISPLACEMENTDISSOLVE		BCC+ 置换叠化转场			BCC+Displacement Dissolve
+BCC_DISPLACEMENT		BCC+ 置换贴图			BCC+Displacement Map
+BCC_DISSOLVE		BCC+ 叠化转场			BCC+Dissolve
+BCC_DOUBLEFOG		BCC+ 双重雾化柔光			BCC+Double Fog
+BCC_DUALGRADIENT		BCC+ 双重渐变滤镜			BCC+Dual Gradient
+BCC_EDGECLEANER		BCC+ 抠像边缘清理			BCC+Edge Cleaner
+BCC_EDGECOMPOSITE		BCC+ 边缘合成			BCC+Edge Composite
+BCC_ENHANCING		BCC+ 选择性色彩增强			BCC+Enhancing
+BCC_EYELIGHT		BCC+ 眼神光			BCC+Eye Light
+BCC_FSTOP		BCC+ 光圈档位曝光			BCC+F-Stop
+BCC_MLFACESEGMENTATION		BCC+ 人脸分区蒙版 ML			BCC+Face ML
+BCC_FILMGLOWDISSOLVE		BCC+ 胶片辉光叠化转场			BCC+Film Glow Dissolve
+BCC_FILMGRUNGE		BCC+ 胶片污损			BCC+Film Grunge
+BCC_FILMROLL		BCC+ 胶片滚动转场			BCC+Film Roll
+BCC_FILMSTOCKS		BCC+ 胶片片种模拟			BCC+Film Stocks
+BCC_FLASHING		BCC+ 胶片预闪曝光			BCC+Flashing
+BCC_FLUORESCENT		BCC+ 荧光灯偏色校正			BCC+Fluorescent
+BCC_FLUTTERCUT		BCC+ 交替闪切转场			BCC+Flutter Cut
+BCC_FOG		BCC+ 雾化柔光			BCC+Fog
+BCC_MLFRAMEFIXER		BCC+ 画帧修复 ML			BCC+Frame Fixer ML
+BCC_FROST		BCC+ 霜化柔焦			BCC+Frost
+BCC_GELS		BCC+ 灯光色片			BCC+Gels
+BCC_GLOWDARKS		BCC+ 暗部辉光			BCC+Glow Darks
+BCC_GLOWEDGES		BCC+ 边缘辉光			BCC+Glow Edges
+BCC_GLOW		BCC+ 辉光			BCC+Glow
+BCC_GRADE		BCC+ 色彩分级			BCC+Grade
+BCC_GRAIN		BCC+ 胶片颗粒			BCC+Grain
+BCC_HALO		BCC+ 光晕柔焦			BCC+Halo
+BCC_HARRISSHUTTER		BCC+ 哈里斯快门分色拖影			BCC+Harris Shutter
+BCC_HAZE		BCC+ 薄雾滤镜			BCC+Haze
+BCC_HIGHCONTRAST		BCC+ 高反差			BCC+High Contrast
+BCC_HOLDOUTCOMPOSITE		BCC+ 遮挡遮罩合成			BCC+Holdout Composite
+BCC_ICEHALOS		BCC+ 冰晶光环			BCC+Ice Halos
+BCC_INFRARED		BCC+ 红外成像			BCC+Infrared
+BCC_MLJUMPCUT		BCC+ 跳切修复 ML			BCC+Jump Cut Fixer ML
+BCC_KELVIN		BCC+ 开尔文色温调整			BCC+Kelvin
+BCC_KEYLIGHT		BCC+ 主光照明			BCC+Key Light
+BCC_LENSBLUR		BCC+ 镜头虚焦			BCC+Lens Blur
+BCC_LENSDISTORTION		BCC+ 镜头畸变			BCC+Lens Distortion
+BCC_LENSFLAREDISSOLVE		BCC+ 镜头耀斑叠化转场			BCC+Lens Flare Dissolve
+BCC_LENSFLARE		BCC+ 镜头耀斑			BCC+Lens Flare
+BCC_LICENSEPLATEML		BCC+ 车牌遮挡 ML			BCC+License Plate ML
+BCC_LIGHTFLICKER		BCC+ 灯光闪烁			BCC+Light Flicker
+BCC_LIGHTLEAKSDISSOLVE		BCC+ 漏光叠化转场			BCC+Light Leaks Dissolve
+BCC_LIGHTLEAKS		BCC+ 漏光			BCC+Light Leaks
+BCC_LIGHTWRAP		BCC+ 边缘光包裹			BCC+Light Wrap
+BCC_LIGHT		BCC+ 灯光照明			BCC+Light
+BCC_LINEARCOLORKEY		BCC+ 线性色彩抠像			BCC+Linear Color Key
+BCC_LINEARLUMAKEY		BCC+ 线性亮度抠像			BCC+Linear Luma Key
+BCC_LOOKS		BCC+ 影像风格调色			BCC+Looks
+BCC_LOWCONTRAST		BCC+ 低反差			BCC+Low Contrast
+BCC_MAGICSHARP		BCC+ 魔法锐化			BCC+Magic Sharp
+BCC_MATHCOMPOSITE		BCC+ 数学运算合成			BCC+Math Composite
+BCC_MLMATTEREFINE		BCC+ 蒙版精修 ML			BCC+Matte Refine ML
+BCC_MIST		BCC+ 薄雾柔光			BCC+Mist
+BCC_MOSAICDISSOLVE		BCC+ 马赛克叠化转场			BCC+Mosaic Dissolve
+BCC_MOSAIC		BCC+ 马赛克			BCC+Mosaic
+BCC_MOTIONBLURML		BCC+ 运动模糊 ML			BCC+Motion Blur ML
+BCC_MULTISTARDISSOLVE		BCC+ 多重星芒叠化转场			BCC+Multi-Star Dissolve
+BCC_MULTISTAR		BCC+ 多重星芒			BCC+Multi-Star
+BCC_NDGRADIENT		BCC+ ND 渐变减光滤镜			BCC+ND Gradient|中性密度渐变
+BCC_NET		BCC+ 网纱柔焦			BCC+Net
+BCC_NIGHTVISION		BCC+ 夜视成像			BCC+Night Vision
+BCC_NONADDITIVEMIX		BCC+ 非加性混合			BCC+Non-Additive Mix
+BCC_OPTICALDISSOLVE		BCC+ 光学叠化			BCC+Optical Dissolve
+BCC_ORBSDISSOLVE		BCC+ 光斑叠化转场			BCC+Orbs Dissolve
+BCC_ORBS		BCC+ 圆形光斑			BCC+Orbs
+BCC_OVEREXPOSE		BCC+ 过曝光效			BCC+Overexpose
+BCC_PHOTOGRAPHIC		BCC+ 摄影滤色			BCC+Photographic
+BCC_PIXELCHOOSER		BCC+ 像素选区蒙版			BCC+Pixel Chooser
+BCC_POLARDISPLACEMENT		BCC+ 极坐标置换			BCC+Polar Displacement
+BCC_POLARWARP		BCC+ 极坐标扭曲			BCC+Polar Warp
+BCC_POLARIZER		BCC+ 偏振滤镜			BCC+Polarizer
+BCC_PRIMATTESTUDIO		BCC+ Primatte 抠像工作室			BCC+Primatte Studio|Primatte Studio
+BCC_PRISMDISSOLVE		BCC+ 棱镜叠化转场			BCC+Prism Dissolve
+BCC_PRISMBLUR		BCC+ 棱镜折射			BCC+Prism
+BCC_RACKFOCUSDISSOLVE		BCC+ 焦点转移叠化转场			BCC+Rack Focus Dissolve
+BCC_RACKFOCUS		BCC+ 焦点转移虚化			BCC+Rack Focus
+BCC_RADIALBLUR		BCC+ 径向模糊			BCC+Radial Blur
+BCC_RADIALEXPOSURE		BCC+ 径向曝光			BCC+Radial Exposure
+BCC_RADIALTINT		BCC+ 径向染色			BCC+Radial Tint
+BCC_RAYSDISSOLVE		BCC+ 放射光束叠化转场			BCC+Rays Dissolve
+BCC_RAYS		BCC+ 放射光束			BCC+Rays
+BCC_REFLECTOR		BCC+ 反光板补光			BCC+Reflector
+BCC_RELIGHT		BCC+ 重新布光			BCC+ReLight
+BCC_MLRETIMER		BCC+ 时间重映射 ML			BCC+Retimer ML
+BCC_RIPPLEDISSOLVE		BCC+ 涟漪叠化转场			BCC+Ripple Dissolve
+BCC_RIPPLE		BCC+ 涟漪变形			BCC+Ripple
+BCC_SCANLINE		BCC+ 扫描线			BCC+Scanline
+BCC_SELECTIVESATURATION		BCC+ 选择性饱和度			BCC+Selective Saturation
+BCC_SEPIA		BCC+ 棕褐色调			BCC+Sepia
+BCC_SHADOWSHIGHLIGHTS		BCC+ 阴影与高光调整			BCC+Shadows/Highlights
+BCC_SILK		BCC+ 丝绸柔光			BCC+Silk
+BCC_SKINTONE		BCC+ 肤色调整			BCC+Skin Tone
+BCC_SMEARBLUR		BCC+ 涂抹模糊			BCC+Smear Blur
+BCC_SMOKEANDFOGDISSOLVE		BCC+ 烟雾叠化转场			BCC+Smoke and Fog Dissolve
+BCC_SMOKEANDFOG		BCC+ 烟雾生成			BCC+Smoke and Fog
+BCC_SPILLREMOVER		BCC+ 溢色消除			BCC+Spill Remover
+BCC_SPINBLURDISSOLVE		BCC+ 旋转模糊叠化转场			BCC+Spin Blur Dissolve
+BCC_SPLITFIELD		BCC+ 分区柔焦滤镜			BCC+Split Field
+BCC_SPLITTONE		BCC+ 分离色调			BCC+Split Tone
+BCC_STMAP		BCC+ ST 坐标映射变形			BCC+ST Map
+BCC_STREAKS		BCC+ 条状星芒			BCC+Streaks
+BCC_SUNSET		BCC+ 日落色调			BCC+Sunset
+BCC_SUPERLED		BCC+ 超级 LED 点阵			BCC+Super LED
+BCC_SWISHGLOW		BCC+ 辉光甩镜转场			BCC+Swish Glow
+BCC_SWISH		BCC+ 快速甩镜转场			BCC+Swish Pan
+BCC_SWISHPRISM		BCC+ 棱镜甩镜转场			BCC+Swish Prism
+BCC_SWISHWARP		BCC+ 扭曲甩镜转场			BCC+Swish Warp
+BCC_TEXTURES		BCC+ 纹理生成			BCC+Textures
+BCC_THREESTRIP		BCC+ 三色胶片工艺			BCC+Three Strip
+BCC_TINT		BCC+ 色调染色			BCC+Tint
+BCC_TRANSFORM		BCC+ 几何变换			BCC+Transform
+BCC_TWOSTRIP		BCC+ 双色胶片工艺			BCC+Two Strip
+BCC_TWOWAYKEY		BCC+ 双向抠像			BCC+Two Way Key
+BCC_UPRESML		BCC+ 超分辨率放大 ML			BCC+UpRes ML
+BCC_VECTORDISPLACEMENT		BCC+ 矢量置换			BCC+Vector Displacement
+BCC_VIDEOGLITCHDISSOLVE		BCC+ 视频故障叠化转场			BCC+Video Glitch Dissolve
+BCC_VIDEOGLITCH		BCC+ 视频故障			BCC+Video Glitch
+BCC_VIGNETTEWIPE		BCC+ 暗角擦除转场			BCC+Vignette Wipe
+BCC_VIGNETTE		BCC+ 暗角			BCC+Vignette
+BCC_WIDEANGLELENS		BCC+ 广角镜头			BCC+Wide Angle Lens
+BCC_WITNESSPROTECTIONML		BCC+ 隐私遮挡跟踪 ML			BCC+Witness Protection ML
+BCC_XRAY		BCC+ X 射线透视风格			BCC+X-Ray
+PEAF		自动生长填充			自动填充|区域生长|Plugin Everything AutoFill 自动生长填充
+BAO_Boa		沿遮罩路径弯曲			路径变形|沿路径弯曲|BAO Boa 沿遮罩路径弯曲
+BAO_Layer_Sculptor		图层雕塑变形			图层塑形|局部扭曲|BAO Layer Sculptor 图层雕塑变形
+PEDF		数字计数动画			数字动画|计数器|Plugin Everything Digit Fiddler 数字计数动画
+PEDX		专业置换扭曲			位移扭曲|置换变形|Plugin Everything Displacer Pro 专业置换扭曲
+RWB Fast Bokeh		快速散景模糊			景深模糊|焦外散景|Rowbyte Fast Bokeh 快速散景模糊
+One Chance Furikake		高性能粒子生成			粒子生成器|粒子系统|One Chance Furikake 高性能粒子生成
+AESweetsGlitch7in1		七合一故障失真			故障干扰|七合一故障|AESweets Glitch 7in1 七合一故障失真
+irrealix loopFlow		循环流动动画			静图流动|无缝循环流动|irrealix loopFlow 循环流动动画
+Vimager ScaleUp		图像放大增强			高清放大|图像放大|Vimager ScaleUp 图像放大增强
+PESS3		阴影生成			投影生成|长阴影|Plugin Everything Shadow Studio 3 阴影生成
+ADBE TimeMachine		时间机器（功能待确认）			时光机|TimeMachine 时间机器（功能待确认）
+Videocopilot Twitch		随机抖动故障			随机抽动|故障抖动|Video Copilot Twitch 随机抖动故障
+KNSW Unmult		黑底转透明			去黑底|去黑背景|Knoll UnMult 黑底转透明
+VIDEOCOPILOT VCReflect		镜面倒影			地面倒影|镜面反射|Video Copilot VC Reflect 镜面倒影
+VIDEOCOPILOT VIBRANCE		色彩鲜艳度			色彩增强|颜色活力|Video Copilot VC Color Vibrance 色彩鲜艳度
+PEDG2		深度辉光			真实辉光|深度发光|Plugin Everything Deep Glow 2 深度辉光
+omino color extract		色彩映射着色			色彩映射|重新着色|omino colorizer 色彩映射着色
+omino_diffusion		误差扩散抖色			误差扩散|限色抖色|omino diffusion 误差扩散抖色
+omino_halftone		半色调网点			印刷网点|半色调|omino halftone++ 半色调网点
+omino_kaleidoscope		万花筒			万花筒|镜像拼花|omino kaleidoscope 万花筒
+omino_snake		沿路径蛇形弯曲			蛇形变形|路径弯曲|omino snake 沿路径蛇形弯曲
+omino_sphere_map		球面映射			球形贴图|球面变形|omino sphere map 球面映射
+omino squares		方块重构图像			方块化|方块像素|omino squares 方块重构图像
+omino_test		测试工具（用途待确认）			测试插件|omino test 测试工具（用途待确认）
+GUTS BadTV		老电视信号故障			坏电视|电视干扰|Rowbyte Bad TV 老电视信号故障
+RWB DATA GLITCH		数字数据故障			数据损坏|数字故障|Rowbyte Data Glitch 数字数据故障
+RWB DOT PIXELS		圆点像素化			点阵像素|圆点化|Rowbyte Dot Pixels 圆点像素化
+GUTS SEPRGB		红绿蓝通道分离			色彩分离|三色分离|Rowbyte Separate RGB 红绿蓝通道分离
+RWB TV PIXEL		电视像素点阵			电视点阵|屏幕像素|Rowbyte TVPixel 电视像素点阵
+CINEMA 4D Effect		三维场景联动渲染			三维场景渲染|影院四维联动|Maxon Cineware 三维场景联动渲染
+Cryptomatte		对象材质遮罩提取			对象遮罩|材质遮罩|Cryptomatte 对象材质遮罩提取
+tc Echospace		三维图层回声阵列			图层复制阵列|空间回声|Red Giant Trapcode Echospace 三维图层回声阵列
+Geo		三维模型材质灯光与克隆			三维模型克隆|模型材质灯光|Red Giant Geo 三维模型材质灯光与克隆
+tc Trapcode Horizon		环境全景背景			全景背景|三维环境|Red Giant Trapcode Horizon 环境全景背景
+tc Lux		三维体积光			体积光|可见灯光|Red Giant Trapcode Lux 三维体积光
+rg Mir		三维分形网格			分形地形|三维网格|Red Giant Trapcode Mir 3 三维分形网格
+tc Particular		三维粒子系统			粒子系统|三维粒子|Red Giant Trapcode Particular 三维粒子系统
+tc Tao		三维路径几何生成			路径几何|三维管线|Red Giant Trapcode Tao 三维路径几何生成
+Red Giant GrowBounds		扩展图层边界			扩大边界|扩展画布|Red Giant Grow Bounds 扩展图层边界
+BCC Blobs WipePrTr		BCC 团块擦除（旧版）			团块转场|斑块擦除
+BCC3Blur		BCC 模糊（旧版）			旧版模糊
+BCC Blur DissolvePrTr		BCC 模糊溶解（已弃用）			模糊转场|模糊叠化
+BCC Burnt FilmPrTr		BCC 胶片烧灼（旧版）			烧胶片转场|胶片燃烧
+BCCChecker WipePrTr		BCC 棋盘格擦除（旧版）			棋盘转场|棋格擦除
+BCC Colorize Glow DissolvePrTr		BCC 着色辉光溶解（旧版）			彩色辉光转场|着色叠化
+BCC Composite DissolvePrTr		BCC 合成溶解（旧版）			混合转场|合成叠化
+BCC Crash Zoom DissolvePrTr		BCC 急速变焦溶解（已弃用）			急推变焦转场|快速变焦叠化
+BCC Criss-Cross WipePrTr		BCC 交叉擦除（旧版）			交错转场|交叉擦除
+BCC Cross GlitchPrTr		BCC 交叉故障转场（已弃用）			故障叠化|交叉故障
+BCC Cross MeltPrTr		BCC 交叉熔化转场（旧版）			熔化叠化|交叉熔化
+BCC Cross ZoomPrTr		BCC 交叉变焦转场（已弃用）			变焦叠化|交叉缩放
+BCC Curl DissolvePrTr		BCC 卷曲溶解（旧版）			卷曲转场|卷曲叠化
+BCC Damaged TV DissolvePrTr		BCC 损坏电视溶解（旧版）			电视故障转场|电视干扰叠化
+BCC Fast Film Glow DissolvePrTr		BCC 快速胶片辉光溶解（已弃用）			快速胶片辉光转场
+BCC Film Glow DissolvePrTr		BCC 胶片辉光溶解（已弃用）			胶片辉光转场|胶片辉光叠化
+BCCFlutterPrTr		BCC 颤动切换（已弃用）			颤动转场|抖动切换
+BCC Grid WipePrTr		BCC 网格擦除（旧版）			网格转场|格栅擦除
+BCC Kaleida DissolvePrTr		BCC 万花筒溶解（旧版）			万花筒转场|万花筒叠化
+BCC Lens Blur DissolvePrTr		BCC 镜头模糊溶解（旧版）			镜头模糊转场|散景叠化
+BCC Lens Distortion WipePrTr		BCC 镜头畸变擦除（旧版）			镜头扭曲转场|镜头畸变擦除
+BCC Lens Flare DissolvePrTr		BCC 镜头光晕溶解（旧版）			镜头光晕转场|耀斑叠化
+BCC Lens Flare RoundPrTr		BCC 圆形镜头光晕转场（旧版）			圆形耀斑转场
+BCC Lens Flare SpikedPrTr		BCC 尖芒镜头光晕转场（旧版）			星芒耀斑转场
+BCC Lens FlashPrTr		BCC 镜头闪光转场（旧版）			闪光转场|镜头闪白
+BCC LensTransitionPrTr		BCC 镜头转场（已弃用）			旧版镜头转场
+BCCLightLeakDslvPrTr		BCC 漏光溶解（已弃用）			漏光转场|漏光叠化
+BCC Light WipePrTr		BCC 光线擦除（旧版）			光线转场|扫光擦除
+BCC Linear WipePrTr		BCC 线性擦除（已弃用）			线性转场|直线擦除
+BCC Multi Stretch WipePrTr		BCC 多重拉伸擦除（旧版）			多重拉伸转场
+BCC Multi Stripe WipePrTr		BCC 多条纹擦除（旧版）			多条纹转场|条带擦除
+BCC PI DissolvePrTr		BCC 粒子幻象溶解（旧版）			粒子幻象转场|粒子叠化
+BCC Prism DissolvePrTr		BCC 棱镜溶解（已弃用）			棱镜转场|棱镜叠化
+BCC Radial WipePrTr		BCC 径向擦除（已弃用）			径向转场|扇形擦除
+BCC Rays DissolvePrTr		BCC 光芒溶解（已弃用）			光芒转场|射线叠化
+BCC Rectangular WipePrTr		BCC 矩形擦除（已弃用）			矩形转场|方框擦除
+BCC RGB Blur DissolvePrTr		BCC 三色通道模糊溶解（已弃用）			三色模糊转场|通道模糊叠化
+BCC RGB Dspl DissolvePrTr		BCC 三色通道置换溶解（旧版）			三色置换转场|通道位移叠化
+BCC Ribbon WipePrTr		BCC 丝带擦除（旧版）			丝带转场|带状擦除
+BCC Rings WipePrTr		BCC 圆环擦除（旧版）			圆环转场|环形擦除
+BCC Ripple DissolvePrTr		BCC 波纹溶解（已弃用）			波纹转场|涟漪叠化
+BCC Spin Blur DissolvePrTr		BCC 旋转模糊溶解（已弃用）			旋转模糊转场
+BCC Swish PanPrTr		BCC 甩镜转场（已弃用）			快速摇镜|甩镜切换
+BCC Textured WipePrTr		BCC 纹理擦除（已弃用）			纹理转场|材质擦除
+BCC Tile WipePrTr		BCC 平铺擦除（旧版）			平铺转场|瓦片擦除
+BCC Tritone DissolvePrTr		BCC 三色调溶解（旧版）			三色调转场|三色调叠化
+BCC TwisterPrTr		BCC 扭转转场（旧版）			旋扭转场|扭曲切换
+BCC Vector Blur DissolvePrTr		BCC 矢量模糊溶解（旧版）			矢量模糊转场
+BCCVignette WipePrTr		BCC 暗角擦除（已弃用）			暗角转场|晕影擦除
+BCC Water Waves DissolvePrTr		BCC 水波溶解（旧版）			水波转场|水波叠化
+RG_MB_ParamCurve_AE		参数化曲线调色			参数曲线|分区曲线调色|Red Giant Magic Bullet Parametric Curve 参数化曲线调色
+RG MB COLORISTA IV		专业色彩校正			专业调色|色彩校正|Red Giant Magic Bullet Colorista V 专业色彩校正
+RG Cosmo_II		人像美肤			磨皮美肤|肤色修饰|Red Giant Magic Bullet Cosmo II 人像美肤
+RG Denoiser3		视频降噪			视频去噪|影像降噪|Red Giant Magic Bullet Denoiser III 视频降噪
+Magic_Bullet_Mojo_II		电影风格调色			电影调色|电影色调|Red Giant Magic Bullet Mojo II 电影风格调色
+Magic_Bullet_Renoiser		胶片颗粒添加			胶片颗粒|重新加噪|Red Giant Magic Bullet Renoiser 胶片颗粒添加
+Magic_Bullet_Suite_Magic_Bullet		胶片质感模拟			胶片模拟|电影胶片|Red Giant Magic Bullet Film 胶片质感模拟
+MB LookSuite3		影视风格调色			风格调色|影视色彩|Red Giant Magic Bullet Looks 影视风格调色
+Universe_Blur_Blur_Premium		Universe 模糊			宇宙模糊
+Universe_Blur_Box_Bokeh		Universe 散景模糊			散景|焦外光斑
+Universe_Compound_Blur_Premium		Universe 复合模糊			复合模糊|贴图控制模糊
+Universe_Blur_Spot_Blur		Universe 局部模糊			局部模糊|区域模糊
+Universe_CrumplePop_Finisher		Universe 综合画面润色			画面润色|影像修饰
+Universe_CrumplePop_Fisheye_Fix		Universe 鱼眼畸变校正			鱼眼校正|去鱼眼
+Universe_CrumplePop_Grain16		Universe 十六毫米胶片颗粒			十六毫米颗粒|胶片加颗粒
+Universe_CrumplePop_OverLight		Universe 叠加光效			叠光|光效叠加
+Universe_CrumplePop_ShrinkRay		Universe 微缩移轴景观			移轴微缩|微缩景观
+Universe_Distort_Camera_Shake_P		Universe 摄像机抖动			镜头抖动|摄像机震动
+Universe_Distort_Chromatic_Aber		Universe 色差畸变			镜头色差|色散
+Universe_Distort_Heatwave		Universe 热浪扭曲			热扰动|热浪变形
+Universe_Distort_Picture_in_Pic		Universe 画中画			画中画|子画面
+Universe_Distort_Prism_Displace		Universe 棱镜置换			棱镜扭曲|棱镜位移
+Universe_Distort_RGB_Separation		Universe 红绿蓝通道分离			三色分离|通道分离
+Universe_Generators_Custom_Dith		Universe 自定义抖色			自定义抖色|抖动网点
+Universe_Generators_Fractal_Bac		Universe 分形背景			分形背景|程序纹理背景
+Universe_Generators_Gradient_Ra		Universe 渐变坡度			渐变生成|渐变色带
+Universe_Generators_Soft_Gradie		Universe 柔和渐变背景			柔和渐变|渐变背景
+Universe_Generators_Spectralici		Universe 炫彩背景生成			炫彩背景|彩色纹理
+Universe_Glow_Chromatic_Glow		Universe 色散辉光			彩色辉光|色差发光
+Universe_Glow_Edge_Glow_Premium		Universe 边缘辉光			轮廓发光|边缘发光
+Universe_Glow_Glimmer		Universe 闪烁光芒			闪光辉芒|闪烁发光
+Universe_Glow_Glow		Universe 辉光			柔光辉光|宇宙发光
+Universe_Glow_Glo_Fi_Premium		Universe 科幻辉光			科幻发光|彩色光晕
+Universe_Glow_Point_Zoom		Universe 点状缩放光芒			中心缩放光芒|缩放光束
+RG_UNI_Glow_Quantum		Universe 光迹辉光			光迹|量子光轨
+Universe_M_G_Array_Gun		Universe 图形阵列生成			图形阵列|阵列生成器
+Universe_Visualizations_HUD_Com		Universe 科幻仪表组件			抬头显示组件|科幻界面
+Universe_Motion_Graphics_Draw_P		Universe 线条动画			线条绘制|路径线条
+Universe_M_G_Progresso		Universe 进度指示器			进度条|进度环
+RG_UNI_M_G_Reframe		Universe 动态画中画构图			动画画中画|画框构图
+Universe_Generators_TurNoise		Universe 湍流杂色			湍流噪波|湍流纹理
+RG_UNI_Stylize_Analog		Universe 模拟电视画面			模拟电视|复古显像管
+Universe_Stylize_Carousel		Universe 幻灯片放映风格			幻灯机|幻灯片风格
+RG_UNI_Chromatown		Universe 彩色分区拖影模糊			分区拖影|彩色条纹模糊
+RG_UNI_Stylize_Electrify		Universe 电流描边			电流|闪电轮廓
+Universe_Stylize_Error_Diffuse_		Universe 误差扩散抖色			误差扩散|扩散抖色
+Universe_Stylize_Glitch		Universe 数字故障			故障干扰|数字失真
+Universe_Stylize_Halftone_Dithe		Universe 半色调抖色			半色调网点|网点抖色
+Universe_Distort_Holomatrix		Universe 全息投影风格			全息投影|全息干扰
+Universe_Knoll_Light_Factory_EZ		Universe 简易镜头光晕			简易光工厂|镜头耀斑
+Universe_Misfire_Premium		Universe 胶片损伤模拟			胶片损伤|老电影瑕疵
+RG_UNI_Stylize_Multitone		Universe 多色调映射			多色调|多色映射
+Universe_Stylize_Noir_Moderne		Universe 黑白电影风格			黑白电影|黑色电影
+Universe_Stylize_Ordered_Dither		Universe 有序抖色			有序抖色|有序网点
+Universe_CrumplePop_RetroGrade		Universe 复古胶片风格			复古胶片|老电影风格
+Universe_Stylize_Sketchify		Universe 素描风格化			素描|手绘线稿
+Universe_Stylize_Symbol_Mapper		Universe 符号映射			符号拼图|字符映射
+Universe_Stylize_Texturize		Universe 纹理叠加			纹理化|材质叠加
+MX_UNI_Stylize_Texturize_Motion		Universe 动态纹理叠加			动态纹理|运动纹理
+Universe_Stylize_Threshold_Dith		Universe 阈值抖色			阈值抖色|阈值网点
+Universe_Stylize_VHS		Universe 录像带画质模拟			录像带|老录像带画质
+Universe_Text_AV_Club		Universe 老录像噪点文字			复古字幕|录像带文字
+Universe_Text_Ecto		Universe 幽灵辉光			幽灵发光|灵气光晕
+Universe_Text_Glo_Fi_II		Universe 科幻辉光二代			科幻发光二代|彩色辉光二代
+Universe_Text_Hacker_Text		Universe 黑客字符动画			乱码文字|黑客文字
+Universe_Text_Long_Shadow		Universe 长阴影			长投影|长阴影
+Universe_Text_Luster		Universe 金属光泽			金属质感|闪亮光泽
+Universe_Text_Numbers		Universe 数字动画			数字计数|数字生成
+Universe_Text_Screen_Text		Universe 屏幕文字动画			屏显文字|屏幕文本
+Universe_Text_Text_Tile		Universe 文字平铺			文字铺排|文本平铺
+Universe_Utilities_Title_Motion		Universe 标题运动动画			标题动画|字幕运动
+Universe_Text_Type_Cast		Universe 逐行逐词逐字动画			分词动画|逐字动画
+Universe_Text_Type_On		Universe 打字机逐字显示			打字机|逐字出现
+RG_UNI_Text_Typographic		Universe 字体排印动画			动态排版|文字排印
+Universe_Transitions_Blinds		Universe 百叶窗转场			百叶窗|百叶擦除
+Universe_Transitions_Bokeh		Universe 散景转场			散景切换|焦外光斑转场
+Universe_Transitions_Camera_Sha		Universe 镜头抖动转场			抖动转场|震动切换
+Universe_Transitions_Carousel_T		Universe 幻灯片转场			幻灯机转场|幻灯片切换
+Universe_Transitions_Channel_Bl		Universe 通道模糊转场			通道模糊切换|分色模糊转场
+Universe_Transitions_Channel_Su		Universe 电视频道切换			换台转场|电视换台
+Universe_Transitions_Clock_Wipe		Universe 时钟擦除转场			时钟擦除|扇形转场
+Universe_Transitions_Color_Mosa		Universe 彩色马赛克转场			彩色马赛克|色块切换
+Universe_Transitions_Color_Stri		Universe 彩色条纹转场			色条转场|条纹切换
+Universe_Transitions_Cube		Universe 立方体转场			立方体切换|方块翻转
+Universe_Transitions_Diamond_Wa		Universe 菱形波浪转场			菱形波浪|菱形切换
+Universe_Transitions_Dolly_Fade		Universe 推拉淡化转场			推拉镜头转场|推拉淡入淡出
+Universe_Exposure_Blur_Premium		Universe 曝光模糊转场			曝光模糊|曝光切换
+Universe_Transitions_Film_Trans		Universe 胶片转场			胶片切换|胶片过渡
+Universe_Transitions_Flicker_Cu		Universe 闪烁切换			闪切|闪烁转场
+Universe_Transitions_Fold		Universe 折叠转场			折叠切换|折页转场
+Universe_Transitions_Glitch_Tra		Universe 故障转场			故障切换|失真转场
+Universe_Transitions_HalfLight		Universe 漏光辉光转场			漏光闪切|辉光溶解
+Universe_Transitions_Inside_Cub		Universe 立方体内部转场			方体内景切换|立方体内壁
+Universe_Transitions_Knoll_Ligh		Universe 镜头光晕转场			耀斑转场|光工厂转场
+Universe_Transitions_Linear_Wip		Universe 线性擦除转场			线性擦除|直线转场
+Universe_Transitions_RetroGrade		Universe 复古胶片转场			老电影转场|复古切换
+Universe_Transitions_Rubics_Cub		Universe 魔方转场			魔方旋转|魔方切换
+Universe_Transitions_Shape_Wipe		Universe 形状擦除转场			图形擦除|形状切换
+Universe_Transitions_Slide		Universe 滑动转场			滑移切换|滑动过渡
+Universe_Soft_Edge_Wipe_Premium		Universe 柔边擦除转场			柔边擦除|软边切换
+Universe_Transitions_Spectralic		Universe 炫彩转场			炫彩切换|光谱色转场
+RG_UNI_Transition_Stretch		Universe 拉伸转场			拉伸切换|伸展转场
+Universe_Swish_Pan_Premium		Universe 甩镜转场			快速摇镜|甩镜切换
+Universe_Transitions_Triangle_W		Universe 三角波浪转场			三角波浪|三角切换
+Universe_Transitions_Turbulence		Universe 湍流扭曲转场			湍流切换|紊流转场
+Universe_Transitions_Unfold		Universe 展开转场			展开切换|展开折页
+Universe_Transitions_VHS_Transi		Universe 录像带转场			录像带切换|磁带故障转场
+RG_UNI_Transition_Warp		Universe 扭曲转场			变形切换|扭曲过渡
+Universe_Utilities_Logo_Motion		Universe 标志运动动画			标志动画|商标动效
+RG_UNI_Utilities_Modes		Universe 混合模式合成			混合模式|图层混合
+Universe_Utilities_Palettes		Universe 调色板配色			色板|配色方案
+RG_UNI_Utilities_Socialize		Universe 社交媒体画面适配			社媒版式|社交平台画幅
+Universe_Utilities_Unmult_Premi		Universe 黑底转透明			去黑底|去黑背景
+rgBang		枪口火焰生成			枪口火焰|枪口闪光|Red Giant Bang 枪口火焰生成
+RG_VFX_ChromaDisp_AE		色散置换			色差置换|彩色位移扭曲|Red Giant Chromatic Displacement 色散置换
+RG_VFX_Depth_Generator_AE		深度图生成			深度图|深度通道生成|Red Giant Depth Generator 深度图生成
+RG_KingPin_Tracker		平面跟踪贴合			平面跟踪|四角定位跟踪|Red Giant King Pin Tracker 平面跟踪贴合
+RG_Lens_Distortion		镜头畸变匹配			镜头畸变校正|镜头匹配|Red Giant Lens Distortion Matcher 镜头畸变匹配
+MX_Lens_Flare		真实镜头光晕			真实耀斑|镜头光晕|Red Giant Real Lens Flares 真实镜头光晕
+RG_VFX_OpticalGlow_AE		光学辉光			光学发光|真实光晕|Red Giant Optical Glow 光学辉光
+Photron Primatte6		色键抠像			专业抠像|绿幕抠像|Red Giant Primatte Keyer 6 色键抠像
+rg.vfx.reflection		反射倒影			反射|镜面倒影|Red Giant Reflection 反射倒影
+rg.vfx.shadow		阴影生成			投影|阴影|Red Giant Shadow 阴影生成
+RG_VFX_SpotClone_Tracker_AE		跟踪克隆修补			跟踪修补|污点移除|Red Giant Spot Clone Tracker 跟踪克隆修补
+RG_VFX_Supernova_AE		多图层光效合成			超级合成|光效融合|Red Giant Supercomp 多图层光效合成
+Create Motion Vectors 3.x		运动矢量生成			生成运动矢量|运动向量生成|RE:Vision Motion Vectors: Create 运动矢量生成
+Twixtor 4 Vectors In		输入矢量变速补帧			外部矢量补帧|矢量输入变速|RE:Vision Twixtor Pro, Vectors In 输入矢量变速补帧
+Pseudo/MHAC PrCtrl NWX 10		MHAC PrCtrl NWX 10 伪效果控件（用途待确认）			伪效果控件|未知控件

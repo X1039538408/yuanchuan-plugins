@@ -336,7 +336,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
         options = parse_options(arguments);
         if (!options.log.empty()) log = fs::absolute(options.log);
         if (options.help) {
-            const wchar_t* help = L"效果控制台 1.0.19 安装 / 卸载工具\n\n--target <AE Support Files 目录>  指定目标\n--uninstall  卸载本插件，保留个人设置与备份\n--silent  不弹提示框\n--list  只列出目标，不修改文件\n--log <文件路径>  指定 UTF-8 日志\n\nAE 正在运行时会停止并提示先保存工程、自行退出后重试。程序不会关闭 AE。\n独立卸载器默认执行卸载。未指定目标时处理全部检测到的有效目录。\n需要管理员权限。退出码：0 成功，1 未完成。";
+            const wchar_t* help = L"效果控制台 1.0.25 安装 / 卸载工具\n\n--target <AE Support Files 目录>  指定目标\n--uninstall  卸载本插件，保留个人设置与备份\n--silent  不弹提示框\n--list  只列出目标，不修改文件\n--log <文件路径>  指定 UTF-8 日志\n\nAE 正在运行时会停止并提示先保存工程、自行退出后重试。程序不会关闭 AE。\n独立卸载器默认执行卸载。未指定目标时处理全部检测到的有效目录。\n需要管理员权限。退出码：0 成功，1 未完成。";
             std::wcout << help << std::endl;
             if (!options.silent) MessageBoxW(nullptr, help, L"效果控制台", MB_OK | MB_ICONINFORMATION);
             return 0;
